@@ -11,6 +11,17 @@ function downloadModelUrl(jobId: string): string {
 function downloadDatasetUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/dataset`;
 }
+async function exportOnnx(jobId: string): Promise<void> {
+  const resp = await fetch(`${API_BASE}/train/jobs/${jobId}/export-onnx`, { method: "POST" });
+  if (!resp.ok) throw new Error("Export failed");
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "model.onnx";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ── Component ───────────────────────────────────────
 
@@ -387,6 +398,13 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               <>
                 <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">模型</a>
                 <a href={downloadDatasetUrl(job.id)} download className="text-primary-600 hover:underline font-medium">数据集</a>
+                <button
+                  onClick={async () => {
+                    try { await exportOnnx(job.id); toast.success("ONNX 导出成功"); }
+                    catch { toast.error("ONNX 导出失败"); }
+                  }}
+                  className="text-primary-600 hover:underline font-medium"
+                >ONNX</button>
                 <button
                   onClick={() => {
                     window.dispatchEvent(new CustomEvent("yolo-validate", {

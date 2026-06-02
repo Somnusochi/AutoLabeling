@@ -203,6 +203,40 @@ def download_dataset(
         raise HTTPException(500, "Failed to create dataset archive")
 
 
+@router.post("/jobs/{job_id}/export-onnx")
+def export_onnx(
+    job_id: str,
+    db: Session = Depends(get_db),
+):
+    """Export trained PT model to ONNX format."""
+    from pathlib import Path
+
+    from ...core.config import settings
+    from ultralytics import YOLO
+
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job or not job.model_path:
+        raise HTTPException(404, "Model not found")
+    if job.status != "completed":
+        raise HTTPException(400, "Training not completed")
+
+    pt_path = Path(job.model_path)
+    if not pt_path.exists():
+        raise HTTPException(404, "Model file not found on disk")
+
+    try:
+        model = YOLO(str(pt_path))
+        export_path = model.export(format="onnx", imgsz=640, half=False)
+        onnx_path = str(export_path) if isinstance(export_path, str) else str(pt_path.with_suffix(".onnx"))
+        return FileResponse(
+            onnx_path,
+            media_type="application/octet-stream",
+            filename=f"{job.model_variant}_finetuned.onnx",
+        )
+    except Exception as exc:
+        raise HTTPException(500, f"ONNX export failed: {exc}") from exc
+
+
 @router.get("/jobs/{job_id}/download")
 def download_model(
     job_id: str,
