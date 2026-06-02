@@ -257,7 +257,11 @@ export function TrainingPanel({ detections }: Props) {
           <label className="text-xs text-gray-500">任务类型</label>
           <select value={taskType} onChange={(e) => setTaskType(e.target.value)}
             className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
-            <option value="detect">目标检测</option>
+            <option value="detect">目标检测 (Detect)</option>
+            <option value="segment" disabled>实例分割 (Segment)</option>
+            <option value="classify" disabled>图像分类 (Classify)</option>
+            <option value="pose" disabled>姿态估计 (Pose)</option>
+            <option value="obb" disabled>旋转框 (OBB)</option>
           </select>
         </div>
       </div>
