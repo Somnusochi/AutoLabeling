@@ -70,7 +70,7 @@ async def create_detection(
         image_name=original_name,
         image_width=result["img_w"],
         image_height=result["img_h"],
-        categories=json.dumps(cat_list),
+        categories=cat_list,
     )
     detection.elapsed_ms = int((time.perf_counter() - t0) * 1000)
     box_dicts: list[dict] = [
@@ -185,6 +185,44 @@ def add_box(
         "class_name": body.class_name,
         "x1": body.x1, "y1": body.y1, "x2": body.x2, "y2": body.y2,
     }])
+    repo.db.commit()
+    return APIResponse(data={"ok": True})
+
+
+class ReplaceBoxesBody(BaseModel):
+    boxes: list[dict]  # [{"x1","y1","x2","y2","class_name"}, ...]
+
+
+@router.put("/detections/{detection_id}/boxes")
+def replace_boxes(
+    detection_id: str,
+    body: ReplaceBoxesBody,
+    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+) -> APIResponse:
+    det = repo.get_by_id(detection_id)
+    if not det:
+        raise NotFoundError("Detection", detection_id)
+    repo.replace_boxes(detection_id, body.boxes)
+    repo.db.commit()
+    return APIResponse(data={"ok": True, "count": len(body.boxes)})
+
+
+class FilterSettingsBody(BaseModel):
+    filter_mode: str  # best | nms | all
+    filter_nms_iou: float | None = None
+
+
+@router.put("/detections/{detection_id}/filter-settings")
+def save_filter_settings(
+    detection_id: str,
+    body: FilterSettingsBody,
+    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+) -> APIResponse:
+    det = repo.get_by_id(detection_id)
+    if not det:
+        raise NotFoundError("Detection", detection_id)
+    det.filter_mode = body.filter_mode
+    det.filter_nms_iou = body.filter_nms_iou
     repo.db.commit()
     return APIResponse(data={"ok": True})
 

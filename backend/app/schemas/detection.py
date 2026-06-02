@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+def _coerce_uuid(v: Any) -> str:
+    return str(v) if isinstance(v, uuid.UUID) else v
 
 
 class DetectionBoxOut(BaseModel):
@@ -16,20 +22,32 @@ class DetectionBoxOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def coerce_id(cls, v: Any) -> str:
+        return _coerce_uuid(v)
+
 
 class DetectionOut(BaseModel):
     id: str
     image_name: str
-    categories: str
+    categories: list[str] = []
     model_name: str
     image_width: int
     image_height: int
     elapsed_ms: int | None = None
+    filter_mode: str | None = None
+    filter_nms_iou: float | None = None
     status: str
     created_at: datetime
     boxes: list[DetectionBoxOut] = []
 
     model_config = {"from_attributes": True}
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def coerce_id(cls, v: Any) -> str:
+        return _coerce_uuid(v)
 
 
 class DetectionListOut(BaseModel):

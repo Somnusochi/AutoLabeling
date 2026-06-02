@@ -24,7 +24,7 @@ class DetectionRepository:
         image_name: str,
         image_width: int,
         image_height: int,
-        categories: str,       # JSON array string
+        categories: list,       # JSONB stores Python list directly
         model_name: str = "LocateAnything-3B",
     ) -> Detection:
         det = Detection(
@@ -53,6 +53,14 @@ class DetectionRepository:
         self.db.add_all(entities)
         self.db.flush()
         return entities
+
+    def replace_boxes(self, detection_id: str, boxes: list[dict]) -> list["DetectionBox"]:
+        """Delete all existing boxes for a detection and insert new ones."""
+        self.db.query(DetectionBox).filter(
+            DetectionBox.detection_id == detection_id,
+        ).delete()
+        self.db.flush()
+        return self.add_boxes(detection_id, boxes)
 
     # ── read ───────────────────────────────────────────
 

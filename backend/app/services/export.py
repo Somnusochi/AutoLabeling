@@ -68,9 +68,11 @@ def export_batch(db: "Session", detection_ids: list[str]) -> bytes:
 
 def _build_class_map(detections: list["Detection"]) -> dict[str, int]:
     """Build a unified class_name → class_id mapping across all given detections."""
+    from .yolo_format import _get_filtered_boxes
+
     class_map: dict[str, int] = {}
     for det in detections:
-        for box in det.boxes:
-            if box.class_name not in class_map:
-                class_map[box.class_name] = len(class_map)
+        for box in _get_filtered_boxes(det):
+            if box["class_name"] not in class_map:
+                class_map[box["class_name"]] = len(class_map)
     return class_map

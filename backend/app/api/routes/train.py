@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from ...core.database import get_db
-from ...models.train import TrainingJob
+from ...models.train import TrainingDetection, TrainingJob
 from ...schemas.common import APIResponse
 from ...schemas.train import TrainingJobListOut, TrainingJobOut, TrainRequest
 from ...services.trainer import YOLO_SERIES, run_training_safe
@@ -34,17 +34,24 @@ def create_training_job(
         epochs=body.epochs,
         imgsz=body.imgsz,
         batch=body.batch,
-        detection_ids=json.dumps(body.detection_ids),
         status="pending",
     )
     db.add(job)
+    db.flush()
+
+    import uuid as _uuid
+    for det_id in body.detection_ids:
+        db.add(TrainingDetection(
+            training_job_id=job.id,
+            detection_id=_uuid.UUID(det_id),
+        ))
     db.commit()
     db.refresh(job)
 
     # Run training in background thread
     thread = threading.Thread(
         target=run_training_safe,
-        args=(job.id, body.detection_ids, body.model_variant,
+        args=(str(job.id), body.detection_ids, body.model_variant,
               body.epochs, body.imgsz, body.batch),
         daemon=True,
     )
@@ -213,11 +220,8 @@ async def predict_with_model(
         Path(tmp.name).unlink(missing_ok=True)
 
     class_map = {}
-    if job.metrics:
-        try:
-            class_map = json.loads(job.metrics).get("class_map", {})
-        except json.JSONDecodeError:
-            pass
+    if job.metrics and isinstance(job.metrics, dict):
+        class_map = job.metrics.get("class_map", {})
 
     return APIResponse(data={**result, "model_variant": job.model_variant, "class_map": class_map})
 

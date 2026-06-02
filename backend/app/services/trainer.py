@@ -97,10 +97,11 @@ def _build_dataset(
         dst_img = img_dir / f"{det.id}{src.suffix}"
         shutil.copy2(src, dst_img)
 
-        # Build class map
-        for box in det.boxes:
-            if box.class_name not in class_map:
-                class_map[box.class_name] = len(class_map)
+        # Build class map from filtered boxes
+        from .yolo_format import _get_filtered_boxes
+        for box in _get_filtered_boxes(det):
+            if box["class_name"] not in class_map:
+                class_map[box["class_name"]] = len(class_map)
 
         samples.append((det, lbl_dir / f"{det.id}.txt"))
         sample_count += 1
@@ -243,7 +244,8 @@ def run_training(
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if job:
         job.status = "completed"
-        job.metrics = json.dumps(metrics)
+        job.metrics = metrics
+        job.class_map = class_map
         job.model_path = str(output_path)
         job.completed_at = datetime.now(timezone.utc)
         db.commit()
