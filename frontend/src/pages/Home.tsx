@@ -281,24 +281,34 @@ export function Home() {
           )}
         </div>
 
-        <div>
-          <p className="text-sm font-medium text-gray-600 mb-2">目标类别</p>
-          <CategoryInput categories={categories} onChange={setCategories} disabled={loading} recentCategories={recentCategories} />
-        </div>
+        {!validateVideoFile && (
+          <>
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">目标类别</p>
+              <CategoryInput categories={categories} onChange={setCategories} disabled={loading} recentCategories={recentCategories} />
+            </div>
 
-        <button
-          type="button"
-          disabled={loading || files.length === 0 || (!validateMode && categories.length === 0)}
-          onClick={handleDetect}
-          className="w-full rounded bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading
-            ? <span className="inline-flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                检测中 {batchProgress.total > 1 ? `(${batchProgress.current}/${batchProgress.total})` : "..."}
-              </span>
-            : validateMode ? "YOLO 验证" : `开始检测${files.length > 1 ? ` (${files.length} 张)` : ""}`}
-        </button>
+            <button
+              type="button"
+              disabled={loading || files.length === 0 || (!validateMode && categories.length === 0)}
+              onClick={handleDetect}
+              className="w-full rounded bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading
+                ? <span className="inline-flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    检测中 {batchProgress.total > 1 ? `(${batchProgress.current}/${batchProgress.total})` : "..."}
+                  </span>
+                : validateMode ? "YOLO 验证" : `开始检测${files.length > 1 ? ` (${files.length} 张)` : ""}`}
+            </button>
+          </>
+        )}
+
+        {validateVideoFile && (
+          <div className="text-xs text-gray-400 text-center py-2">
+            视频推理中，调整上方 Conf/IoU 后重新点击"验证视频"
+          </div>
+        )}
 
         <BatchProgress current={batchProgress.current} total={batchProgress.total} completed={batchResults.length}
           onCancel={cancelBatch} />
