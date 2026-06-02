@@ -1,4 +1,4 @@
-# YOLO 自动标注训练平台
+# AutoLabeling
 
 基于 NVIDIA LocateAnything-3B 视觉大模型 + YOLOv26 的端到端自动标注训练系统。
 
