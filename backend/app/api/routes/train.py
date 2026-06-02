@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import threading
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
