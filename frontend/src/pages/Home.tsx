@@ -29,6 +29,7 @@ export function Home() {
   const [categories, setCategories] = useState<string[]>([]);
   const [validateVideoId, setValidateVideoId] = useState<string | null>(null);
   const [validateRunKey, setValidateRunKey] = useState(0);
+  const [externalModelFile, setExternalModelFile] = useState<File | null>(null);
 
   // ── Detection ────────────────────────────────────
   const queryClient = useQueryClient();
@@ -233,7 +234,28 @@ export function Home() {
 
         {validateMode && (
           <div className="rounded bg-green-50 border border-green-200 p-2 text-xs space-y-2">
-            <p className="text-green-700 font-medium">模型: {validateMode.modelVariant}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-green-700 font-medium">模型:</span>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="model-source" checked={!externalModelFile}
+                  onChange={() => setExternalModelFile(null)} className="h-3 w-3" />
+                <span className="text-gray-600">{validateMode?.modelVariant ?? "已训练"}</span>
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="model-source" checked={!!externalModelFile}
+                  onChange={() => {}} className="h-3 w-3" />
+                <span className="text-gray-600">上传</span>
+              </label>
+            </div>
+            {externalModelFile && (
+              <div className="text-green-700 text-[11px]">已选择: {externalModelFile.name}</div>
+            )}
+            <input
+              type="file"
+              accept=".pt"
+              className="text-[10px]"
+              onChange={(e) => { if (e.target.files?.[0]) setExternalModelFile(e.target.files[0]); }}
+            />
             <div className="flex gap-2">
               <div className="flex-1">
                 <label className="text-gray-500">Conf</label>
@@ -379,7 +401,8 @@ export function Home() {
           <VideoValidator
             key={validateRunKey}
             videoId={validateVideoId}
-            jobId={validateMode.jobId}
+            jobId={externalModelFile ? undefined : validateMode.jobId}
+            modelFile={externalModelFile ?? undefined}
             conf={validateConf}
             iou={validateIou}
           />

@@ -290,6 +290,88 @@ def download_model(
     )
 
 
+# Temp storage for uploaded external models
+_external_models: dict[str, str] = {}
+
+@router.post("/upload-model")
+async def upload_external_model(file: UploadFile = File(...)):
+    """Upload an external YOLO .pt model, return a token for MJPEG validation."""
+    import uuid
+    import tempfile
+
+    if not file.filename or not file.filename.endswith(".pt"):
+        raise HTTPException(400, "Only .pt files are accepted")
+
+    model_tmp = tempfile.NamedTemporaryFile(suffix=".pt", delete=False)
+    model_tmp.write(await file.read())
+    model_tmp.close()
+
+    token = uuid.uuid4().hex
+    _external_models[token] = model_tmp.name
+    return APIResponse(data={"token": token, "fileName": file.filename})
+
+
+@router.get("/validate-mjpeg/{token}/{video_id}")
+async def validate_mjpeg_external(
+    token: str,
+    video_id: str,
+    conf: float = Query(0.25),
+    iou: float = Query(0.45),
+):
+    """MJPEG validation with an external model (token from upload-model)."""
+    import asyncio
+    import subprocess
+    from pathlib import Path
+
+    from starlette.responses import StreamingResponse
+
+    from ...core.config import settings
+    from ...core.database import SessionLocal
+    from ...models.video import Video
+    from ...services.video_service import _ffprobe
+
+    model_path = _external_models.get(token)
+    if not model_path:
+        raise HTTPException(404, "Model token not found or expired")
+
+    db = SessionLocal()
+    try:
+        video = db.query(Video).filter(Video.id == video_id).first()
+        if not video: raise HTTPException(404, "Video not found")
+        vp = Path(video.file_path)
+        if not vp.exists(): raise HTTPException(404, "Video file not found")
+        video_path = str(vp)
+    finally:
+        db.close()
+
+    meta = _ffprobe(video_path)
+    fps = meta["fps"]
+
+    async def mjpeg_stream():
+        proc = subprocess.Popen(
+            ["ffmpeg", "-y", "-i", video_path, "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "5", "-"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        )
+        assert proc.stdout is not None
+        buf, frame_num = b"", 0
+        while True:
+            chunk = proc.stdout.read(4096)
+            if not chunk: break
+            buf += chunk
+            end = buf.find(b"\xff\xd9")
+            if end == -1: continue
+            jpg = buf[:end + 1]; buf = buf[end + 1:]
+            annotated = await asyncio.get_event_loop().run_in_executor(None, _draw_frame, model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps)
+            if annotated:
+                yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
+                await asyncio.sleep(0)
+            frame_num += 1
+        proc.terminate()
+
+    return StreamingResponse(mjpeg_stream(), media_type="multipart/x-mixed-replace; boundary=frame",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @router.get("/jobs/{job_id}/validate-mjpeg/{video_id}")
 async def validate_mjpeg(
     job_id: str,
