@@ -28,11 +28,11 @@ export function TrainingPanel({ detections }: Props) {
   const [splitPreset, setSplitPreset] = useState("70/20/10");
   const [taskType, setTaskType] = useState("detect");
 
-  const splitPresets: Record<string, { label: string; train: number; val: number }> = {
-    "70/20/10": { label: "70% 训练 / 20% 验证 / 10% 测试", train: 0.7, val: 0.2 },
-    "80/20":    { label: "80% 训练 / 20% 验证（无测试）", train: 0.8, val: 0.2 },
-    "90/10":    { label: "90% 训练 / 10% 验证（无测试）", train: 0.9, val: 0.1 },
-    "60/20/20": { label: "60% 训练 / 20% 验证 / 20% 测试", train: 0.6, val: 0.2 },
+  const splitPresets: Record<string, { train: number; val: number }> = {
+    "70 / 20 / 10": { train: 0.7, val: 0.2 },
+    "80 / 20":      { train: 0.8, val: 0.2 },
+    "90 / 10":      { train: 0.9, val: 0.1 },
+    "60 / 20 / 20": { train: 0.6, val: 0.2 },
   };
   const qc = useQueryClient();
 
@@ -88,15 +88,15 @@ export function TrainingPanel({ detections }: Props) {
       toast.error("请至少选择一条检测记录");
       return;
     }
-    const preset = splitPresets[splitPreset];
+    const p = splitPresets[splitPreset];
     trainMut.mutate({
       detectionIds: [...selected],
       modelVariant: currentVariant,
       epochs,
       imgsz,
       batch,
-      trainRatio: preset.train,
-      valRatio: preset.val,
+      trainRatio: p.train,
+      valRatio: p.val,
       taskType,
     });
   };
@@ -251,11 +251,13 @@ export function TrainingPanel({ detections }: Props) {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500">数据拆分</label>
+          <label className="text-xs text-gray-500">
+            数据拆分（训练 / 验证{splitPreset.split("/").length >= 3 ? " / 测试" : ""}）
+          </label>
           <Select
             value={splitPreset}
             onChange={setSplitPreset}
-            options={Object.entries(splitPresets).map(([key, p]) => ({ value: key, label: p.label }))}
+            options={Object.keys(splitPresets).map((k) => ({ value: k, label: k }))}
             className="w-full"
             size="small"
           />
