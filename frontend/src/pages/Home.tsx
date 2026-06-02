@@ -51,6 +51,18 @@ export function Home() {
     setValidateConf, setValidateIou, runValidation,
   } = useYoloValidation();
 
+  // Synchronize validation panel tabs and select the training job when "yolo-validate" is triggered
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setAppMode("validate");
+      setValidateModelSource("trained");
+      setSelectedTrainedJobId(detail.jobId);
+    };
+    window.addEventListener("yolo-validate", handler);
+    return () => window.removeEventListener("yolo-validate", handler);
+  }, []);
+
   // ── Manual annotation ────────────────────────────
   const [canvasMode, setCanvasMode] = useState<"view" | "draw">("view");
   const [drawCategory, setDrawCategory] = useState("");
