@@ -93,10 +93,11 @@ export function TrainingPanel({ detections }: Props) {
   };
 
   const selectAll = () => {
-    if (selected.size === detections.length) {
+    const targets = trainFilter.size > 0 ? filteredDetections : detections;
+    if (selected.size === targets.length && targets.every((d) => selected.has(d.id))) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(detections.map((d) => d.id)));
+      setSelected(new Set(targets.map((d) => d.id)));
     }
   };
 
@@ -161,7 +162,11 @@ export function TrainingPanel({ detections }: Props) {
         </span>
         <button type="button" onClick={selectAll}
           className="text-xs text-primary-600 hover:underline">
-          {selectedCount === detections.length ? "取消全选" : "全选"}
+          {(() => {
+            const targets = trainFilter.size > 0 ? filteredDetections : detections;
+            return selectedCount === targets.length && targets.every((d) => selected.has(d.id))
+              ? "取消全选" : "全选";
+          })()}
         </button>
       </div>
 
