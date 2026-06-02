@@ -287,4 +287,21 @@ def extract_keyframes(
         raw = _ffmpeg_scene(filepath, output_dir, threshold, max_frames)
 
     logger.info("Raw frames: %d (method=%s)", len(raw), method)
+
+    # Fallback: always extract at least the first frame
+    if len(raw) == 0:
+        logger.warning("No frames extracted, grabbing first frame as fallback")
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", filepath,
+             "-vframes", "1",
+             str(output_dir / "kf_00000.jpg")],
+            capture_output=True, text=True, timeout=30,
+        )
+        raw = [{
+            "frame_number": 0,
+            "timestamp_seconds": 0.0,
+            "image_path": str(output_dir / "kf_00000.jpg"),
+            "score": None,
+        }]
+
     return _deduplicate(raw, ssim_threshold)

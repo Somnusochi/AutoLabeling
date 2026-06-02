@@ -52,7 +52,7 @@ class VideoOut(BaseSchema):
 class ExtractKeyframesIn(BaseSchema):
     method: str = Field("scene", description="scene | motion | interval")
     threshold: float = Field(
-        30.0, ge=0.5, le=50.0,
+        15.0, ge=0.5, le=50.0,
         description="scene: chi-sqr sensitivity (1-100); motion: min displacement px (0.5-50)",
     )
     interval_seconds: float = Field(2.0, ge=0.5, le=60.0, description="interval seconds (interval method only)")

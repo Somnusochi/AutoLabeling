@@ -30,7 +30,7 @@ export function VideoPanel({ onLoadKeyframes, disabled }: Props) {
   const [loadingAll, setLoadingAll] = useState(false);
 
   const [method, setMethod] = useState<"scene" | "motion" | "interval">("scene");
-  const [threshold, setThreshold] = useState(30);
+  const [threshold, setThreshold] = useState(15);
   const [intervalSec, setIntervalSec] = useState(2);
   const [maxFrames, setMaxFrames] = useState(100);
   const [ssimThreshold, setSsimThreshold] = useState(0.95);
