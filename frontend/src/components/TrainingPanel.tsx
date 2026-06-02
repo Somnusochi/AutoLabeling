@@ -25,9 +25,15 @@ export function TrainingPanel({ detections }: Props) {
   const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
   const [imgsz, setImgsz] = useState(DEFAULT_IMGSZ);
   const [batch, setBatch] = useState(DEFAULT_BATCH);
-  const [trainRatio, setTrainRatio] = useState(0.7);
-  const [valRatio, setValRatio] = useState(0.2);
+  const [splitPreset, setSplitPreset] = useState("70/20/10");
   const [taskType, setTaskType] = useState("detect");
+
+  const splitPresets: Record<string, { label: string; train: number; val: number }> = {
+    "70/20/10": { label: "70% 训练 / 20% 验证 / 10% 测试", train: 0.7, val: 0.2 },
+    "80/20":    { label: "80% 训练 / 20% 验证（无测试）", train: 0.8, val: 0.2 },
+    "90/10":    { label: "90% 训练 / 10% 验证（无测试）", train: 0.9, val: 0.1 },
+    "60/20/20": { label: "60% 训练 / 20% 验证 / 20% 测试", train: 0.6, val: 0.2 },
+  };
   const qc = useQueryClient();
 
   const variantsQuery = useQuery({
@@ -82,14 +88,15 @@ export function TrainingPanel({ detections }: Props) {
       toast.error("请至少选择一条检测记录");
       return;
     }
+    const preset = splitPresets[splitPreset];
     trainMut.mutate({
       detectionIds: [...selected],
       modelVariant: currentVariant,
       epochs,
       imgsz,
       batch,
-      trainRatio,
-      valRatio,
+      trainRatio: preset.train,
+      valRatio: preset.val,
       taskType,
     });
   };
@@ -243,24 +250,15 @@ export function TrainingPanel({ detections }: Props) {
             className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs"
           />
         </div>
-        <div className="col-span-2">
-          <label className="text-xs text-gray-500">
-            训练/验证/测试 ({Math.round(trainRatio * 100)}% / {Math.round(valRatio * 100)}% / {Math.max(0, Math.round((1 - trainRatio - valRatio) * 100))}%)
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-400 w-10 text-right">训练</span>
-            <input type="range" min={0.1} max={0.9} step={0.05} value={trainRatio}
-              onChange={(e) => { const v = Number(e.target.value); setTrainRatio(v); if (v + valRatio > 1) setValRatio(1 - v); }}
-              className="flex-1 h-1 accent-blue-500" />
-            <span className="text-xs text-gray-600 w-8">{Math.round(trainRatio * 100)}%</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-400 w-10 text-right">验证</span>
-            <input type="range" min={0} max={1 - trainRatio} step={0.05} value={valRatio}
-              onChange={(e) => setValRatio(Number(e.target.value))}
-              className="flex-1 h-1 accent-green-500" />
-            <span className="text-xs text-gray-600 w-8">{Math.round(valRatio * 100)}%</span>
-          </div>
+        <div>
+          <label className="text-xs text-gray-500">数据拆分</label>
+          <Select
+            value={splitPreset}
+            onChange={setSplitPreset}
+            options={Object.entries(splitPresets).map(([key, p]) => ({ value: key, label: p.label }))}
+            className="w-full"
+            size="small"
+          />
         </div>
         <div>
           <label className="text-xs text-gray-500">任务类型</label>
