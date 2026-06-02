@@ -35,10 +35,15 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
     return () => URL.revokeObjectURL(url);
   }, [videoFile]);
 
-  // Auto-start SSE processing on mount
-  useEffect(() => {
+  // Auto-play and start SSE when metadata is loaded
+  const handleMetadata = () => {
+    const v = videoRef.current;
+    if (v) {
+      setDuration(v.duration);
+      v.play().then(() => setPlaying(true)).catch(() => {});
+    }
     startProcessing();
-  }, []);
+  };
 
   // SSE: send video → receive frame-by-frame detections
   const startProcessing = async () => {
@@ -183,7 +188,7 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
           src={videoUrl}
           className="w-full"
           onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
-          onLoadedMetadata={() => setDuration(videoRef.current?.duration ?? 0)}
+          onLoadedMetadata={handleMetadata}
           onClick={togglePlay}
         />
         <canvas ref={canvasRef} className="absolute top-0 left-0 pointer-events-none" />
