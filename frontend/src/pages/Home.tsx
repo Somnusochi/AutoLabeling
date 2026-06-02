@@ -8,6 +8,7 @@ import { HistoryList } from "@/components/HistoryList";
 import { BatchProgress } from "@/components/BatchProgress";
 import { TrainingPanel } from "@/components/TrainingPanel";
 import { VideoPanel } from "@/components/VideoPanel";
+import { VideoValidator } from "@/components/VideoValidator";
 import { DetectionSkeleton, HistorySkeleton } from "@/components/LoadingSkeleton";
 import { useDetectMutation, useDetectionListQuery } from "@/hooks/useDetection";
 import { useYoloValidation } from "@/hooks/useYoloValidation";
@@ -26,6 +27,7 @@ export function Home() {
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+  const [validateVideoFile, setValidateVideoFile] = useState<File | null>(null);
 
   // ── Detection ────────────────────────────────────
   const queryClient = useQueryClient();
@@ -270,7 +272,11 @@ export function Home() {
           {inputMode === "image" ? (
             <ImageUploader onFiles={handleFiles} disabled={loading} />
           ) : (
-            <VideoPanel onLoadKeyframes={handleSelectKeyframe} disabled={loading} />
+            <VideoPanel
+              onLoadKeyframes={handleSelectKeyframe}
+              onValidateVideo={validateMode ? (file) => { setValidateVideoFile(file); setFiles([file]); } : undefined}
+              disabled={loading}
+            />
           )}
         </div>
 
@@ -358,7 +364,16 @@ export function Home() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
-        {!result && !loading && (
+        {validateVideoFile && validateMode && (
+          <VideoValidator
+            videoFile={validateVideoFile}
+            jobId={validateMode.jobId}
+            conf={validateConf}
+            iou={validateIou}
+          />
+        )}
+
+        {!validateVideoFile && !result && !loading && (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             上传图片/视频并输入目标类别，点击"开始检测"
           </div>

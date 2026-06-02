@@ -290,6 +290,128 @@ def download_model(
     )
 
 
+@router.post("/jobs/{job_id}/predict-video-stream")
+async def predict_video_stream(
+    job_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    conf: float = Form(0.25),
+    iou: float = Form(0.45),
+    interval: float = Form(1.0),
+):
+    """SSE endpoint: process video frames and stream YOLO results in real-time."""
+    import asyncio
+    import io
+    import json
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    from PIL import Image
+    from starlette.responses import StreamingResponse
+
+    from ...core.config import settings
+    from ...services.trainer import predict_trained_model
+
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job or not job.model_path:
+        raise HTTPException(404, "Trained model not found")
+    if job.status != "completed":
+        raise HTTPException(400, "Training not completed")
+    if not Path(job.model_path).exists():
+        raise HTTPException(404, "Model file not found on disk")
+
+    tmp_video = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+    tmp_video.write(await file.read())
+    tmp_video.close()
+
+    async def event_stream():
+        fps = 30.0
+        frame_step = max(1, int(interval * fps))
+        frame_num = 0
+
+        proc = subprocess.Popen(
+            ["ffmpeg", "-y", "-i", tmp_video.name,
+             "-vf", f"select='not(mod(n,{frame_step}))'",
+             "-vsync", "vfr", "-f", "image2pipe", "-vcodec", "mjpeg", "-"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        )
+        assert proc.stdout is not None
+
+        buf = b""
+        start_time = None
+        processed = 0
+
+        while True:
+            chunk = proc.stdout.read(4096)
+            if not chunk:
+                break
+            buf += chunk
+            end = buf.find(b"\xff\xd9")
+            if end == -1:
+                continue
+            jpg_data = buf[:end + 2]
+            buf = buf[end + 2:]
+
+            if start_time is None:
+                start_time = asyncio.get_event_loop().time()
+
+            # Run YOLO in thread pool (CPU-bound)
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                _predict_frame,
+                job.model_path,
+                jpg_data,
+                settings.resolved_device,
+                conf,
+                iou,
+            )
+
+            timestamp = round(frame_num * interval, 3)
+            boxes_camel = [{
+                "className": b["class_name"],
+                "confidence": b["confidence"],
+                "x1": b["x1"], "y1": b["y1"],
+                "x2": b["x2"], "y2": b["y2"],
+            } for b in result["boxes"]]
+
+            yield f"data: {json.dumps({'frame': frame_num, 'timestamp': timestamp, 'imageWidth': result['image_width'], 'imageHeight': result['image_height'], 'boxes': boxes_camel})}\n\n"
+
+            frame_num += 1
+            processed += 1
+            await asyncio.sleep(0)  # yield to event loop
+
+        proc.terminate()
+        elapsed = asyncio.get_event_loop().time() - start_time if start_time else 0
+        yield f"data: {json.dumps({'done': True, 'frames': processed, 'elapsed': round(elapsed, 2)})}\n\n"
+        Path(tmp_video.name).unlink(missing_ok=True)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _predict_frame(model_path: str, jpg_data: bytes, device: str, conf: float, iou: float) -> dict:
+    """Run YOLO on a single JPEG frame. Called in thread pool."""
+    import io
+    import tempfile
+    from pathlib import Path
+
+    from PIL import Image
+
+    from ...services.trainer import predict_trained_model
+
+    img = Image.open(io.BytesIO(jpg_data))
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
+        img.save(tf.name)
+        r = predict_trained_model(model_path, tf.name, device=device, conf=conf, iou=iou)
+        Path(tf.name).unlink()
+    return r
+
+
 @router.post("/jobs/{job_id}/predict-video")
 def predict_video(
     job_id: str,

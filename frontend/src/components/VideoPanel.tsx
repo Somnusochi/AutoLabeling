@@ -7,6 +7,7 @@ import type { VideoInfo } from "@/types";
 
 interface Props {
   onLoadKeyframes: (files: File[], videoName: string) => void;
+  onValidateVideo?: (file: File) => void;
   disabled?: boolean;
 }
 
@@ -22,7 +23,8 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function VideoPanel({ onLoadKeyframes, disabled }: Props) {
+export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props) {
+  const isValidation = !!onValidateVideo;
   const queryClient = useQueryClient();
   const [dragOver, setDragOver] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -35,6 +37,7 @@ export function VideoPanel({ onLoadKeyframes, disabled }: Props) {
   const [maxFrames, setMaxFrames] = useState(100);
   const [ssimThreshold, setSsimThreshold] = useState(0.95);
   const [selectedFrameIds, setSelectedFrameIds] = useState<Set<string>>(new Set());
+  const fileCache = useRef<Map<string, File>>(new Map());
 
   const { data: videoList } = useQuery({
     queryKey: ["videos"],
@@ -42,7 +45,11 @@ export function VideoPanel({ onLoadKeyframes, disabled }: Props) {
   });
 
   const uploadMut = useMutation({
-    mutationFn: uploadVideo,
+    mutationFn: async (file: File) => {
+      const result = await uploadVideo(file);
+      fileCache.current.set(result.id, file);
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
       toast.success("视频上传成功");
@@ -196,6 +203,20 @@ export function VideoPanel({ onLoadKeyframes, disabled }: Props) {
 
       {/* Extraction panel */}
       {selectedVideoId && selectedVideo && (
+        isValidation ? (
+          <div className="rounded border border-gray-200 p-2.5">
+            <button
+              onClick={() => {
+                const f = fileCache.current.get(selectedVideo.id);
+                if (f) onValidateVideo!(f);
+                else toast.error("视频文件已失效，请重新上传");
+              }}
+              className="w-full rounded bg-green-600 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+            >
+              验证视频（实时推理）
+            </button>
+          </div>
+        ) : (
         <div className="rounded border border-gray-200 p-2.5 space-y-3">
           {/* Method toggle */}
           <div className="flex gap-0.5 rounded bg-gray-100 p-0.5">
@@ -374,7 +395,7 @@ export function VideoPanel({ onLoadKeyframes, disabled }: Props) {
             </>
           )}
         </div>
-      )}
+      ))}
     </div>
   );
 }
