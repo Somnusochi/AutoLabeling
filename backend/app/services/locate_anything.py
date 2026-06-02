@@ -128,43 +128,36 @@ def _get_worker() -> LocateAnythingWorker:
     return _worker
 
 
-_PAIR_PATTERN = re.compile(
-    r"<ref>([^<]+)</ref>\s*<box><(\d+)><(\d+)><(\d+)><(\d+)></box>"
-)
-_BOX_ONLY_PATTERN = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
+_REF_PATTERN = re.compile(r"<ref>([^<]+)</ref>")
+_BOX_PATTERN = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
+_TOKEN_PATTERN = re.compile(r"<ref>[^<]+</ref>|<box><\d+><\d+><\d+><\d+></box>")
 
 
 def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     """Parse model output into boxes with class names.
 
-    Supports both formats:
-      <ref>fire</ref><box><34><14><961><997></box>   (with class label)
-      <box><34><14><961><997></box>                     (without)
+    The model outputs one <ref> tag followed by multiple <box> tags sharing
+    that label. Later <ref> tags switch the label for subsequent boxes.
     """
     boxes: list[dict] = []
+    current_class = ""
 
-    # Try ref+box pairs first
-    for match in _PAIR_PATTERN.finditer(raw_text):
-        class_name, x1, y1, x2, y2 = match.groups()
-        boxes.append({
-            "class_name": class_name.strip(),
-            "x1": int(int(x1) / 1000 * img_w),
-            "y1": int(int(y1) / 1000 * img_h),
-            "x2": int(int(x2) / 1000 * img_w),
-            "y2": int(int(y2) / 1000 * img_h),
-        })
-
-    # If no ref+box pairs found, fall back to box-only
-    if not boxes:
-        for match in _BOX_ONLY_PATTERN.finditer(raw_text):
-            x1, y1, x2, y2 = map(int, match.groups())
-            boxes.append({
-                "class_name": "",
-                "x1": int(x1 / 1000 * img_w),
-                "y1": int(y1 / 1000 * img_h),
-                "x2": int(x2 / 1000 * img_w),
-                "y2": int(y2 / 1000 * img_h),
-            })
+    for token in _TOKEN_PATTERN.findall(raw_text):
+        if token.startswith("<ref>"):
+            m = _REF_PATTERN.match(token)
+            if m:
+                current_class = m.group(1).strip()
+        elif token.startswith("<box>"):
+            m = _BOX_PATTERN.match(token)
+            if m:
+                x1, y1, x2, y2 = map(int, m.groups())
+                boxes.append({
+                    "class_name": current_class,
+                    "x1": int(x1 / 1000 * img_w),
+                    "y1": int(y1 / 1000 * img_h),
+                    "x2": int(x2 / 1000 * img_w),
+                    "y2": int(y2 / 1000 * img_h),
+                })
 
     return boxes
 
