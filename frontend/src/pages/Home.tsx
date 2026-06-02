@@ -18,7 +18,7 @@ import { applyFilter } from "@/lib/filterBoxes";
 import type { FilterMode } from "@/lib/filterBoxes";
 import toast from "react-hot-toast";
 import { addBox, deleteBox, saveFilterSettings } from "@/services/api";
-import { API_BASE } from "@/lib/constants";
+import { API_BASE, uploadCache, tokenCache } from "@/lib/constants";
 import { parseCategories } from "@/lib/parsers";
 import type { BBox, Detection } from "@/types";
 
@@ -47,7 +47,7 @@ export function Home() {
 
   // ── YOLO Validation ──────────────────────────────
   const {
-    validateMode: _validateMode, validateConf, validateIou, validating,
+    validateConf, validateIou, validating,
     setValidateConf, setValidateIou, runValidation,
   } = useYoloValidation();
 
@@ -117,11 +117,52 @@ export function Home() {
 
     try {
       if (appMode === "validate") {
+        let token: string | undefined = undefined;
+
+        if (validateModelSource === "upload") {
+          if (!externalModelFile) {
+            toast.error("请先上传模型文件");
+            return;
+          }
+          let t = tokenCache.get(externalModelFile);
+          if (!t) {
+            let promise = uploadCache.get(externalModelFile);
+            if (!promise) {
+              const form = new FormData();
+              form.append("file", externalModelFile);
+              promise = (async () => {
+                const resp = await fetch(`${API_BASE}/train/upload-model`, { method: "POST", body: form });
+                const json = await resp.json();
+                if (json.data?.token) {
+                  tokenCache.set(externalModelFile, json.data.token);
+                  return json.data.token;
+                }
+                throw new Error("No token returned from server");
+              })();
+              uploadCache.set(externalModelFile, promise);
+            }
+            try {
+              t = await promise;
+            } catch {
+              tokenCache.delete(externalModelFile);
+              uploadCache.delete(externalModelFile);
+              toast.error("上传模型失败");
+              return;
+            }
+          }
+          token = t;
+        } else {
+          if (!selectedTrainedJobId) {
+            toast.error("请先选择已训练的模型");
+            return;
+          }
+        }
+
         // Batch-validate all files
         const results: Detection[] = [];
         setBatchProgress({ current: 0, total: files.length });
         for (let i = 0; i < files.length; i++) {
-          const data = await runValidation(files[i]);
+          const data = await runValidation(files[i], selectedTrainedJobId || undefined, token);
           if (data) {
             results.push(data);
             setBatchResults([...results]);
@@ -148,7 +189,7 @@ export function Home() {
     } finally {
       stopTimer();
     }
-  }, [files, categories, appMode === "validate", runValidation, runBatch, startTimer, stopTimer, queryClient]);
+  }, [files, categories, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
@@ -402,8 +443,8 @@ export function Home() {
           <VideoValidator
             key={validateRunKey}
             videoId={validateVideoId}
-            jobId={externalModelFile ? undefined : (selectedTrainedJobId ?? undefined)}
-            modelFile={externalModelFile ?? undefined}
+            jobId={validateModelSource === "trained" ? (selectedTrainedJobId ?? undefined) : undefined}
+            modelFile={validateModelSource === "upload" ? (externalModelFile ?? undefined) : undefined}
             conf={validateConf}
             iou={validateIou}
           />

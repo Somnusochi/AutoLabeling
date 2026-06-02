@@ -30,18 +30,25 @@ export function useYoloValidation() {
   }, []);
 
   const runValidation = useCallback(
-    async (file: File): Promise<Detection | null> => {
-      if (!validateMode) return null;
+    async (file: File, jobId?: string, token?: string, modelVariant?: string): Promise<Detection | null> => {
+      const activeJobId = jobId || validateMode?.jobId;
+      const activeVariant = modelVariant || validateMode?.modelVariant;
+      if (!activeJobId && !token) {
+        toast.error("请先选择已训练的模型或上传模型");
+        return null;
+      }
       setValidating(true);
       try {
         const form = new FormData();
         form.append("file", file);
         form.append("conf", String(validateConf));
         form.append("iou", String(validateIou));
-        const res = await fetch(
-          `${API_BASE}/train/jobs/${validateMode.jobId}/predict`,
-          { method: "POST", body: form },
-        );
+        
+        const url = token
+          ? `${API_BASE}/train/validate-image/${token}`
+          : `${API_BASE}/train/jobs/${activeJobId}/predict`;
+
+        const res = await fetch(url, { method: "POST", body: form });
         const json = await res.json();
         if (!res.ok) {
           toast.error(json.error?.message ?? "验证失败");
@@ -52,7 +59,7 @@ export function useYoloValidation() {
           id: `validate-${Date.now()}`,
           imageName: file.name,
           categories: [],
-          modelName: validateMode.modelVariant,
+          modelName: token ? "上传模型" : (activeVariant || "YOLO"),
           imageWidth: data.imageWidth,
           imageHeight: data.imageHeight,
           status: "completed",
