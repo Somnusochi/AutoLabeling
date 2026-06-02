@@ -1,4 +1,5 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ImageUploader } from "@/components/ImageUploader";
 import { CategoryInput } from "@/components/CategoryInput";
@@ -6,6 +7,7 @@ import { DetectionResult } from "@/components/DetectionResult";
 import { HistoryList } from "@/components/HistoryList";
 import { BatchProgress } from "@/components/BatchProgress";
 import { TrainingPanel } from "@/components/TrainingPanel";
+import { VideoPanel } from "@/components/VideoPanel";
 import { DetectionSkeleton, HistorySkeleton } from "@/components/LoadingSkeleton";
 import { useDetectMutation, useDetectionListQuery } from "@/hooks/useDetection";
 import { useYoloValidation } from "@/hooks/useYoloValidation";
@@ -20,11 +22,13 @@ import type { BBox, Detection } from "@/types";
 
 export function Home() {
   // ── Upload & categories ──────────────────────────
+  const [inputMode, setInputMode] = useState<"image" | "video">("image");
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
 
   // ── Detection ────────────────────────────────────
+  const queryClient = useQueryClient();
   const detectMut = useDetectMutation();
   const [result, setResult] = useState<Detection | null>(null);
 
@@ -48,12 +52,13 @@ export function Home() {
     if (!result) return;
     try {
       await saveFilterSettings(result.id, filterMode, filterMode === "nms" ? nmsIou : null);
-      setResult({ ...result, filter_mode: filterMode, filter_nms_iou: filterMode === "nms" ? nmsIou : null });
+      setResult({ ...result, filterMode: filterMode, filterNmsIou: filterMode === "nms" ? nmsIou : null });
+      queryClient.invalidateQueries({ queryKey: ["detections"] });
       toast.success("过滤设置已保存");
     } catch {
       toast.error("保存失败");
     }
-  }, [result, filterMode, nmsIou]);
+  }, [result, filterMode, nmsIou, queryClient]);
 
   const toggleBoxVisibility = useCallback((boxId: string) => {
     setHiddenIndices((prev) => {
@@ -91,10 +96,14 @@ export function Home() {
     setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
   }, [setBatchResults]);
 
+  // Maps detection_id → File for batch results that can be re-detected
+  const batchFileMap = useRef<Map<string, File>>(new Map());
+
   const handleDetect = useCallback(async () => {
     if (files.length === 0) return;
 
     startTimer();
+    batchFileMap.current.clear();
 
     try {
       if (validateMode) {
@@ -108,25 +117,28 @@ export function Home() {
 
       if (categories.length === 0) return;
       await runBatch(files, categories, (data, file, i) => {
-        if (i === files.length - 1) {
+        batchFileMap.current.set(data.id, file);
+        if (i === 0) {
           setResult(data);
           setPreviewUrl(URL.createObjectURL(file));
         }
       });
+      queryClient.invalidateQueries({ queryKey: ["detections"] });
     } finally {
       stopTimer();
     }
-  }, [files, categories, validateMode, runValidation, runBatch, startTimer, stopTimer]);
+  }, [files, categories, validateMode, runValidation, runBatch, startTimer, stopTimer, queryClient]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
+    batchFileMap.current.clear();
     setPreviewUrl(`${API_BASE}/detections/${det.id}/image`);
     setResult(det);
     setBatchResults([]);
     setCategories(parseCategories(det.categories));
-    if (det.filter_mode) setFilterMode(det.filter_mode as FilterMode);
+    if (det.filterMode) setFilterMode(det.filterMode as FilterMode);
     else setFilterMode("all");
-    if (det.filter_nms_iou != null) setNmsIou(det.filter_nms_iou);
+    if (det.filterNmsIou != null) setNmsIou(det.filterNmsIou);
     setHiddenIndices(new Set());
   }, [setBatchResults]);
 
@@ -134,19 +146,27 @@ export function Home() {
     if (!result) return;
     startTimer();
     try {
-      const blob = await fetch(`${API_BASE}/detections/${result.id}/image`).then((r) => r.blob());
-      const data = await detectMut.mutateAsync({ file: new File([blob], result.image_name, { type: blob.type }), categories });
+      let file: File;
+      const cached = batchFileMap.current.get(result.id);
+      if (cached) {
+        file = cached;
+      } else {
+        const blob = await fetch(`${API_BASE}/detections/${result.id}/image`).then((r) => r.blob());
+        file = new File([blob], result.imageName, { type: blob.type });
+      }
+      const data = await detectMut.mutateAsync({ file, categories });
+      if (data) batchFileMap.current.set(data.id, file);
       setResult(data);
-      setFiles([]);
+      setBatchResults((prev) => prev.map((r) => (r.id === result.id ? data : r)));
     } catch { /* handled by mutation */ }
     finally { stopTimer(); }
-  }, [result, categories, detectMut, startTimer, stopTimer]);
+  }, [result, categories, detectMut, startTimer, stopTimer, setBatchResults]);
 
   const handleDrawBox = useCallback(async (raw: { x1: number; y1: number; x2: number; y2: number }) => {
     if (!result || !drawCategory.trim()) { toast.error("请先输入标注类别"); return; }
     try {
-      await addBox(result.id, { ...raw, class_name: drawCategory.trim() });
-      const newBox: BBox = { id: `manual-${Date.now()}`, class_name: drawCategory.trim(), ...raw, confidence: null };
+      await addBox(result.id, { ...raw, className: drawCategory.trim() });
+      const newBox: BBox = { id: `manual-${Date.now()}`, className: drawCategory.trim(), ...raw, confidence: null };
       const updated = { ...result, boxes: [...result.boxes, newBox] };
       setResult(updated);
       setBatchResults((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
@@ -165,6 +185,13 @@ export function Home() {
     } catch { /* ignore */ }
   }, [result, setBatchResults]);
 
+  const handleSelectKeyframe = useCallback((files: File[]) => {
+    setFiles(files);
+    setPreviewUrl(files.length === 1 ? URL.createObjectURL(files[0]) : null);
+    setBatchResults([]);
+    setResult(null);
+  }, [setBatchResults]);
+
   const handleBatchSelect = useCallback((det: Detection, file?: File) => {
     setResult(det);
     if (file) setPreviewUrl(URL.createObjectURL(file));
@@ -177,16 +204,6 @@ export function Home() {
     [result, filterMode, nmsIou],
   );
 
-  // ── Resizable sidebar ─────────────────────────────
-  const [sidebarW, setSidebarW] = useState(288);
-  const dragging = useRef(false);
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => { if (dragging.current) setSidebarW(Math.max(200, Math.min(500, e.clientX))); };
-    const onUp = () => { dragging.current = false; };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
-  }, []);
 
   // ── Render ───────────────────────────────────────
 
@@ -194,7 +211,7 @@ export function Home() {
     <>
       <aside
         className="flex-shrink-0 border-r border-gray-200 bg-white flex flex-col gap-4 overflow-y-auto relative"
-        style={{ width: sidebarW, padding: "1rem" }}
+        style={{ width: 420, padding: "1rem" }}
       >
         <h1 className="text-lg font-bold text-gray-800">
           {validateMode ? <span className="text-green-600">YOLO 验证模式</span> : "预标注训练"}
@@ -224,8 +241,26 @@ export function Home() {
         )}
 
         <div>
-          <p className="text-sm font-medium text-gray-600 mb-2">上传图片</p>
-          <ImageUploader onFiles={handleFiles} disabled={loading} />
+          <div className="flex gap-1 rounded bg-gray-100 p-0.5 mb-2">
+            {(["image", "video"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => { setInputMode(mode); setFiles([]); setPreviewUrl(null); setBatchResults([]); }}
+                className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+                  inputMode === mode
+                    ? "bg-white text-primary-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {{ image: "图片", video: "视频" }[mode]}
+              </button>
+            ))}
+          </div>
+          {inputMode === "image" ? (
+            <ImageUploader onFiles={handleFiles} disabled={loading} />
+          ) : (
+            <VideoPanel onLoadKeyframes={handleSelectKeyframe} disabled={loading} />
+          )}
         </div>
 
         <div>
@@ -309,16 +344,12 @@ export function Home() {
           <p className="text-sm font-medium text-gray-600 mb-2">YOLO 训练</p>
           <TrainingPanel detections={historyData?.items ?? []} />
         </div>
-
-        <div onMouseDown={() => { dragging.current = true; }}
-          className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-primary-300 transition-colors z-10"
-          style={{ marginRight: "-3px" }} />
       </aside>
 
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
         {!result && !loading && (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-            上传图片并输入目标类别，点击"开始检测"
+            上传图片/视频并输入目标类别，点击"开始检测"
           </div>
         )}
         {loading && !result && <DetectionSkeleton />}
