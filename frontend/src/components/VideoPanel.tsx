@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "antd";
 import toast from "react-hot-toast";
 import { uploadVideo, listVideos, extractKeyframes, deleteVideo, keyframeImageUrl } from "@/services/api";
+import { API_BASE } from "@/lib/constants";
 import type { VideoInfo } from "@/types";
 
 interface Props {
@@ -206,8 +207,18 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
         isValidation ? (
           <div className="rounded border border-gray-200 p-2.5">
             <button
-              onClick={() => {
-                const f = fileCache.current.get(selectedVideo.id);
+              onClick={async () => {
+                let f = fileCache.current.get(selectedVideo.id);
+                if (!f) {
+                  try {
+                    const resp = await fetch(`${API_BASE}/videos/${selectedVideo.id}/file`);
+                    if (resp.ok) {
+                      const blob = await resp.blob();
+                      f = new File([blob], selectedVideo.fileName, { type: "video/mp4" });
+                      fileCache.current.set(selectedVideo.id, f);
+                    }
+                  } catch { /* ignore */ }
+                }
                 if (f) onValidateVideo!(f);
                 else toast.error("视频文件已失效，请重新上传");
               }}

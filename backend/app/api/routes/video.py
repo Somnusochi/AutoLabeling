@@ -136,6 +136,23 @@ def extract_keyframes(
     return APIResponse(data=VideoOut.model_validate(video).model_dump(by_alias=True))
 
 
+@router.get("/videos/{video_id}/file")
+def get_video_file(
+    video_id: UUID,
+    repo: VideoRepository = Depends(_get_video_repo),
+):
+    """Serve the original uploaded video file."""
+    from fastapi.responses import FileResponse
+
+    video = repo.get_video(video_id)
+    if not video:
+        raise NotFoundError("Video", video_id)
+    path = Path(video.file_path)
+    if not path.exists():
+        raise HTTPException(404, "Video file not found on disk")
+    return FileResponse(str(path), media_type="video/mp4")
+
+
 @router.get("/videos/{video_id}/keyframes/{keyframe_id}/image")
 def get_keyframe_image(
     video_id: UUID,
