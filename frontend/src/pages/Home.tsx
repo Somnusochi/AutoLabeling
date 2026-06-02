@@ -281,7 +281,7 @@ export function Home() {
           )}
         </div>
 
-        {!validateVideoFile && (
+        {!(validateMode && inputMode === "video") && (
           <>
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2">目标类别</p>
@@ -304,9 +304,9 @@ export function Home() {
           </>
         )}
 
-        {validateVideoFile && (
+        {validateMode && inputMode === "video" && (
           <div className="text-xs text-gray-400 text-center py-2">
-            视频推理中，调整上方 Conf/IoU 后重新点击"验证视频"
+            {validateVideoFile ? "视频推理中，调整上方 Conf/IoU 后重新点击"验证视频"" : "选择一个视频，展开后点击"验证视频""}
           </div>
         )}
 
