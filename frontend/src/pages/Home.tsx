@@ -247,7 +247,7 @@ export function Home() {
         </div>
 
         {appMode === "validate" && (
-          <div className="rounded bg-green-50 border border-green-200 p-2 text-xs space-y-2">
+          <div className="rounded border border-green-200 p-2.5 text-xs space-y-3">
             <ModelSelector
               selectedJobId={selectedTrainedJobId}
               onSelectJob={setSelectedTrainedJobId}
@@ -256,19 +256,23 @@ export function Home() {
               externalFile={externalModelFile}
               onExternalFile={setExternalModelFile}
             />
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="text-gray-500">Conf</label>
-                <input type="number" min={0.05} max={1} step={0.05} value={validateConf}
-                  onChange={(e) => setValidateConf(Number(e.target.value))}
-                  className="w-full rounded border border-gray-200 px-1 py-0.5 text-xs" />
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-gray-500">Conf (置信度阈值)</span>
+                <span className="text-gray-700 font-medium">{validateConf.toFixed(2)}</span>
               </div>
-              <div className="flex-1">
-                <label className="text-gray-500">IoU</label>
-                <input type="number" min={0.1} max={1} step={0.05} value={validateIou}
-                  onChange={(e) => setValidateIou(Number(e.target.value))}
-                  className="w-full rounded border border-gray-200 px-1 py-0.5 text-xs" />
+              <input type="range" min={0.05} max={1} step={0.05} value={validateConf}
+                onChange={(e) => setValidateConf(Number(e.target.value))}
+                className="w-full h-1 accent-green-500" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-gray-500">IoU (重叠阈值)</span>
+                <span className="text-gray-700 font-medium">{validateIou.toFixed(2)}</span>
               </div>
+              <input type="range" min={0.1} max={1} step={0.05} value={validateIou}
+                onChange={(e) => setValidateIou(Number(e.target.value))}
+                className="w-full h-1 accent-green-500" />
             </div>
           </div>
         )}
