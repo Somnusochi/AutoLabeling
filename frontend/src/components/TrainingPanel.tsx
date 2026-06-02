@@ -259,7 +259,6 @@ export function TrainingPanel({ detections }: Props) {
             onChange={setSplitPreset}
             options={Object.keys(splitPresets).map((k) => ({ value: k, label: k }))}
             className="w-full"
-            size="small"
           />
         </div>
         <div>
@@ -275,7 +274,6 @@ export function TrainingPanel({ detections }: Props) {
               { value: "obb", label: "旋转框 (OBB)", disabled: true },
             ]}
             className="w-full"
-            size="small"
           />
         </div>
       </div>
