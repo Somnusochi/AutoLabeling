@@ -44,7 +44,6 @@ export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourc
             label: `${j.modelVariant} — ${new Date(j.createdAt).toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}${j.metrics?.mAP50 != null ? ` (mAP50: ${(j.metrics.mAP50 as number).toFixed(2)})` : ""}`,
           }))}
           className="w-full"
-          size="small"
         />
       )}
 
