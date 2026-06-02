@@ -203,12 +203,34 @@ export function Home() {
 
   const loading = detectMut.isPending || batchProgress.total > 0 || validating;
 
+  // ── Resizable sidebar ─────────────────────────────
+  const [sidebarW, setSidebarW] = useState(288);
+  const dragging = useRef(false);
+
+  const onDragStart = () => { dragging.current = true; };
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      setSidebarW(Math.max(200, Math.min(500, e.clientX)));
+    };
+    const onUp = () => { dragging.current = false; };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
+
   // ── Render ───────────────────────────────────────
 
   return (
     <>
       {/* Left sidebar */}
-      <aside className="w-72 flex-shrink-0 border-r border-gray-200 bg-white p-4 flex flex-col gap-4 overflow-y-auto">
+      <aside
+        className="flex-shrink-0 border-r border-gray-200 bg-white flex flex-col gap-4 overflow-y-auto relative"
+        style={{ width: sidebarW, padding: "1rem" }}
+      >
         <h1 className="text-lg font-bold text-gray-800">
           {validateMode ? (
             <span className="text-green-600">YOLO 验证模式</span>
@@ -301,6 +323,12 @@ export function Home() {
           <p className="text-sm font-medium text-gray-600 mb-2">YOLO 训练</p>
           <TrainingPanel detections={historyData?.items ?? []} />
         </div>
+        {/* Drag handle */}
+        <div
+          onMouseDown={onDragStart}
+          className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-primary-300 transition-colors z-10"
+          style={{ marginRight: "-3px" }}
+        />
       </aside>
 
       {/* Main area */}

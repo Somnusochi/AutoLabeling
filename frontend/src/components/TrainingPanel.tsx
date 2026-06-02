@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import type { Detection, TrainingJob } from "@/types";
@@ -170,7 +170,26 @@ export function TrainingPanel({ detections }: Props) {
         {filteredDetections.map((det) => (
           <label
             key={det.id}
-            className="group flex items-center gap-2 text-xs py-0.5 cursor-pointer hover:bg-gray-50 rounded px-1 relative"
+            className="flex items-center gap-2 text-xs py-0.5 cursor-pointer hover:bg-gray-50 rounded px-1 group relative"
+            onMouseEnter={(e) => {
+              clearTimeout((e.currentTarget as HTMLElement).dataset._tid ? Number((e.currentTarget as HTMLElement).dataset._tid) : undefined);
+              const pop = e.currentTarget.querySelector(".preview-pop") as HTMLElement;
+              if (!pop) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              pop.style.position = "fixed";
+              pop.style.left = `${rect.right + 8}px`;
+              pop.style.top = `${Math.max(60, rect.top - 40)}px`;
+              pop.style.zIndex = "50";
+              pop.classList.remove("hidden");
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              const tid = window.setTimeout(() => {
+                const pop = el.querySelector(".preview-pop") as HTMLElement;
+                if (pop) pop.classList.add("hidden");
+              }, 200);
+              el.dataset._tid = String(tid);
+            }}
           >
             <input
               type="checkbox"
@@ -182,10 +201,11 @@ export function TrainingPanel({ detections }: Props) {
               className="h-8 w-8 rounded object-cover flex-shrink-0" />
             <span className="truncate flex-1">{det.image_name}</span>
             <span className="text-gray-400 flex-shrink-0">{det.boxes.length} 目标</span>
-            {/* Hover preview */}
-            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-20 hidden group-hover:block">
-              <img src={`${API_BASE}/detections/${det.id}/image`} alt=""
-                className="h-32 w-auto rounded shadow-lg border border-gray-200 object-contain bg-white" />
+            <div className="preview-pop hidden"
+              onMouseEnter={(e) => (e.currentTarget as HTMLElement).classList.remove("hidden")}
+              onMouseLeave={(e) => (e.currentTarget as HTMLElement).classList.add("hidden")}
+            >
+              <TrainingPreview detection={det} />
             </div>
           </label>
         ))}
@@ -360,6 +380,46 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
         <p className="mt-1 text-red-500">{job.error_message}</p>
       )}
     </div>
+  );
+}
+
+function TrainingPreview({ detection }: { detection: Detection }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const img = new Image();
+    img.src = `${API_BASE}/detections/${detection.id}/image`;
+    img.onload = () => {
+      const maxW = 420;
+      const scale = Math.min(maxW / img.naturalWidth, 320 / img.naturalHeight, 1);
+      canvas.width = Math.round(img.naturalWidth * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      detection.boxes.forEach((box, i) => {
+        const x = box.x1 * scale, y = box.y1 * scale;
+        const w = (box.x2 - box.x1) * scale, h = (box.y2 - box.y1) * scale;
+        const color = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B"][i % 4];
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, w, h);
+        ctx.font = "10px system-ui";
+        const tw = ctx.measureText(box.class_name).width + 4;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y - 14, tw, 14);
+        ctx.fillStyle = "#fff";
+        ctx.fillText(box.class_name, x + 2, y - 4);
+      });
+    };
+  }, [detection]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="rounded shadow-lg border border-gray-200 bg-white"
+    />
   );
 }
 
