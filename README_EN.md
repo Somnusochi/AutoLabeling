@@ -25,9 +25,10 @@ End-to-end **pre-annotation & training system** powered by NVIDIA LocateAnything
 | Visual Grounding | NVIDIA LocateAnything-3B (Qwen2.5-3B + MoonViT) |
 | Object Detection | YOLOv5 / v8 / v11 / v26 (Ultralytics) |
 | Backend | Python FastAPI + PostgreSQL + SSE |
-| Frontend | React + TypeScript + Vite + Tailwind CSS |
+| Frontend | React + TypeScript + Vite + Tailwind CSS + antd |
 | State Management | TanStack Query + ahooks |
-| Tooling | unplugin-auto-import, ESLint, Prettier |
+| Video Processing | ffmpeg (scene detection / motion detection / interval extraction) |
+| Tooling | pnpm, ESLint, Prettier |
 
 ## Quick Start
 
@@ -38,6 +39,7 @@ End-to-end **pre-annotation & training system** powered by NVIDIA LocateAnything
 | Python | 3.12+ |
 | Node.js | 22+ |
 | PostgreSQL | 16+ |
+| ffmpeg | Any version |
 | macOS | Apple Silicon 24GB unified memory |
 | NVIDIA GPU | 10GB VRAM |
 | CPU mode | 16GB system RAM |
@@ -57,7 +59,7 @@ cd ..
 
 # Frontend
 cd frontend
-npm install
+pnpm install
 cd ..
 
 # Database
@@ -100,15 +102,77 @@ start.bat
 docker compose up -d
 ```
 
+## Project Structure
+
+```
+AutoLabeling/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── deps.py              # Dependency injection
+│   │   │   └── routes/              # REST API
+│   │   │       ├── detection.py     # Detection CRUD, manual annotation
+│   │   │       ├── export.py        # YOLO format export
+│   │   │       ├── train.py         # Training, SSE, validation
+│   │   │       └── video.py         # Video upload, keyframe extraction
+│   │   ├── core/                    # Config, database, middleware, logging
+│   │   ├── models/                  # SQLAlchemy ORM
+│   │   │   ├── detection.py         # Detection & bounding boxes
+│   │   │   ├── train.py             # Training jobs
+│   │   │   └── video.py             # Video & keyframes
+│   │   ├── repositories/            # Data access layer
+│   │   ├── schemas/                 # Pydantic models (camelCase)
+│   │   ├── services/
+│   │   │   ├── box_filter.py        # Box filtering, NMS dedup
+│   │   │   ├── locate_anything.py   # VLM inference engine
+│   │   │   ├── video_service.py     # ffmpeg keyframe extraction + SSIM dedup
+│   │   │   ├── trainer.py           # YOLO training + validation
+│   │   │   ├── export.py            # Annotation export
+│   │   │   └── yolo_format.py       # YOLO format conversion
+│   │   └── main.py                  # FastAPI entry point
+│   ├── alembic/                     # Database migrations
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── components/              # UI components
+│       │   ├── DetectionCanvas.tsx  # Image annotation canvas
+│       │   ├── DetectionResult.tsx  # Detection result display
+│       │   ├── VideoPanel.tsx       # Video upload & keyframe timeline
+│       │   ├── VideoDetail.tsx      # Keyframe detail view
+│       │   ├── KeyframeGrid.tsx     # Keyframe grid
+│       │   ├── TrainingPanel.tsx    # YOLO training panel
+│       │   └── ...
+│       ├── pages/Home.tsx           # Main page (image/video dual mode)
+│       ├── hooks/                   # Custom hooks
+│       ├── services/api.ts          # Unified API layer (camelCase)
+│       ├── lib/                     # Constants, utilities
+│       └── types/                   # TypeScript types
+├── docs/                            # Screenshots
+├── docker-compose.yml
+├── start.sh / start.bat             # Launch scripts
+└── README.md
+```
+
 ## Features
 
 ### VLM Pre-annotation
 
-Upload images with open-vocabulary descriptions (e.g. `fire, smoke`, `red car`). LocateAnything-3B automatically detects and draws bounding boxes.
+Upload images or video keyframes with open-vocabulary descriptions (e.g. `fire, smoke`, `red car`). LocateAnything-3B automatically detects and draws bounding boxes.
 
 - Open-vocabulary: describe anything in natural language
 - Auto-resize large images to prevent OOM
-- Batch upload: drag a folder, process serially
+- Batch upload: drag a folder or load video keyframes, stream results as they arrive
+- Streaming: first result appears immediately, subsequent results append in real time
+
+### Video Annotation
+
+Upload a video, extract keyframes intelligently, select and batch-annotate.
+
+- **Three extraction modes**: scene change detection, motion detection (optical flow), fixed interval
+- **SSIM deduplication**: automatically removes near-duplicate frames, threshold adjustable
+- **Timeline preview**: horizontal scrollable strip for browsing all keyframes, click for full-size preview
+- **Multi-select**: check individual frames, select all / deselect all, load selected frames to annotation queue
+- Loaded keyframes go through the standard VLM pre-annotation pipeline, same experience as image annotation
 
 ### Manual Annotation
 
@@ -120,6 +184,7 @@ Canvas drawing mode for precise box annotation.
 - Filter boxes with All / Best / NMS modes
 - Saved filter settings are applied by backend export and training dataset generation
 - Temporarily hide individual boxes while inspecting dense detections
+- Per-frame re-detection
 
 ### History Management
 
@@ -128,6 +193,7 @@ Canvas drawing mode for precise box annotation.
 - Click to view details, re-detect with updated labels
 - Export single or batch YOLO format labels
 - Single-image `.txt` export runs in the browser; batch export uses backend zip generation
+- History list refreshes in real time after saving filter results
 
 ### YOLO Training
 
@@ -135,8 +201,8 @@ Canvas drawing mode for precise box annotation.
 - Tag filter + thumbnail preview for precise training data selection
 - One-click training with SSE real-time progress (Epoch / Loss / mAP)
 - Download trained `.pt` model on completion
-- Training jobs and detections are linked through a separate association table
-- Metrics and class maps are stored as JSONB
+- Training jobs and detections linked through a separate association table
+- Metrics and class maps stored as JSONB
 - Training dataset generation uses each detection's saved filter settings
 
 ### Model Validation
@@ -144,37 +210,69 @@ Canvas drawing mode for precise box annotation.
 - Run inference with trained YOLO model on new images
 - Adjustable Conf / IoU thresholds
 - Visualize detections with confidence scores
-- Validation results are temporary: they can export a single YOLO `.txt`, but do not save filter settings or request backend zip export
+- Validation results are temporary; can export single YOLO `.txt`
 
 ## API Reference
+
+All response fields use camelCase. Error responses carry correct HTTP status codes.
 
 ### Detection & Annotation
 
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/v1/detect` | VLM pre-annotation (multipart) |
-| GET | `/api/v1/detections` | List detections (paginated) |
+| GET | `/api/v1/detections` | List detections (paginated, returns `data` + `total` + `page` + `pageSize`) |
 | GET | `/api/v1/detections/{id}` | Detection detail |
 | GET | `/api/v1/detections/{id}/image` | Original image |
 | POST | `/api/v1/detections/{id}/boxes` | Add annotation box |
 | PUT | `/api/v1/detections/{id}/boxes` | Replace all boxes for a detection |
-| PUT | `/api/v1/detections/{id}/boxes/{box_id}` | Update box coordinates |
-| POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | Delete box |
+| PUT | `/api/v1/detections/{id}/boxes/{boxId}` | Update box coordinates |
+| POST | `/api/v1/detections/{id}/boxes/{boxId}/delete` | Delete box |
 | PUT | `/api/v1/detections/{id}/filter-settings` | Save filter mode and NMS IoU |
 | POST | `/api/v1/detections/{id}/delete` | Delete detection |
 | GET | `/api/v1/detections/{id}/export` | Export single YOLO label |
 | POST | `/api/v1/detections/export-batch` | Batch export (zip) |
+
+### Video
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/videos/upload` | Upload video (multipart) |
+| GET | `/api/v1/videos` | List videos (paginated) |
+| GET | `/api/v1/videos/{id}` | Video detail (includes keyframes) |
+| POST | `/api/v1/videos/{id}/extract-keyframes` | Extract keyframes |
+| GET | `/api/v1/videos/{id}/keyframes/{keyframeId}/image` | Keyframe image |
+| POST | `/api/v1/videos/{id}/delete` | Delete video and keyframes |
 
 ### Training
 
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/v1/train/jobs` | Create training job |
-| GET | `/api/v1/train/jobs` | List training jobs |
+| GET | `/api/v1/train/jobs` | List training jobs (paginated) |
 | GET | `/api/v1/train/variants` | Available YOLO series |
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE training progress |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO model inference |
 | POST | `/api/v1/train/jobs/{id}/delete` | Delete training job |
+
+### Response Format
+
+**Success (single)** → `200/201`:
+```json
+{ "data": { "id": "...", "fileName": "...", "createdAt": "..." } }
+```
+
+**Success (list)** → `200`:
+```json
+{ "data": [...], "total": 100, "page": 1, "pageSize": 20 }
+```
+
+**Success (delete)** → `204` (empty body)
+
+**Error** → `4xx/5xx`:
+```json
+{ "error": { "code": "NotFoundError", "message": "Video not found: xxx" } }
+```
 
 ## Cross-Platform
 
@@ -188,18 +286,14 @@ Auto-detection priority: CUDA → MPS → CPU. Override via `DEVICE` env variabl
 
 ## Development Checks
 
-The frontend depends on Vite/Rolldown native bindings, so the Node architecture must match the installed `node_modules`. If you changed Node architecture or removed a stale Node install, reinstall dependencies:
-
 ```bash
+# Frontend
 cd frontend
-npm install
-npm run lint
-npm run build
-```
+pnpm install
+pnpm run lint
+pnpm run build
 
-Backend checks:
-
-```bash
+# Backend
 cd backend
 source .venv/bin/activate
 PYTHONPATH=. alembic upgrade head
