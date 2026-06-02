@@ -188,7 +188,7 @@ def download_dataset(
     if not job:
         raise HTTPException(404, "Training job not found")
 
-    work_dir = settings.project_root / "training_runs" / job_id
+    work_dir = settings.project_root / "training_runs" / str(job_id)
     if not work_dir.exists():
         raise HTTPException(404, "Dataset not found")
 
@@ -223,7 +223,7 @@ def get_chart(
     if not job:
         raise HTTPException(404, "Training job not found")
 
-    work_dir = settings.project_root / "training_runs" / job_id
+    work_dir = settings.project_root / "training_runs" / str(job_id)
     chart_path = work_dir / chart_name
     if not chart_path.exists():
         raise HTTPException(404, f"Chart not found: {chart_name}")
