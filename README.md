@@ -36,7 +36,7 @@
 | 资源 | 最低配置 |
 |------|---------|
 | Python | 3.12+ |
-| Node.js | 20+ |
+| Node.js | 22+ |
 | PostgreSQL | 16+ |
 | macOS | Apple Silicon 24GB 统一内存 |
 | NVIDIA GPU | 10GB 显存 |
@@ -54,16 +54,22 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cd ..
 
 # 3. 前端
-cd ../frontend
+cd frontend
 npm install
+cd ..
 
 # 4. 数据库
 psql -d postgres -c "CREATE DATABASE autolabeling;"
 
 # 5. 配置
 cp backend/.env.example backend/.env
+
+# 6. 数据库迁移
+cd backend
+PYTHONPATH=. alembic upgrade head
 ```
 
 ### 下载模型（可选）
@@ -112,6 +118,7 @@ AutoLabeling/
 │   │   ├── repositories/            # 数据访问层
 │   │   ├── schemas/                 # Pydantic 模型
 │   │   ├── services/
+│   │   │   ├── box_filter.py       # 标注框过滤、NMS 去重
 │   │   │   ├── locate_anything.py   # VLM 推理引擎
 │   │   │   ├── trainer.py           # YOLO 训练 + 验证
 │   │   │   ├── export.py            # 标注导出
@@ -129,6 +136,8 @@ AutoLabeling/
 │       │   └── useYoloValidation.ts
 │       ├── services/api.ts          # 统一 API 层
 │       ├── lib/                     # 常量、工具函数
+│       │   ├── filterBoxes.ts       # 前端标注框过滤
+│       │   ├── yoloExport.ts        # 浏览器端 YOLO txt 导出
 │       ├── types/                   # TypeScript 类型
 │       └── main.tsx                 # 入口
 ├── docs/                            # 截图
@@ -154,6 +163,9 @@ Canvas 画框模式，自由绘制边界框。
 - 查看/标注双模式切换
 - 画框前选择类别，历史类别快速填充
 - VLM 预标注 → 删错框 → 补漏框，协同工作
+- 支持“全部 / 最优 / NMS 去重”过滤模式
+- 过滤设置可保存到检测记录，后端导出和训练会使用保存后的过滤结果
+- 支持临时隐藏单个标注框，便于检查密集检测结果
 
 ### 历史管理
 
@@ -161,6 +173,7 @@ Canvas 画框模式，自由绘制边界框。
 - 按标签多选筛选
 - 点击查看详情，支持重新检测
 - 批量/单张导出 YOLO 格式标注文件
+- 单图支持浏览器端 `.txt` 快速导出；批量导出使用后端 zip
 
 ### YOLO 训练
 
@@ -168,12 +181,15 @@ Canvas 画框模式，自由绘制边界框。
 - 标签筛选 + 缩略图预览，精确选择训练数据
 - 一键训练，SSE 实时推送 Epoch / Loss / mAP 进度
 - 训练完成后下载 `.pt` 模型文件
+- 训练任务与检测记录使用独立关联表保存，支持 JSONB 指标与类别映射
+- 训练数据生成会应用检测记录中保存的过滤模式
 
 ### 模型验证
 
 - 用训练好的 YOLO 模型推理新图片
 - Conf / IoU 可调节
 - 可预览标注框效果，置信度一目了然
+- 验证结果是临时结果，可直接导出单图 YOLO `.txt`，不会保存过滤设置或请求后端 zip 导出
 
 ## API 概览
 
@@ -186,8 +202,10 @@ Canvas 画框模式，自由绘制边界框。
 | GET | `/api/v1/detections/{id}` | 检测详情 |
 | GET | `/api/v1/detections/{id}/image` | 检测原图 |
 | POST | `/api/v1/detections/{id}/boxes` | 手动添加标注框 |
+| PUT | `/api/v1/detections/{id}/boxes` | 替换检测记录的全部标注框 |
 | PUT | `/api/v1/detections/{id}/boxes/{box_id}` | 修改标注框坐标 |
 | POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | 删除标注框 |
+| PUT | `/api/v1/detections/{id}/filter-settings` | 保存过滤模式与 NMS IoU |
 | POST | `/api/v1/detections/{id}/delete` | 删除检测记录 |
 | GET | `/api/v1/detections/{id}/export` | 导出单图 YOLO 标注 |
 | POST | `/api/v1/detections/export-batch` | 批量导出（zip） |
@@ -212,6 +230,26 @@ Canvas 画框模式，自由绘制边界框。
 | 无 GPU | CPU | CPU |
 
 设备自动检测，优先级：CUDA → MPS → CPU。可通过 `DEVICE` 环境变量手动指定。
+
+## 开发与校验
+
+前端依赖 Vite/Rolldown 原生 binding，Node 架构和 `node_modules` 架构必须一致。如果切换过 Node 架构或清理过本机 Node 安装，建议重新安装依赖：
+
+```bash
+cd frontend
+npm install
+npm run lint
+npm run build
+```
+
+后端基础校验：
+
+```bash
+cd backend
+source .venv/bin/activate
+PYTHONPATH=. alembic upgrade head
+python -m compileall app alembic
+```
 
 ## License
 
