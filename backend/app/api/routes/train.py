@@ -178,6 +178,9 @@ def download_dataset(
     """Download the training dataset (images + labels + data.yaml) as a zip."""
     import shutil
     import tempfile
+    from pathlib import Path
+
+    from ...core.config import settings
 
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job:
