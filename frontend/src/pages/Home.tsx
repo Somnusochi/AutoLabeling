@@ -298,7 +298,7 @@ export function Home() {
               <CategoryInput categories={categories} onChange={setCategories} disabled={loading} recentCategories={recentCategories} />
             </div>
 
-            <Button type="primary" block loading={loading} size="large"
+            <Button type="primary" block loading={loading}
               disabled={files.length === 0 || (appMode !== "validate" && categories.length === 0)}
               onClick={handleDetect}>
               {loading ? `检测中 ${batchProgress.total > 1 ? `(${batchProgress.current}/${batchProgress.total})` : "..."}`
@@ -319,16 +319,19 @@ export function Home() {
         {result && (
           <div>
             <p className="text-sm font-medium text-gray-600 mb-2">过滤模式</p>
-            <Segmented
-              block
-              value={filterMode}
-              onChange={(v) => { setFilterMode(v as FilterMode); setHiddenIndices(new Set()); }}
-              options={[
-                { value: "best", label: "最优" },
-                { value: "nms", label: "去重" },
-                { value: "all", label: "全部" },
-              ]}
-            />
+            <div className="flex gap-1 rounded bg-gray-100 p-1 text-xs">
+              {(["best", "nms", "all"] as FilterMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => { setFilterMode(mode); setHiddenIndices(new Set()); }}
+                  className={`flex-1 rounded px-2 py-1 font-medium transition-colors ${
+                    filterMode === mode ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {{ best: "最优", nms: "去重", all: "全部" }[mode]}
+                </button>
+              ))}
+            </div>
             {filterMode === "nms" && (
               <>
                 <div className="mt-2 flex items-center gap-2">
