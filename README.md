@@ -200,8 +200,10 @@ Canvas 画框模式，自由绘制边界框。
 
 - 多系列可选：YOLOv5 / v8 / v11 / v26（n/s/m/l/x）
 - 标签筛选 + 缩略图预览，精确选择训练数据
+- 数据集拆分：预设比例（70/20/10、80/20 等），自动分 train/val/test
 - 一键训练，SSE 实时推送 Epoch / Loss / mAP 进度
-- 训练完成后下载 `.pt` 模型文件
+- 训练完成自动导出 ONNX，可下载 PT / ONNX 模型和数据集 zip
+- 训练曲线图表（results.png）可在详情模态框中查看
 - 训练任务与检测记录使用独立关联表保存，支持 JSONB 指标与类别映射
 - 训练数据生成会应用检测记录中保存的过滤模式
 
@@ -248,10 +250,14 @@ Canvas 画框模式，自由绘制边界框。
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/v1/train/jobs` | 创建训练任务 |
+| POST | `/api/v1/train/jobs` | 创建训练任务（支持 trainRatio/valRatio 拆分、taskType） |
 | GET | `/api/v1/train/jobs` | 训练任务列表（分页） |
 | GET | `/api/v1/train/variants` | 可用 YOLO 系列 |
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |
+| GET | `/api/v1/train/jobs/{id}/download` | 下载 PT 模型 |
+| GET | `/api/v1/train/jobs/{id}/dataset` | 下载数据集 zip（images + labels + data.yaml） |
+| GET | `/api/v1/train/jobs/{id}/charts/{name}` | 训练曲线图（results.png 等） |
+| POST | `/api/v1/train/jobs/{id}/export-onnx` | 导出 / 下载 ONNX 模型 |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理验证 |
 | POST | `/api/v1/train/jobs/{id}/delete` | 删除训练任务 |
 

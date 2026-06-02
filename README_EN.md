@@ -248,10 +248,14 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/train/jobs` | Create training job |
+| POST | `/api/v1/train/jobs` | Create training job (supports trainRatio/valRatio split, taskType) |
 | GET | `/api/v1/train/jobs` | List training jobs (paginated) |
 | GET | `/api/v1/train/variants` | Available YOLO series |
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE training progress |
+| GET | `/api/v1/train/jobs/{id}/download` | Download PT model |
+| GET | `/api/v1/train/jobs/{id}/dataset` | Download dataset zip (images + labels + data.yaml) |
+| GET | `/api/v1/train/jobs/{id}/charts/{name}` | Training charts (results.png, etc.) |
+| POST | `/api/v1/train/jobs/{id}/export-onnx` | Export / download ONNX model |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO model inference |
 | POST | `/api/v1/train/jobs/{id}/delete` | Delete training job |
 
