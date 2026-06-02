@@ -1,0 +1,31 @@
+# Model weights
+backend/model/
+backend/trained_models/
+backend/training_runs/
+backend/uploads/
+
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+.eggs/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env
+.env
+backend/.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Misc
+*.log
+/tmp/
+backend/yolo26n.pt
+*.pt
