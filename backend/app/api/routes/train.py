@@ -290,6 +290,102 @@ def download_model(
     )
 
 
+@router.post("/jobs/{job_id}/predict-video")
+def predict_video(
+    job_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    conf: float = Form(0.25),
+    iou: float = Form(0.45),
+    interval: float = Form(2.0),
+    max_frames: int = Form(100),
+):
+    """Validate model on a video: extract frames, run inference, return results."""
+    import io
+    import tempfile
+    import uuid as _uuid
+    from pathlib import Path
+
+    from PIL import Image
+
+    from ...core.config import settings
+    from ...services.trainer import predict_trained_model
+    from ...services.video_service import _ffprobe
+
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job or not job.model_path:
+        raise HTTPException(404, "Trained model not found")
+    if job.status != "completed":
+        raise HTTPException(400, "Training not completed")
+    if not Path(job.model_path).exists():
+        raise HTTPException(404, "Model file not found on disk")
+
+    # Save uploaded video
+    tmp_video = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+    tmp_video.write(file.file.read())
+    tmp_video.close()
+
+    try:
+        meta = _ffprobe(tmp_video.name)
+        fps = meta["fps"]
+        frame_step = max(1, int(interval * fps))
+
+        # Extract frames via ffmpeg pipe
+        import subprocess
+        proc = subprocess.Popen(
+            ["ffmpeg", "-y", "-i", tmp_video.name,
+             "-vf", f"select='not(mod(n,{frame_step}))'",
+             "-vsync", "vfr", "-f", "image2pipe", "-vcodec", "mjpeg", "-"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        )
+        results: list[dict] = []
+        frame_num = 0
+        buf = b""
+        assert proc.stdout is not None
+
+        while len(results) < max_frames:
+            chunk = proc.stdout.read(4096)
+            if not chunk:
+                break
+            buf += chunk
+            # JPEG end marker
+            end = buf.find(b"\xff\xd9")
+            if end == -1:
+                continue
+            jpg_data = buf[:end + 2]
+            buf = buf[end + 2:]
+
+            img = Image.open(io.BytesIO(jpg_data))
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
+                img.save(tf.name)
+                r = predict_trained_model(job.model_path, tf.name, device=settings.resolved_device, conf=conf, iou=iou)
+                Path(tf.name).unlink()
+
+            boxes_camel = [{
+                "className": b["class_name"],
+                "confidence": b["confidence"],
+                "x1": b["x1"], "y1": b["y1"],
+                "x2": b["x2"], "y2": b["y2"],
+            } for b in r["boxes"]]
+            results.append({
+                "frameNumber": frame_num,
+                "timestampSeconds": round(frame_num / fps * frame_step, 3),
+                "imageWidth": r["image_width"],
+                "imageHeight": r["image_height"],
+                "boxes": boxes_camel,
+            })
+            frame_num += 1
+
+        proc.terminate()
+        return APIResponse(data={
+            "modelVariant": job.model_variant,
+            "frameCount": len(results),
+            "frames": results,
+        })
+    finally:
+        Path(tmp_video.name).unlink(missing_ok=True)
+
+
 @router.post("/jobs/{job_id}/retrain")
 def retrain_job(
     job_id: str,

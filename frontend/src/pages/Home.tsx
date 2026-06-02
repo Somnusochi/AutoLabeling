@@ -8,6 +8,7 @@ import { HistoryList } from "@/components/HistoryList";
 import { BatchProgress } from "@/components/BatchProgress";
 import { TrainingPanel } from "@/components/TrainingPanel";
 import { VideoPanel } from "@/components/VideoPanel";
+import { VideoValidator } from "@/components/VideoValidator";
 import { DetectionSkeleton, HistorySkeleton } from "@/components/LoadingSkeleton";
 import { useDetectMutation, useDetectionListQuery } from "@/hooks/useDetection";
 import { useYoloValidation } from "@/hooks/useYoloValidation";
@@ -33,7 +34,7 @@ export function Home() {
   const [result, setResult] = useState<Detection | null>(null);
 
   // ── Batch processing ─────────────────────────────
-  const { batchResults, batchProgress, runBatch, cancelBatch, setBatchResults } = useBatchDetection();
+  const { batchResults, batchProgress, runBatch, cancelBatch, setBatchResults, setBatchProgress } = useBatchDetection();
 
   // ── YOLO Validation ──────────────────────────────
   const {
@@ -358,7 +359,17 @@ export function Home() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
-        {!result && !loading && (
+        {/* Video validation mode */}
+        {validateMode && files.length === 1 && files[0].type.startsWith("video/") && (
+          <VideoValidator
+            videoFile={files[0]}
+            jobId={validateMode.jobId}
+            conf={validateConf}
+            iou={validateIou}
+          />
+        )}
+
+        {(!result && !loading && !validateMode) && (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             上传图片/视频并输入目标类别，点击"开始检测"
           </div>

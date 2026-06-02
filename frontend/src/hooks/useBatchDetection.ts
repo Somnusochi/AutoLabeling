@@ -46,5 +46,5 @@ export function useBatchDetection() {
     setBatchProgress({ current: 0, total: 0 });
   }, []);
 
-  return { batchResults, batchProgress, runBatch, cancelBatch, setBatchResults };
+  return { batchResults, batchProgress, runBatch, cancelBatch, setBatchResults, setBatchProgress };
 }

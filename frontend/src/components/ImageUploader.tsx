@@ -44,7 +44,7 @@ function compressImage(file: File): Promise<File> {
 }
 
 async function processFiles(fileList: FileList | File[]): Promise<File[]> {
-  const images = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+  const images = Array.from(fileList).filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
   const results: File[] = [];
   for (const f of images) {
     try {
@@ -130,7 +130,7 @@ export function ImageUploader({ onFiles, disabled }: Props) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           multiple
           className="hidden"
           disabled={disabled}
