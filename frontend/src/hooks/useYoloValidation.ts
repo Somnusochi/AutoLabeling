@@ -44,7 +44,7 @@ export function useYoloValidation() {
         );
         const json = await res.json();
         if (!res.ok) {
-          toast.error(json.detail ?? "验证失败");
+          toast.error(json.error?.message ?? "验证失败");
           return null;
         }
         const data = json.data;

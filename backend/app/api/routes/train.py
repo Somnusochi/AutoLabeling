@@ -224,6 +224,22 @@ async def predict_with_model(
     if job.metrics and isinstance(job.metrics, dict):
         class_map = job.metrics.get("class_map", {})
 
-    return APIResponse(data={**result, "model_variant": job.model_variant, "class_map": class_map})
+    # Convert snake_case result to camelCase for API consistency
+    boxes_camel = [
+        {
+            "className": b["class_name"],
+            "confidence": b["confidence"],
+            "x1": b["x1"], "y1": b["y1"],
+            "x2": b["x2"], "y2": b["y2"],
+        }
+        for b in result["boxes"]
+    ]
+    return APIResponse(data={
+        "imageWidth": result["image_width"],
+        "imageHeight": result["image_height"],
+        "boxes": boxes_camel,
+        "modelVariant": job.model_variant,
+        "classMap": class_map,
+    })
 
 
