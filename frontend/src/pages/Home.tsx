@@ -9,6 +9,7 @@ import { BatchProgress } from "@/components/BatchProgress";
 import { TrainingPanel } from "@/components/TrainingPanel";
 import { VideoPanel } from "@/components/VideoPanel";
 import { VideoValidator } from "@/components/VideoValidator";
+import { ModelSelector } from "@/components/ModelSelector";
 import { DetectionSkeleton, HistorySkeleton } from "@/components/LoadingSkeleton";
 import { useDetectMutation, useDetectionListQuery } from "@/hooks/useDetection";
 import { useYoloValidation } from "@/hooks/useYoloValidation";
@@ -22,6 +23,11 @@ import { parseCategories } from "@/lib/parsers";
 import type { BBox, Detection } from "@/types";
 
 export function Home() {
+  // ── Mode ────────────────────────────────────────
+  const [appMode, setAppMode] = useState<"annotate" | "validate">("annotate");
+  const [validateModelSource, setValidateModelSource] = useState<"trained" | "upload">("trained");
+  const [selectedTrainedJobId, setSelectedTrainedJobId] = useState<string | null>(null);
+
   // ── Upload & categories ──────────────────────────
   const [inputMode, setInputMode] = useState<"image" | "video">("image");
   const [files, setFiles] = useState<File[]>([]);
@@ -41,8 +47,8 @@ export function Home() {
 
   // ── YOLO Validation ──────────────────────────────
   const {
-    validateMode, validateConf, validateIou, validating,
-    setValidateConf, setValidateIou, exitValidation, runValidation,
+    validateMode: _validateMode, validateConf, validateIou, validating,
+    setValidateConf, setValidateIou, runValidation,
   } = useYoloValidation();
 
   // ── Manual annotation ────────────────────────────
@@ -110,7 +116,7 @@ export function Home() {
     batchFileMap.current.clear();
 
     try {
-      if (validateMode) {
+      if (appMode === "validate") {
         // Batch-validate all files
         const results: Detection[] = [];
         setBatchProgress({ current: 0, total: files.length });
@@ -142,7 +148,7 @@ export function Home() {
     } finally {
       stopTimer();
     }
-  }, [files, categories, validateMode, runValidation, runBatch, startTimer, stopTimer, queryClient]);
+  }, [files, categories, appMode === "validate", runValidation, runBatch, startTimer, stopTimer, queryClient]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
@@ -228,33 +234,27 @@ export function Home() {
         className="flex-shrink-0 border-r border-gray-200 bg-white flex flex-col gap-4 overflow-y-auto relative"
         style={{ width: 420, padding: "1rem" }}
       >
-        <h1 className="text-lg font-bold text-gray-800">
-          {validateMode ? <span className="text-green-600">YOLO 验证模式</span> : "预标注训练"}
-        </h1>
+        {/* Mode tabs */}
+        <div className="flex gap-1 rounded bg-gray-100 p-0.5">
+          {(["annotate", "validate"] as const).map((m) => (
+            <button key={m} onClick={() => { setAppMode(m); setResult(null); setValidateVideoId(null); }}
+              className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+                appMode === m ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}>
+              {{ annotate: "标注预训练", validate: "YOLO 验证" }[m]}
+            </button>
+          ))}
+        </div>
 
-        {validateMode && (
+        {appMode === "validate" && (
           <div className="rounded bg-green-50 border border-green-200 p-2 text-xs space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-green-700 font-medium">模型:</span>
-              <label className="flex items-center gap-1 cursor-pointer">
-                <input type="radio" name="model-source" checked={!externalModelFile}
-                  onChange={() => setExternalModelFile(null)} className="h-3 w-3" />
-                <span className="text-gray-600">{validateMode?.modelVariant ?? "已训练"}</span>
-              </label>
-              <label className="flex items-center gap-1 cursor-pointer">
-                <input type="radio" name="model-source" checked={!!externalModelFile}
-                  onChange={() => {}} className="h-3 w-3" />
-                <span className="text-gray-600">上传</span>
-              </label>
-            </div>
-            {externalModelFile && (
-              <div className="text-green-700 text-[11px]">已选择: {externalModelFile.name}</div>
-            )}
-            <input
-              type="file"
-              accept=".pt"
-              className="text-[10px]"
-              onChange={(e) => { if (e.target.files?.[0]) setExternalModelFile(e.target.files[0]); }}
+            <ModelSelector
+              selectedJobId={selectedTrainedJobId}
+              onSelectJob={setSelectedTrainedJobId}
+              modelSource={validateModelSource}
+              onSourceChange={setValidateModelSource}
+              externalFile={externalModelFile}
+              onExternalFile={setExternalModelFile}
             />
             <div className="flex gap-2">
               <div className="flex-1">
@@ -270,9 +270,6 @@ export function Home() {
                   className="w-full rounded border border-gray-200 px-1 py-0.5 text-xs" />
               </div>
             </div>
-            <button onClick={() => { exitValidation(); setResult(null); }} className="text-green-600 hover:underline">
-              退出验证
-            </button>
           </div>
         )}
 
@@ -297,13 +294,13 @@ export function Home() {
           ) : (
             <VideoPanel
               onLoadKeyframes={handleSelectKeyframe}
-              onValidateVideo={validateMode ? (videoId) => { setValidateVideoId(videoId); setValidateRunKey((k) => k + 1); } : undefined}
+              onValidateVideo={appMode === "validate" ? (videoId) => { setValidateVideoId(videoId); setValidateRunKey((k) => k + 1); } : undefined}
               disabled={loading}
             />
           )}
         </div>
 
-        {!(validateMode && inputMode === "video" && validateVideoId) && (
+        {!(appMode === "validate" && inputMode === "video" && validateVideoId) && (
           <>
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2">目标类别</p>
@@ -312,7 +309,7 @@ export function Home() {
 
             <button
               type="button"
-              disabled={loading || files.length === 0 || (!validateMode && categories.length === 0)}
+              disabled={loading || files.length === 0 || (appMode !== "validate" && categories.length === 0)}
               onClick={handleDetect}
               className="w-full rounded bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
@@ -321,12 +318,12 @@ export function Home() {
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                     检测中 {batchProgress.total > 1 ? `(${batchProgress.current}/${batchProgress.total})` : "..."}
                   </span>
-                : validateMode ? "YOLO 验证" : `开始检测${files.length > 1 ? ` (${files.length} 张)` : ""}`}
+                : appMode === "validate" ? "YOLO 验证" : `开始检测${files.length > 1 ? ` (${files.length} 张)` : ""}`}
             </button>
           </>
         )}
 
-        {validateMode && inputMode === "video" && (
+        {appMode === "validate" && inputMode === "video" && (
           <div className="text-xs text-gray-400 text-center py-2">
             {validateVideoId ? '视频推理中，调整上方 Conf/IoU 后重新点击「验证视频」' : '选择一个视频，展开后点击「验证视频」'}
           </div>
@@ -397,11 +394,11 @@ export function Home() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
-        {validateVideoId && validateMode && (
+        {validateVideoId && appMode === "validate" && (
           <VideoValidator
             key={validateRunKey}
             videoId={validateVideoId}
-            jobId={externalModelFile ? undefined : validateMode.jobId}
+            jobId={externalModelFile ? undefined : (selectedTrainedJobId ?? undefined)}
             modelFile={externalModelFile ?? undefined}
             conf={validateConf}
             iou={validateIou}
@@ -421,7 +418,7 @@ export function Home() {
               batchResults={batchResults} batchFiles={files} loading={loading} elapsedMs={elapsedMs}
               categories={categories} canvasMode={canvasMode} drawCategory={drawCategory}
               recentCategories={recentCategories} hiddenIndices={hiddenIndices}
-              onToggleVisibility={toggleBoxVisibility} isValidation={!!validateMode}
+              onToggleVisibility={toggleBoxVisibility} isValidation={appMode === "validate"}
               onCanvasModeChange={setCanvasMode} onDrawCategoryChange={setDrawCategory}
               onDeleteBox={handleDeleteBox} onSelectBatch={handleBatchSelect}
               onReDetect={handleReDetect} onSaveBoxes={handleSaveBoxes} onDrawBox={handleDrawBox}
