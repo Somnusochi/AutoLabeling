@@ -37,12 +37,17 @@ export function Home() {
         style={{ width: 420, padding: "1rem" }}
       >
         {/* Mode tabs */}
-        <div className="flex gap-1 rounded bg-gray-100 p-0.5">
+        <div className="flex border-b border-gray-200 mb-2">
           {(["annotate", "validate"] as const).map((m) => (
-            <button key={m} onClick={() => { setAppMode(m); setResult(null); setValidateVideoId(null); }}
-              className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                appMode === m ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              }`}>
+            <button
+              key={m}
+              onClick={() => { setAppMode(m); setResult(null); setValidateVideoId(null); }}
+              className={`flex-1 pb-3 pt-1 text-sm font-bold transition-all duration-200 relative text-center cursor-pointer ${
+                appMode === m
+                  ? "text-primary-600 border-b-2 border-primary-600 scale-[1.02]"
+                  : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"
+              }`}
+            >
               {{ annotate: "标注预训练", validate: "YOLO 验证" }[m]}
             </button>
           ))}
