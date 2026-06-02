@@ -343,7 +343,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
           <span className="font-medium">{job.modelVariant}</span>
           {job.completedAt && (
             <span className="text-gray-400 ml-2">
-              {new Date(job.completedAt).toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              {new Date(job.completedAt).toLocaleString("zh-CN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
         </div>
