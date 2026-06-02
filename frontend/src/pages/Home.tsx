@@ -306,7 +306,7 @@ export function Home() {
 
         {validateMode && inputMode === "video" && (
           <div className="text-xs text-gray-400 text-center py-2">
-            {validateVideoFile ? "视频推理中，调整上方 Conf/IoU 后重新点击"验证视频"" : "选择一个视频，展开后点击"验证视频""}
+            {validateVideoFile ? '视频推理中，调整上方 Conf/IoU 后重新点击「验证视频」' : '选择一个视频，展开后点击「验证视频」'}
           </div>
         )}
 
