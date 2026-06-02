@@ -203,6 +203,27 @@ def download_dataset(
         raise HTTPException(500, "Failed to create dataset archive")
 
 
+@router.get("/jobs/{job_id}/charts/{chart_name}")
+def get_chart(
+    job_id: str,
+    chart_name: str,
+    db: Session = Depends(get_db),
+):
+    """Serve training chart images (results.png, confusion_matrix.png, etc.)."""
+    from pathlib import Path
+
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Training job not found")
+
+    work_dir = settings.project_root / "training_runs" / job_id
+    chart_path = work_dir / chart_name
+    if not chart_path.exists():
+        raise HTTPException(404, f"Chart not found: {chart_name}")
+
+    return FileResponse(str(chart_path), media_type="image/png")
+
+
 @router.post("/jobs/{job_id}/export-onnx")
 def export_onnx(
     job_id: str,

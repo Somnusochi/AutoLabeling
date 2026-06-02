@@ -259,9 +259,14 @@ def run_training(
         verbose=False,
     )
 
-    # 3. Save trained model
+    # 3. Copy training artifacts (charts + model) to our directories
+    run_dir = Path(results.save_dir)
     output_path = models_dir / f"{job_id}.pt"
-    shutil.copy2(Path(results.save_dir) / "weights" / "best.pt", output_path)
+    shutil.copy2(run_dir / "weights" / "best.pt", output_path)
+
+    # Copy chart images
+    for chart in run_dir.glob("*.png"):
+        shutil.copy2(chart, work_dir / chart.name)
 
     # 4. Collect metrics
     metrics = _training_metrics(results, sample_count, class_map)

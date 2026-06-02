@@ -8,6 +8,10 @@ import { deleteTrainingJob, fetchTrainingJobs, fetchYoloSeries, startTraining } 
 function downloadModelUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/download`;
 }
+function chartUrl(jobId: string): string {
+  return `${API_BASE}/train/jobs/${jobId}/charts/results.png`;
+}
+
 function downloadDatasetUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/dataset`;
 }
@@ -391,6 +395,12 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               <span className="font-medium">{(job.metrics.recall as number)?.toFixed(3) ?? "-"}</span>
               <span className="font-medium">{String(job.metrics.num_samples ?? "-")}</span>
               <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
+            </div>
+          )}
+          {job.status === "completed" && (
+            <div className="mt-2 rounded overflow-hidden border border-gray-200">
+              <img src={chartUrl(job.id)} alt="训练曲线" className="w-full"
+                onError={(e) => { (e.target as HTMLElement).style.display = "none"; }} />
             </div>
           )}
           <div className="mt-1.5 flex gap-3">
