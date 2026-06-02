@@ -290,6 +290,115 @@ def download_model(
     )
 
 
+@router.post("/jobs/{job_id}/validate-mjpeg")
+async def validate_mjpeg(
+    job_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    conf: float = Form(0.25),
+    iou: float = Form(0.45),
+):
+    """MJPEG endpoint: process every video frame, draw boxes, stream as MJPEG."""
+    import asyncio
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    from starlette.responses import StreamingResponse
+
+    from ...core.config import settings
+    from ...services.trainer import predict_trained_model
+    from ...services.video_service import _ffprobe
+
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job or not job.model_path:
+        raise HTTPException(404, "Trained model not found")
+    if job.status != "completed":
+        raise HTTPException(400, "Training not completed")
+    if not Path(job.model_path).exists():
+        raise HTTPException(404, "Model file not found on disk")
+
+    tmp_video = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+    tmp_video.write(await file.read())
+    tmp_video.close()
+
+    meta = _ffprobe(tmp_video.name)
+    fps = meta["fps"]
+
+    async def mjpeg_stream():
+        proc = subprocess.Popen(
+            ["ffmpeg", "-y", "-i", tmp_video.name,
+             "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "5", "-"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        )
+        assert proc.stdout is not None
+        buf = b""
+        frame_num = 0
+
+        while True:
+            chunk = proc.stdout.read(4096)
+            if not chunk: break
+            buf += chunk
+            end = buf.find(b"\xff\xd9")
+            if end == -1: continue
+            jpg = buf[:end + 2]
+            buf = buf[end + 2:]
+
+            loop = asyncio.get_event_loop()
+            annotated = await loop.run_in_executor(
+                None, _draw_frame, job.model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps,
+            )
+            if annotated:
+                yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
+                await asyncio.sleep(0)
+            frame_num += 1
+
+        proc.terminate()
+        Path(tmp_video.name).unlink(missing_ok=True)
+
+    return StreamingResponse(
+        mjpeg_stream(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _draw_frame(model_path: str, jpg: bytes, device: str, conf: float, iou: float, frame_num: int, fps: float) -> bytes | None:
+    """Run YOLO, draw boxes on frame, return annotated JPEG bytes."""
+    import cv2
+    import numpy as np
+    import io
+    import tempfile
+    from pathlib import Path
+    from PIL import Image
+
+    from ...services.trainer import predict_trained_model
+
+    try:
+        img = Image.open(io.BytesIO(jpg))
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
+            img.save(tf.name)
+            r = predict_trained_model(model_path, tf.name, device=device, conf=conf, iou=iou)
+            Path(tf.name).unlink()
+
+        frame = cv2.cvtColor(np.array(img.convert("RGB")), cv2.COLOR_RGB2BGR)
+        for b in r["boxes"]:
+            cv2.rectangle(frame, (b["x1"], b["y1"]), (b["x2"], b["y2"]), (0, 255, 0), 2)
+            label = f"{b['class_name']} {b['confidence']:.2f}"
+            (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+            cv2.rectangle(frame, (b["x1"], b["y1"] - th - 4), (b["x1"] + tw + 4, b["y1"]), (0, 255, 0), -1)
+            cv2.putText(frame, label, (b["x1"] + 2, b["y1"] - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+        # Add info overlay
+        ts_str = f"Frame {frame_num} | {frame_num/fps:.1f}s" if fps > 0 else f"Frame {frame_num}"
+        cv2.putText(frame, ts_str, (8, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+        _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        return buf.tobytes()
+    except Exception:
+        return None
+
+
 @router.post("/jobs/{job_id}/predict-video-stream")
 async def predict_video_stream(
     job_id: str,
