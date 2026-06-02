@@ -49,11 +49,16 @@ export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourc
       )}
 
       {modelSource === "upload" && (
-        <div>
-          <input type="file" accept=".pt" className="text-[10px]"
+        <label className="flex items-center justify-between rounded border border-dashed border-gray-300 px-2.5 py-2 cursor-pointer hover:border-green-400 transition-colors">
+          <span className="text-[11px] text-gray-400 truncate flex-1">
+            {externalFile ? externalFile.name : "选择 .pt 模型文件"}
+          </span>
+          <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">
+            {externalFile ? "已选择" : "浏览"}
+          </span>
+          <input type="file" accept=".pt" className="hidden"
             onChange={(e) => onExternalFile(e.target.files?.[0] ?? null)} />
-          {externalFile && <div className="text-green-700 text-[10px] mt-0.5">{externalFile.name}</div>}
-        </div>
+        </label>
       )}
     </div>
   );
