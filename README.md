@@ -1,77 +1,78 @@
 # AutoLabeling
 
-基于 NVIDIA LocateAnything-3B 视觉大模型驱动的端到端**预标注训练系统**。
+[中文文档](README_CN.md) | English
 
-> 图片扔进去，模型训出来 — VLM 自动定位标注 + 人工修正 + 一键 YOLO 训练 + 模型验证，全流程闭环。
+End-to-end **pre-annotation & training system** powered by NVIDIA LocateAnything-3B VLM.
 
-**核心流程**：VLM 预标注 → 手动修正 → 导出数据集 → YOLO 训练 → 模型验证
+> Images in, model out — VLM auto-labeling + manual refinement + one-click YOLO training + validation.
 
-## 截图
+**Pipeline**: VLM Pre-annotation → Manual Refinement → Export Dataset → Train YOLO → Validate Model
 
-| VLM 预标注 | 手动标注与训练 |
-|-----------|-------------|
-| ![预标注](docs/1.png) | ![训练](docs/2.png) |
+## Screenshots
 
-| 模型验证 |
-|---------|
-| ![验证](docs/3.png) |
+| VLM Pre-annotation | Manual Annotation & Training |
+|-------------------|---------------------------|
+| ![Pre-annotation](docs/1.png) | ![Training](docs/2.png) |
 
-## 技术栈
+| Model Validation |
+|-----------------|
+| ![Validation](docs/3.png) |
 
-| 层 | 技术 |
-|---|------|
-| 视觉定位 | NVIDIA LocateAnything-3B（Qwen2.5-3B + MoonViT） |
-| 目标检测 | YOLOv5 / v8 / v11 / v26（Ultralytics） |
-| 后端 | Python FastAPI + PostgreSQL + SSE |
-| 前端 | React + TypeScript + Vite + Tailwind CSS |
-| 状态管理 | TanStack Query + ahooks |
-| 工程化 | unplugin-auto-import、ESLint、Prettier |
+## Tech Stack
 
-## 快速开始
+| Layer | Technology |
+|-------|-----------|
+| Visual Grounding | NVIDIA LocateAnything-3B (Qwen2.5-3B + MoonViT) |
+| Object Detection | YOLOv5 / v8 / v11 / v26 (Ultralytics) |
+| Backend | Python FastAPI + PostgreSQL + SSE |
+| Frontend | React + TypeScript + Vite + Tailwind CSS |
+| State Management | TanStack Query + ahooks |
+| Tooling | unplugin-auto-import, ESLint, Prettier |
 
-### 环境要求
+## Quick Start
 
-| 资源 | 最低配置 |
-|------|---------|
+### Requirements
+
+| Resource | Minimum |
+|----------|---------|
 | Python | 3.12+ |
 | Node.js | 20+ |
 | PostgreSQL | 16+ |
-| macOS | Apple Silicon 24GB 统一内存 |
-| NVIDIA GPU | 10GB 显存 |
-| CPU 模式 | 16GB 系统内存 |
+| macOS | Apple Silicon 24GB unified memory |
+| NVIDIA GPU | 10GB VRAM |
+| CPU mode | 16GB system RAM |
 
-### 安装
+### Setup
 
 ```bash
-# 1. 克隆仓库
 git clone https://github.com/Somnusochi/AutoLabeling.git
 cd AutoLabeling
 
-# 2. 后端
+# Backend
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# 3. 前端
+# Frontend
 cd ../frontend
 npm install
 
-# 4. 数据库
+# Database
 psql -d postgres -c "CREATE DATABASE locate_anything;"
 
-# 5. 配置
+# Config
 cp backend/.env.example backend/.env
 ```
 
-### 下载模型（可选）
+### Model Download (Optional)
 
 ```bash
-# 首次运行会自动下载，网络慢可预下载
+# Auto-downloaded on first run. Pre-download if network is slow:
 huggingface-cli download nvidia/LocateAnything-3B --local-dir backend/model
 ```
 
-### 启动
+### Launch
 
 ```bash
 # macOS / Linux
@@ -81,11 +82,11 @@ huggingface-cli download nvidia/LocateAnything-3B --local-dir backend/model
 start.bat
 ```
 
-| 服务 | 地址 |
-|------|------|
-| 前端 | http://localhost:5173 |
-| 后端 | http://localhost:8000 |
-| API 文档 | http://localhost:8000/docs |
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend | http://localhost:8000 |
+| API Docs | http://localhost:8000/docs |
 
 ### Docker
 
@@ -93,126 +94,84 @@ start.bat
 docker compose up -d
 ```
 
-## 项目结构
+## Features
 
-```
-AutoLabeling/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── deps.py              # 依赖注入
-│   │   │   └── routes/              # REST API
-│   │   │       ├── detection.py     # 检测 CRUD、手动标注
-│   │   │       ├── export.py        # YOLO 格式导出
-│   │   │       └── train.py         # 训练、SSE、验证
-│   │   ├── core/                    # 配置、数据库、中间件、日志
-│   │   ├── models/                  # SQLAlchemy ORM
-│   │   ├── repositories/            # 数据访问层
-│   │   ├── schemas/                 # Pydantic 模型
-│   │   ├── services/
-│   │   │   ├── locate_anything.py   # VLM 推理引擎
-│   │   │   ├── trainer.py           # YOLO 训练 + 验证
-│   │   │   ├── export.py            # 标注导出
-│   │   │   └── yolo_format.py       # YOLO 格式转换
-│   │   └── main.py                  # FastAPI 入口
-│   ├── alembic/                     # 数据库迁移
-│   └── requirements.txt
-├── frontend/
-│   └── src/
-│       ├── components/              # UI 组件
-│       ├── pages/Home.tsx           # 主页面
-│       ├── hooks/                   # 自定义 Hooks
-│       │   ├── useDetection.ts
-│       │   ├── useBatchDetection.ts
-│       │   └── useYoloValidation.ts
-│       ├── services/api.ts          # 统一 API 层
-│       ├── lib/                     # 常量、工具函数
-│       ├── types/                   # TypeScript 类型
-│       └── main.tsx                 # 入口
-├── docs/                            # 截图
-├── docker-compose.yml
-├── start.sh / start.bat             # 启动脚本
-└── README.md
-```
+### VLM Pre-annotation
 
-## 功能
+Upload images with open-vocabulary descriptions (e.g. `fire, smoke`, `red car`). LocateAnything-3B automatically detects and draws bounding boxes.
 
-### VLM 预标注
+- Open-vocabulary: describe anything in natural language
+- Auto-resize large images to prevent OOM
+- Batch upload: drag a folder, process serially
 
-上传图片，输入目标描述（如 `fire, smoke`、`Monster Energy drink`），LocateAnything-3B 自动检测并绘制边界框。
+### Manual Annotation
 
-- 支持任意开放词汇描述，英文短语效果最佳
-- 图片自动压缩至安全分辨率，防止显存溢出
-- 支持文件夹批量上传，串行处理
+Canvas drawing mode for precise box annotation.
 
-### 手动标注
+- Toggle between View / Draw modes
+- Category quick-fill from history
+- VLM pre-annotation as baseline → delete mistakes → fill gaps
 
-Canvas 画框模式，自由绘制边界框。
+### History Management
 
-- 查看/标注双模式切换
-- 画框前选择类别，历史类别快速填充
-- VLM 预标注 → 删错框 → 补漏框，协同工作
+- Thumbnail previews with category tags
+- Multi-select tag filtering
+- Click to view details, re-detect with updated labels
+- Export single or batch YOLO format labels
 
-### 历史管理
+### YOLO Training
 
-- 缩略图 + 类别标签展示
-- 按标签多选筛选
-- 点击查看详情，支持重新检测
-- 批量/单张导出 YOLO 格式标注文件
+- Multi-series: YOLOv5 / v8 / v11 / v26 (n/s/m/l/x)
+- Tag filter + thumbnail preview for precise training data selection
+- One-click training with SSE real-time progress (Epoch / Loss / mAP)
+- Download trained `.pt` model on completion
 
-### YOLO 训练
+### Model Validation
 
-- 多系列可选：YOLOv5 / v8 / v11 / v26（n/s/m/l/x）
-- 标签筛选 + 缩略图预览，精确选择训练数据
-- 一键训练，SSE 实时推送 Epoch / Loss / mAP 进度
-- 训练完成后下载 `.pt` 模型文件
+- Run inference with trained YOLO model on new images
+- Adjustable Conf / IoU thresholds
+- Visualize detections with confidence scores
 
-### 模型验证
+## API Reference
 
-- 用训练好的 YOLO 模型推理新图片
-- Conf / IoU 可调节
-- 可预览标注框效果，置信度一目了然
+### Detection & Annotation
 
-## API 概览
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/detect` | VLM pre-annotation (multipart) |
+| GET | `/api/v1/detections` | List detections (paginated) |
+| GET | `/api/v1/detections/{id}` | Detection detail |
+| GET | `/api/v1/detections/{id}/image` | Original image |
+| POST | `/api/v1/detections/{id}/boxes` | Add annotation box |
+| PUT | `/api/v1/detections/{id}/boxes/{box_id}` | Update box coordinates |
+| POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | Delete box |
+| POST | `/api/v1/detections/{id}/delete` | Delete detection |
+| GET | `/api/v1/detections/{id}/export` | Export single YOLO label |
+| POST | `/api/v1/detections/export-batch` | Batch export (zip) |
 
-### 检测与标注
+### Training
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/detect` | VLM 预标注（multipart） |
-| GET | `/api/v1/detections` | 历史列表（分页） |
-| GET | `/api/v1/detections/{id}` | 检测详情 |
-| GET | `/api/v1/detections/{id}/image` | 检测原图 |
-| POST | `/api/v1/detections/{id}/boxes` | 手动添加标注框 |
-| PUT | `/api/v1/detections/{id}/boxes/{box_id}` | 修改标注框坐标 |
-| POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | 删除标注框 |
-| POST | `/api/v1/detections/{id}/delete` | 删除检测记录 |
-| GET | `/api/v1/detections/{id}/export` | 导出单图 YOLO 标注 |
-| POST | `/api/v1/detections/export-batch` | 批量导出（zip） |
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/train/jobs` | Create training job |
+| GET | `/api/v1/train/jobs` | List training jobs |
+| GET | `/api/v1/train/variants` | Available YOLO series |
+| GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE training progress |
+| POST | `/api/v1/train/jobs/{id}/predict` | YOLO model inference |
+| POST | `/api/v1/train/jobs/{id}/delete` | Delete training job |
 
-### 训练
+## Cross-Platform
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/train/jobs` | 创建训练任务 |
-| GET | `/api/v1/train/jobs` | 训练任务列表 |
-| GET | `/api/v1/train/variants` | 可用 YOLO 系列 |
-| GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |
-| POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理验证 |
-| POST | `/api/v1/train/jobs/{id}/delete` | 删除训练任务 |
-
-## 跨平台
-
-| 平台 | 推理后端 | 训练后端 |
-|------|---------|---------|
+| Platform | Inference | Training |
+|----------|-----------|----------|
 | macOS (Apple Silicon) | MPS | MPS |
 | Linux / Windows (NVIDIA) | CUDA | CUDA |
-| 无 GPU | CPU | CPU |
+| No GPU | CPU | CPU |
 
-设备自动检测，优先级：CUDA → MPS → CPU。可通过 `DEVICE` 环境变量手动指定。
+Auto-detection priority: CUDA → MPS → CPU. Override via `DEVICE` env variable.
 
 ## License
 
-本项目代码 [MIT](LICENSE)。
+Code: [MIT](LICENSE).
 
-LocateAnything-3B 模型遵循 [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE)（非商用）。
+LocateAnything-3B model: [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE) (non-commercial use only).
