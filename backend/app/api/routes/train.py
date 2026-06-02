@@ -203,7 +203,7 @@ def download_dataset(
         raise HTTPException(500, "Failed to create dataset archive")
 
 
-@router.get("/jobs/{job_id}/charts/{chart_name}")
+@router.get("/jobs/{job_id}/charts/{chart_name}", response_class=FileResponse)
 def get_chart(
     job_id: str,
     chart_name: str,
@@ -211,6 +211,8 @@ def get_chart(
 ):
     """Serve training chart images (results.png, confusion_matrix.png, etc.)."""
     from pathlib import Path
+
+    from ...core.config import settings
 
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job:
