@@ -148,9 +148,11 @@ function drawRect(
   if (label) {
     ctx.font = "12px system-ui, sans-serif";
     const tw = ctx.measureText(label).width + 8;
+    const labelY = y < 18 ? y + 2 : y - 18;  // inside box if near top edge
+    const textY = y < 18 ? y + 14 : y - 6;
     ctx.fillStyle = color;
-    ctx.fillRect(x, y - 18, tw, 18);
+    ctx.fillRect(x, labelY, tw, 18);
     ctx.fillStyle = "#fff";
-    ctx.fillText(label, x + 4, y - 6);
+    ctx.fillText(label, x + 4, textY);
   }
 }

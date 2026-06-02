@@ -10,13 +10,13 @@ End-to-end **pre-annotation & training system** powered by NVIDIA LocateAnything
 
 ## Screenshots
 
-| VLM Pre-annotation | Manual Annotation & Training |
-|-------------------|---------------------------|
-| ![Pre-annotation](docs/1.png) | ![Training](docs/2.png) |
+| VLM Pre-annotation & Refinement | YOLO Training |
+|--------------------------------|---------------|
+| ![VLM pre-annotation and refinement](docs/1.png) | ![YOLO training](docs/2.png) |
 
-| Model Validation |
-|-----------------|
-| ![Validation](docs/3.png) |
+| Video Keyframe Entry | Model Validation |
+|---------------------|-----------------|
+| ![Video keyframe entry](docs/4.png) | ![Model validation](docs/3.png) |
 
 ## Tech Stack
 
