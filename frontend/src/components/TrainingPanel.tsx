@@ -1,58 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import type { Detection, TrainingJob } from "@/types";
-import { API_BASE } from "@/lib/constants";
-
-// ── API helpers (inline to avoid circular deps) ─────
-
-async function startTraining(params: {
-  detection_ids: string[];
-  model_variant: string;
-  epochs: number;
-  imgsz: number;
-  batch: number;
-}): Promise<TrainingJob> {
-  const res = await fetch(`${API_BASE}/train/jobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error?.message ?? "训练请求失败");
-  return json.data;
-}
-
-async function fetchJobs(): Promise<TrainingJob[]> {
-  const res = await fetch(`${API_BASE}/train/jobs`);
-  const json = await res.json();
-  return json.data?.items ?? [];
-}
+import { API_BASE, BOX_COLORS, DEFAULT_BATCH, DEFAULT_EPOCHS, DEFAULT_IMGSZ } from "@/lib/constants";
+import { parseCategories } from "@/lib/parsers";
+import { deleteTrainingJob, fetchTrainingJobs, fetchYoloSeries, startTraining } from "@/services/api";
 
 function downloadModelUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/download`;
-}
-
-function parseDetectionCategories(categories: string): string[] {
-  try {
-    const parsed = JSON.parse(categories);
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-const PREVIEW_COLORS = [
-  { stroke: "#EF4444", chip: "bg-red-100 text-red-700 ring-red-200" },
-  { stroke: "#3B82F6", chip: "bg-blue-100 text-blue-700 ring-blue-200" },
-  { stroke: "#10B981", chip: "bg-emerald-100 text-emerald-700 ring-emerald-200" },
-  { stroke: "#F59E0B", chip: "bg-amber-100 text-amber-700 ring-amber-200" },
-] as const;
-
-function previewColorIndex(className: string, fallbackIndex = 0): number {
-  const chars = [...className];
-  const hash = chars.reduce((total, char) => total + char.charCodeAt(0), 0);
-  return (hash || fallbackIndex) % PREVIEW_COLORS.length;
 }
 
 // ── Component ───────────────────────────────────────
@@ -65,18 +18,14 @@ export function TrainingPanel({ detections }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [series, setSeries] = useState("yolo26");
   const [variant, setVariant] = useState("yolo26n");
-  const [epochs, setEpochs] = useState(100);
-  const [imgsz, setImgsz] = useState(640);
-  const [batch, setBatch] = useState(16);
+  const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
+  const [imgsz, setImgsz] = useState(DEFAULT_IMGSZ);
+  const [batch, setBatch] = useState(DEFAULT_BATCH);
   const qc = useQueryClient();
 
   const variantsQuery = useQuery({
     queryKey: ["yolo-variants"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/train/variants`);
-      const json = await res.json();
-      return json.data as Record<string, { label: string; variants: Record<string, string> }>;
-    },
+    queryFn: fetchYoloSeries,
     staleTime: Infinity,
   });
 
@@ -87,7 +36,7 @@ export function TrainingPanel({ detections }: Props) {
 
   const jobsQuery = useQuery({
     queryKey: ["training-jobs"],
-    queryFn: fetchJobs,
+    queryFn: fetchTrainingJobs,
     refetchInterval: 10_000,
   });
 
@@ -139,14 +88,14 @@ export function TrainingPanel({ detections }: Props) {
   const trainCategories = useMemo(() => {
     const count = new Map<string, number>();
     detections.forEach((d) => {
-      parseDetectionCategories(d.categories).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1));
+      parseCategories(d.categories).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1));
     });
     return [...count.entries()].sort((a, b) => b[1] - a[1]);
   }, [detections]);
   const [trainFilter, setTrainFilter] = useState<Set<string>>(new Set());
   const filteredDetections = trainFilter.size === 0
     ? detections
-    : detections.filter((d) => parseDetectionCategories(d.categories).some((c) => trainFilter.has(c)));
+    : detections.filter((d) => parseCategories(d.categories).some((c) => trainFilter.has(c)));
 
   const selectedCount = selected.size;
 
@@ -318,7 +267,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
   } | null>(null);
 
   useEffect(() => {
-    if (job.status !== "running") return;
+    if (job.status !== "running" && job.status !== "pending") return;
     const es = new EventSource(`${API_BASE}/train/jobs/${job.id}/progress/stream`);
     es.onmessage = (e) => {
       try {
@@ -343,7 +292,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
         <StatusBadge status={job.status} />
       </div>
 
-      {job.status === "running" && (
+      {(job.status === "pending" || job.status === "running") && (
         progress && progress.total_epochs > 0 ? (
           <div className="mt-1.5 space-y-1">
             <div className="flex justify-between text-gray-400">
@@ -392,7 +341,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
           <button
             onClick={() => {
               if (confirm("确定删除该训练任务吗？此操作不可撤销。")) {
-                fetch(`${API_BASE}/train/jobs/${job.id}/delete`, { method: "POST" })
+                deleteTrainingJob(job.id)
                   .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
                   .catch(() => toast.error("删除失败"));
               }
@@ -413,18 +362,16 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
 
 function TrainingPreview({ detection }: { detection: Detection }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const categories = useMemo(() => {
-    const names = new Set(parseDetectionCategories(detection.categories));
-    detection.boxes.forEach((box) => names.add(box.class_name));
-    return [...names];
-  }, [detection]);
-  const categoryColors = useMemo(() => {
-    const colors = new Map<string, (typeof PREVIEW_COLORS)[number]>();
-    categories.forEach((name, index) => {
-      colors.set(name, PREVIEW_COLORS[previewColorIndex(name, index)]);
+  // Build class_name → color map at component level (used by both canvas and chips)
+  const colorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    detection.boxes.forEach((box) => {
+      if (!map.has(box.class_name)) {
+        map.set(box.class_name, BOX_COLORS[map.size % BOX_COLORS.length]);
+      }
     });
-    return colors;
-  }, [categories]);
+    return map;
+  }, [detection]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -438,10 +385,10 @@ function TrainingPreview({ detection }: { detection: Detection }) {
       canvas.height = Math.round(img.naturalHeight * scale);
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      detection.boxes.forEach((box, i) => {
+      detection.boxes.forEach((box) => {
         const x = box.x1 * scale, y = box.y1 * scale;
         const w = (box.x2 - box.x1) * scale, h = (box.y2 - box.y1) * scale;
-        const color = categoryColors.get(box.class_name)?.stroke ?? PREVIEW_COLORS[i % PREVIEW_COLORS.length].stroke;
+        const color = colorMap.get(box.class_name)!;
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(x, y, w, h);
@@ -453,7 +400,7 @@ function TrainingPreview({ detection }: { detection: Detection }) {
         ctx.fillText(box.class_name, x + 2, y - 4);
       });
     };
-  }, [categoryColors, detection]);
+  }, [colorMap, detection]);
 
   return (
     <div className="w-[min(520px,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-3 shadow-xl">
@@ -462,20 +409,24 @@ function TrainingPreview({ detection }: { detection: Detection }) {
           <p className="truncate text-xs font-semibold text-gray-700">{detection.image_name}</p>
           <p className="mt-0.5 text-[11px] text-gray-400">{detection.boxes.length} 个目标</p>
         </div>
-        {categories.length > 0 && (
-          <div className="flex max-w-56 flex-wrap justify-end gap-1">
-            {categories.map((name) => (
-              <span
-                key={name}
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${
-                  categoryColors.get(name)?.chip ?? "bg-gray-100 text-gray-600 ring-gray-200"
-                }`}
-              >
-                {name}
-              </span>
-            ))}
-          </div>
-        )}
+        {(() => {
+          const cats = new Set<string>();
+          detection.boxes.forEach((b) => cats.add(b.class_name));
+          parseCategories(detection.categories).forEach((c) => cats.add(c));
+          if (cats.size === 0) return null;
+          return (
+            <div className="flex max-w-56 flex-wrap justify-end gap-1">
+              {[...cats].map((name) => (
+                <span key={name}
+                  className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                  style={{ backgroundColor: `${colorMap.get(name) ?? BOX_COLORS[0]}20`, color: colorMap.get(name) ?? BOX_COLORS[0] }}
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       <canvas
         ref={canvasRef}

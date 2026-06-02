@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import threading
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -12,10 +11,9 @@ from ...core.database import get_db
 from ...models.train import TrainingJob
 from ...schemas.common import APIResponse
 from ...schemas.train import TrainingJobListOut, TrainingJobOut, TrainRequest
-from ...services.trainer import YOLO_SERIES, run_training
+from ...services.trainer import YOLO_SERIES, run_training_safe
 from ..deps import get_request_id
 
-logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/train", tags=["train"])
 
 
@@ -45,7 +43,7 @@ def create_training_job(
 
     # Run training in background thread
     thread = threading.Thread(
-        target=_run_training_safe,
+        target=run_training_safe,
         args=(job.id, body.detection_ids, body.model_variant,
               body.epochs, body.imgsz, body.batch),
         daemon=True,
@@ -191,103 +189,36 @@ async def predict_with_model(
     from pathlib import Path
 
     from PIL import Image
-    from ultralytics import YOLO
 
     from ...core.config import settings
+    from ...services.trainer import predict_trained_model
 
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
         raise HTTPException(404, "Trained model not found")
     if job.status != "completed":
         raise HTTPException(400, "Training not completed yet")
-
-    model_path = job.model_path
-    if not Path(model_path).exists():
+    if not Path(job.model_path).exists():
         raise HTTPException(404, "Model file not found on disk")
 
-    # Save uploaded image to temp
     img_bytes = await file.read()
-    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    w, h = img.size
-
     with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-        img.save(tmp.name)
+        Image.open(io.BytesIO(img_bytes)).save(tmp.name)
 
     try:
-        model = YOLO(model_path)
-        results = model.predict(tmp.name, device=settings.device, imgsz=640, conf=conf, iou=iou, verbose=False)
-        Path(tmp.name).unlink(missing_ok=True)
+        result = predict_trained_model(job.model_path, tmp.name, device=settings.device, conf=conf, iou=iou)
     except Exception as exc:
-        Path(tmp.name).unlink(missing_ok=True)
         raise HTTPException(500, f"Inference failed: {exc}") from exc
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
 
-    # Parse results
-    boxes_out = []
-    if results and results[0].boxes is not None:
-        r = results[0]
-        for i in range(len(r.boxes)):
-            x1, y1, x2, y2 = r.boxes.xyxy[i].tolist()
-            conf = float(r.boxes.conf[i])
-            cls_id = int(r.boxes.cls[i])
-            cls_name = r.names.get(cls_id, str(cls_id)) if r.names else str(cls_id)
-            boxes_out.append({
-                "class_name": cls_name,
-                "confidence": round(conf, 4),
-                "x1": int(x1), "y1": int(y1),
-                "x2": int(x2), "y2": int(y2),
-            })
-
-    # Load class map from training metrics
     class_map = {}
     if job.metrics:
         try:
-            m = json.loads(job.metrics)
-            class_map = m.get("class_map", {})
+            class_map = json.loads(job.metrics).get("class_map", {})
         except json.JSONDecodeError:
             pass
 
-    return APIResponse(data={
-        "image_width": w,
-        "image_height": h,
-        "model_variant": job.model_variant,
-        "boxes": boxes_out,
-        "class_map": class_map,
-    })
+    return APIResponse(data={**result, "model_variant": job.model_variant, "class_map": class_map})
 
 
-def _run_training_safe(
-    job_id: str,
-    detection_ids: list[str],
-    model_variant: str,
-    epochs: int,
-    imgsz: int,
-    batch: int,
-) -> None:
-    """Wrap run_training to catch errors and update DB on failure."""
-    from ...core.database import SessionLocal
-
-    db = SessionLocal()
-    try:
-        job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
-        if job:
-            job.status = "running"
-            db.commit()
-
-        run_training(
-            job_id=job_id,
-            detection_ids=detection_ids,
-            db=db,
-            model_variant=model_variant,
-            epochs=epochs,
-            imgsz=imgsz,
-            batch=batch,
-        )
-    except Exception as exc:
-        logger.exception("Training job %s failed", job_id)
-        job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
-        if job:
-            job.status = "failed"
-            job.error_message = str(exc)
-            db.commit()
-    finally:
-        db.close()

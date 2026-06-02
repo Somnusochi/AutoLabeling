@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from . import yolo_format
 from ..core.config import settings
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -105,26 +106,9 @@ def _build_dataset(
         sample_count += 1
 
     for det, dst_lbl in samples:
-        dst_lbl.write_text(_detection_to_yolo(det, class_map))
+        dst_lbl.write_text(yolo_format.detection_to_yolo(det, class_map))
 
     return sample_count, class_map
-
-
-def _detection_to_yolo(detection: "Detection", class_map: dict[str, int]) -> str:
-    """Convert a detection record to labels using this training run's class map."""
-    img_w = detection.image_width or 1
-    img_h = detection.image_height or 1
-    lines: list[str] = []
-
-    for box in detection.boxes:
-        class_id = class_map[box.class_name]
-        x_center = ((box.x1 + box.x2) / 2) / img_w
-        y_center = ((box.y1 + box.y2) / 2) / img_h
-        bw = (box.x2 - box.x1) / img_w
-        bh = (box.y2 - box.y1) / img_h
-        lines.append(f"{class_id} {x_center:.6f} {y_center:.6f} {bw:.6f} {bh:.6f}")
-
-    return "\n".join(lines)
 
 
 def _metrics_dict(metrics_obj: object | None) -> dict[str, float]:
@@ -264,3 +248,82 @@ def run_training(
 
     logger.info("Training completed: %s → %s", job_id, output_path)
     return str(output_path)
+
+
+def predict_trained_model(
+    model_path: str,
+    image_path: str,
+    *,
+    device: str = "cpu",
+    conf: float = 0.25,
+    iou: float = 0.45,
+) -> dict:
+    """Run inference with a trained YOLO model.
+
+    Returns: {"image_width", "image_height", "boxes": [{"class_name","confidence","x1","y1","x2","y2"}]}
+    """
+    from ultralytics import YOLO
+
+    model = YOLO(model_path)
+    results = model.predict(image_path, device=device, imgsz=640, conf=conf, iou=iou, verbose=False)
+
+    boxes_out: list[dict] = []
+    if results and results[0].boxes is not None:
+        r = results[0]
+        for i in range(len(r.boxes)):
+            x1, y1, x2, y2 = r.boxes.xyxy[i].tolist()
+            conf_val = float(r.boxes.conf[i])
+            cls_id = int(r.boxes.cls[i])
+            cls_name = r.names.get(cls_id, str(cls_id)) if r.names else str(cls_id)
+            boxes_out.append({
+                "class_name": cls_name,
+                "confidence": round(conf_val, 4),
+                "x1": int(x1), "y1": int(y1),
+                "x2": int(x2), "y2": int(y2),
+            })
+
+    w, h = 0, 0
+    if results:
+        shape = results[0].orig_shape
+        h, w = shape if shape else (0, 0)
+
+    return {"image_width": w, "image_height": h, "boxes": boxes_out}
+
+
+def run_training_safe(
+    job_id: str,
+    detection_ids: list[str],
+    model_variant: str,
+    epochs: int,
+    imgsz: int,
+    batch: int,
+) -> None:
+    """Run training in background, updating DB status on completion/failure."""
+    from ...core.database import SessionLocal
+    from ..models.train import TrainingJob
+
+    db = SessionLocal()
+    try:
+        job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+        if job:
+            job.status = "running"
+            db.commit()
+
+        run_training(
+            job_id=job_id,
+            detection_ids=detection_ids,
+            db=db,
+            model_variant=model_variant,
+            epochs=epochs,
+            imgsz=imgsz,
+            batch=batch,
+        )
+    except Exception as exc:
+        logger.exception("Training job %s failed", job_id)
+        job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+        if job:
+            job.status = "failed"
+            job.error_message = str(exc)
+            db.commit()
+    finally:
+        db.close()

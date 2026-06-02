@@ -1,10 +1,29 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import AutoImport from "unplugin-auto-import/vite";
 import path from "node:path";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    AutoImport({
+      imports: [
+        "react",
+        "ahooks",
+        {
+          "react-hot-toast": ["toast"],
+          "@tanstack/react-query": [
+            "useQuery", "useMutation", "useQueryClient",
+            "useInfiniteQuery", "QueryClient", "QueryClientProvider",
+          ],
+        },
+      ],
+      dts: "./src/auto-imports.d.ts",
+      dirs: ["./src/hooks"],
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

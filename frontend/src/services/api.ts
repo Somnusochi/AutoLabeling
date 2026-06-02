@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Detection, DetectionList, DetectResponse } from "@/types";
+import type { Detection, DetectionList, DetectResponse, TrainingJob } from "@/types";
 import { API_BASE } from "@/lib/constants";
 
 const client = axios.create({
@@ -45,13 +45,7 @@ export async function addBox(
   detectionId: string,
   box: { class_name: string; x1: number; y1: number; x2: number; y2: number },
 ): Promise<void> {
-  const form = new FormData();
-  form.append("class_name", box.class_name);
-  form.append("x1", String(box.x1));
-  form.append("y1", String(box.y1));
-  form.append("x2", String(box.x2));
-  form.append("y2", String(box.y2));
-  await client.post(`/detections/${detectionId}/boxes`, form);
+  await client.post(`/detections/${detectionId}/boxes`, box);
 }
 
 export function exportSingleUrl(id: string): string {
@@ -66,6 +60,37 @@ export async function exportBatch(ids: string[]): Promise<Blob> {
   );
   return data;
 }
+
+// ── Training ────────────────────────────────────
+
+export type YoloSeries = Record<string, { label: string; variants: Record<string, string> }>;
+
+export async function fetchYoloSeries(): Promise<YoloSeries> {
+  const { data } = await client.get<{ data: YoloSeries }>("/train/variants");
+  return data.data;
+}
+
+export async function startTraining(params: {
+  detection_ids: string[];
+  model_variant: string;
+  epochs: number;
+  imgsz: number;
+  batch: number;
+}): Promise<TrainingJob> {
+  const { data } = await client.post<{ data: TrainingJob }>("/train/jobs", params);
+  return data.data;
+}
+
+export async function fetchTrainingJobs(): Promise<TrainingJob[]> {
+  const { data } = await client.get<{ data: { items: TrainingJob[] } }>("/train/jobs");
+  return data.data?.items ?? [];
+}
+
+export async function deleteTrainingJob(id: string): Promise<void> {
+  await client.post(`/train/jobs/${id}/delete`);
+}
+
+// ── Utils ───────────────────────────────────────
 
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);

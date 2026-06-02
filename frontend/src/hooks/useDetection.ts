@@ -1,15 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import {
-  deleteDetection,
-  detectImage,
-  exportBatch,
-  getDetection,
-  listDetections,
-  downloadBlob,
+  deleteDetection, detectImage, exportBatch,
+  listDetections, downloadBlob,
 } from "@/services/api";
-
-// ── Queries ──────────────────────────────────────────
 
 export function useDetectionListQuery(page = 1) {
   return useQuery({
@@ -19,19 +12,8 @@ export function useDetectionListQuery(page = 1) {
   });
 }
 
-export function useDetectionDetailQuery(id: string) {
-  return useQuery({
-    queryKey: ["detections", id],
-    queryFn: () => getDetection(id),
-    enabled: !!id,
-  });
-}
-
-// ── Mutations ────────────────────────────────────────
-
 export function useDetectMutation() {
   const qc = useQueryClient();
-
   return useMutation({
     mutationFn: ({ file, categories }: { file: File; categories: string[] }) =>
       detectImage(file, categories),
@@ -39,15 +21,12 @@ export function useDetectMutation() {
       toast.success(`检测完成，找到 ${data.boxes.length} 个目标`);
       qc.invalidateQueries({ queryKey: ["detections"] });
     },
-    onError: () => {
-      toast.error("检测失败，请重试");
-    },
+    onError: () => toast.error("检测失败，请重试"),
   });
 }
 
 export function useDeleteDetectionMutation() {
   const qc = useQueryClient();
-
   return useMutation({
     mutationFn: (id: string) => deleteDetection(id),
     onSuccess: () => {

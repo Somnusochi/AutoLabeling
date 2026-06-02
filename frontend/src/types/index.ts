@@ -15,6 +15,7 @@ export interface Detection {
   model_name: string;
   image_width: number;
   image_height: number;
+  elapsed_ms: number | null;
   status: string;
   created_at: string;
   boxes: BBox[];

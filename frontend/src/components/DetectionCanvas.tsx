@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BBox } from "@/types";
-
-const COLORS = [
-  "#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6",
-  "#EC4899", "#06B6D4", "#F97316", "#6366F1", "#14B8A6",
-];
+import { BOX_COLORS, CANVAS_MAX_H, CANVAS_MAX_W, CANVAS_MIN_BOX_SIZE } from "@/lib/constants";
 
 type Mode = "view" | "draw";
 
@@ -23,9 +19,7 @@ export function DetectionCanvas({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const MAX_W = 700;
-  const MAX_H = 500;
-  const scale = Math.min(MAX_W / imgWidth, MAX_H / imgHeight, 1);
+  const scale = Math.min(CANVAS_MAX_W / imgWidth, CANVAS_MAX_H / imgHeight, 1);
   const [drawing, setDrawing] = useState<{
     startX: number; startY: number; currentX: number; currentY: number;
   } | null>(null);
@@ -53,7 +47,7 @@ export function DetectionCanvas({
       boxes.forEach((box, idx) => {
         drawRect(ctx, box.x1 * scale, box.y1 * scale,
           (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale,
-          COLORS[idx % COLORS.length], box.class_name);
+          BOX_COLORS[idx % BOX_COLORS.length], box.class_name);
       });
 
       // Drawing preview
@@ -96,7 +90,7 @@ export function DetectionCanvas({
     const x2 = Math.round(Math.max(drawing.startX, drawing.currentX) / scale);
     const y2 = Math.round(Math.max(drawing.startY, drawing.currentY) / scale);
     setDrawing(null);
-    if (x2 - x1 > 5 && y2 - y1 > 5) {
+    if (x2 - x1 > CANVAS_MIN_BOX_SIZE && y2 - y1 > CANVAS_MIN_BOX_SIZE) {
       onDrawBox({ x1, y1, x2, y2 });
     }
   };

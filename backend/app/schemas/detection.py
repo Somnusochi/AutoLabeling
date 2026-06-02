@@ -24,6 +24,7 @@ class DetectionOut(BaseModel):
     model_name: str
     image_width: int
     image_height: int
+    elapsed_ms: int | None = None
     status: str
     created_at: datetime
     boxes: list[DetectionBoxOut] = []

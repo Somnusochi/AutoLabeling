@@ -22,6 +22,7 @@ class Detection(Base):
     model_name: Mapped[str] = mapped_column(String(256), default="LocateAnything-3B")
     image_width: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     image_height: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    elapsed_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="completed")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

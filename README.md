@@ -14,7 +14,8 @@
 | 目标检测 | YOLOv5/v8/v11/v26（Ultralytics） |
 | 后端 | Python FastAPI + PostgreSQL + SSE |
 | 前端 | React + TypeScript + Vite + Tailwind CSS |
-| 状态管理 | TanStack Query |
+| 状态管理 | TanStack Query + ahooks |
+| 工程化 | unplugin-auto-import |
 
 ## 快速开始
 
@@ -112,10 +113,14 @@ locate-anything/
 |------|------|------|
 | POST | `/api/v1/detect` | VLM 预标注 |
 | GET | `/api/v1/detections` | 历史列表 |
+| GET | `/api/v1/detections/{id}` | 检测详情 |
+| GET | `/api/v1/detections/{id}/image` | 检测图片 |
 | POST | `/api/v1/detections/{id}/boxes` | 手动添加标注框 |
 | PUT | `/api/v1/detections/{id}/boxes/{box_id}` | 更新标注框坐标 |
 | POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | 删除标注框 |
+| POST | `/api/v1/detections/{id}/delete` | 删除检测记录 |
 | GET | `/api/v1/detections/{id}/export` | 导出 YOLO 标注 |
+| POST | `/api/v1/detections/export-batch` | 批量导出 YOLO 标注 |
 | POST | `/api/v1/train/jobs` | 创建训练任务 |
 | GET | `/api/v1/train/variants` | 可用 YOLO 系列列表 |
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |

@@ -1,7 +1,9 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
+import { useDebounce } from "ahooks";
 import { useDeleteDetectionMutation } from "@/hooks/useDetection";
 import { exportSingleUrl } from "@/services/api";
 import { API_BASE } from "@/lib/constants";
+import { parseCategories } from "@/lib/parsers";
 import type { Detection } from "@/types";
 
 interface Props {
@@ -16,15 +18,14 @@ export function HistoryList({ data, onSelect }: Props) {
   const allCategories = useMemo(() => {
     const count = new Map<string, number>();
     list.forEach((d) => {
-      try {
-        (JSON.parse(d.categories) as string[]).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1));
-      } catch { /* ignore parse errors */ }
+      parseCategories(d.categories).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1));
     });
     return [...count.entries()].sort((a, b) => b[1] - a[1]);
   }, [list]);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, { wait: 200 });
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -48,15 +49,13 @@ export function HistoryList({ data, onSelect }: Props) {
   };
 
   const filteredCategories = allCategories.filter(
-    ([name]) => !search || name.toLowerCase().includes(search.toLowerCase())
+    ([name]) => !debouncedSearch || name.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
   const filtered = useMemo(() => {
     if (selected.size === 0) return list;
     return list.filter((d) => {
-      try {
-        return (JSON.parse(d.categories) as string[]).some((c) => selected.has(c));
-      } catch { return false; }
+      return parseCategories(d.categories).some((c) => selected.has(c));
     });
   }, [list, selected]);
 
@@ -150,15 +149,11 @@ export function HistoryList({ data, onSelect }: Props) {
                     {new Date(det.created_at).toLocaleString("zh-CN")}
                   </p>
               <div className="flex flex-wrap gap-1 mt-0.5">
-                {(() => {
-                  try {
-                    return (JSON.parse(det.categories) as string[]).map((c) => (
-                      <span key={c} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
-                        selected.has(c) ? "bg-primary-500 text-white" : "bg-primary-100 text-primary-700"
-                      }`}>{c}</span>
-                    ));
-                  } catch { return null; }
-                })()}
+                {parseCategories(det.categories).map((c) => (
+                  <span key={c} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                    selected.has(c) ? "bg-primary-500 text-white" : "bg-primary-100 text-primary-700"
+                  }`}>{c}</span>
+                ))}
               </div>
               <p className="text-xs text-gray-500 mt-0.5">{det.boxes.length} 个目标</p>
               <div className="flex gap-2 mt-1.5">

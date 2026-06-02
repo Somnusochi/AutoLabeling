@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from pydantic import BaseModel
 from fastapi.responses import FileResponse
 
 from ...core.config import settings
@@ -71,6 +72,7 @@ async def create_detection(
         image_height=result["img_h"],
         categories=json.dumps(cat_list),
     )
+    detection.elapsed_ms = int((time.perf_counter() - t0) * 1000)
     box_dicts: list[dict] = [
         {
             "class_name": b.get("class_name") or cat_list[0] or "object",
@@ -83,11 +85,9 @@ async def create_detection(
     repo.db.commit()
     repo.db.refresh(detection)
 
-    elapsed_ms = int((time.perf_counter() - t0) * 1000)
-
     return APIResponse(
         data=DetectionOut.model_validate(detection).model_dump(),
-        meta={"request_id": request_id, "elapsed_ms": elapsed_ms},
+        meta={"request_id": request_id},
     )
 
 
@@ -157,22 +157,33 @@ def delete_box(
     db.commit()
 
 
+class AddBoxBody(BaseModel):
+    class_name: str
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+
+
+class UpdateBoxBody(BaseModel):
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+
+
 @router.post("/detections/{detection_id}/boxes", status_code=201)
 def add_box(
     detection_id: str,
-    class_name: str = Form(...),
-    x1: int = Form(...),
-    y1: int = Form(...),
-    x2: int = Form(...),
-    y2: int = Form(...),
+    body: AddBoxBody,
     repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
 ) -> APIResponse:
     det = repo.get_by_id(detection_id)
     if not det:
         raise NotFoundError("Detection", detection_id)
     repo.add_boxes(detection_id, [{
-        "class_name": class_name,
-        "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+        "class_name": body.class_name,
+        "x1": body.x1, "y1": body.y1, "x2": body.x2, "y2": body.y2,
     }])
     repo.db.commit()
     return APIResponse(data={"ok": True})
@@ -182,10 +193,7 @@ def add_box(
 def update_box(
     detection_id: str,
     box_id: str,
-    x1: int = Form(...),
-    y1: int = Form(...),
-    x2: int = Form(...),
-    y2: int = Form(...),
+    body: UpdateBoxBody,
     db: "Session" = Depends(get_db),  # noqa: F821
 ) -> APIResponse:
     from ...models.detection import DetectionBox
@@ -196,7 +204,7 @@ def update_box(
     ).first()
     if not box:
         raise NotFoundError("DetectionBox", box_id)
-    box.x1, box.y1, box.x2, box.y2 = x1, y1, x2, y2
+    box.x1, box.y1, box.x2, box.y2 = body.x1, body.y1, body.x2, body.y2
     db.commit()
     return APIResponse(data={"ok": True})
 

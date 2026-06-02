@@ -7,7 +7,6 @@ import type { Detection } from "@/types";
 interface Props {
   result: Detection;
   previewUrl: string;
-  elapsedMs: number;
   batchResults: Detection[];
   batchFiles: File[];
   loading: boolean;
@@ -26,7 +25,6 @@ interface Props {
 export function DetectionResult({
   result,
   previewUrl,
-  elapsedMs,
   batchResults,
   batchFiles,
   loading,
@@ -93,9 +91,9 @@ export function DetectionResult({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-gray-700">
           检测结果 ({result.boxes.length} 个目标)
-          {elapsedMs > 0 && (
+          {result.elapsed_ms != null && result.elapsed_ms > 0 && (
             <span className="ml-2 text-gray-400 font-normal">
-              耗时 {elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`}
+              耗时 {result.elapsed_ms >= 1000 ? `${(result.elapsed_ms / 1000).toFixed(1)}s` : `${result.elapsed_ms}ms`}
             </span>
           )}
           {batchResults.length > 1 && (
