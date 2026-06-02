@@ -1,3 +1,4 @@
+import { Button } from "antd";
 import { DetectionCanvas } from "@/components/DetectionCanvas";
 import { ResultTable } from "@/components/ResultTable";
 import { exportBatch, downloadBlob } from "@/services/api";
@@ -116,43 +117,24 @@ export function DetectionResult({
 
         <div className="flex gap-2">
           {!isValidation && (
-            <button
-              type="button"
-              onClick={onSaveBoxes}
-              className="rounded border border-green-300 px-3 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
-            >
-              保存过滤结果
-            </button>
+            <Button size="small" onClick={onSaveBoxes}>保存过滤结果</Button>
           )}
           {!isValidation && categories.length > 0 && (
-            <button
-              type="button"
-              disabled={loading}
-              onClick={onReDetect}
-              className="rounded bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
-            >
+            <Button size="small" danger loading={loading} onClick={onReDetect}>
               {loading ? "检测中..." : "重新检测"}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            onClick={() => downloadYoloTxt(result.boxes, categories, result.imageWidth, result.imageHeight, result.imageName)}
-            className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors"
-          >
+          <Button size="small" onClick={() => downloadYoloTxt(result.boxes, categories, result.imageWidth, result.imageHeight, result.imageName)}>
             导出 YOLO (.txt)
-          </button>
+          </Button>
           {!isValidation && (
-            <button
-              type="button"
-              onClick={async () => {
-                const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
-                const blob = await exportBatch(ids);
-                downloadBlob(blob, "yolo_labels.zip");
-              }}
-              className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
-            >
+            <Button size="small" type="primary" onClick={async () => {
+              const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
+              const blob = await exportBatch(ids);
+              downloadBlob(blob, "yolo_labels.zip");
+            }}>
               {batchResults.length > 1 ? `导出全部 (${batchResults.length} zip)` : "导出 YOLO (zip)"}
-            </button>
+            </Button>
           )}
         </div>
       </div>

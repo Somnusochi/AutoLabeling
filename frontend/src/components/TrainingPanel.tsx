@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Select } from "antd";
+import { Button, Modal, Select } from "antd";
 import type { Detection, TrainingJob } from "@/types";
 import { API_BASE, BOX_COLORS, DEFAULT_BATCH, DEFAULT_EPOCHS, DEFAULT_IMGSZ } from "@/lib/constants";
 import { parseCategories } from "@/lib/parsers";
@@ -154,14 +154,13 @@ export function TrainingPanel({ detections }: Props) {
         <span className="text-xs text-gray-500">
           已选 {selectedCount}{trainFilter.size > 0 ? ` / ${filteredDetections.length}` : ""} / {detections.length} 条
         </span>
-        <button type="button" onClick={selectAll}
-          className="text-xs text-primary-600 hover:underline">
+        <Button type="link" size="small" onClick={selectAll}>
           {(() => {
             const targets = trainFilter.size > 0 ? filteredDetections : detections;
             return selectedCount === targets.length && targets.every((d) => selected.has(d.id))
               ? "取消全选" : "全选";
           })()}
-        </button>
+        </Button>
       </div>
 
       {/* Detection checklist with thumbnails */}
@@ -286,14 +285,11 @@ export function TrainingPanel({ detections }: Props) {
       </div>
 
       {/* Train button */}
-      <button
-        type="button"
-        disabled={trainMut.isPending || selectedCount === 0}
-        onClick={handleTrain}
-        className="w-full rounded bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-      >
+      <Button type="primary" block loading={trainMut.isPending}
+        disabled={selectedCount === 0} onClick={handleTrain}
+        style={{ background: "#16a34a" }}>
         {trainMut.isPending ? "启动中..." : `开始训练 YOLO (${selectedCount} 张)`}
-      </button>
+      </Button>
 
       {/* Job history */}
       {jobsQuery.data && jobsQuery.data.length > 0 && (
@@ -397,47 +393,34 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
             </div>
           )}
-          <div className="mt-1.5 flex gap-3">
+          <div className="mt-1.5 flex gap-2 flex-wrap">
             {job.status === "completed" && (
               <>
-                <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">模型</a>
-                <a href={downloadDatasetUrl(job.id)} download className="text-primary-600 hover:underline font-medium">数据集</a>
-                <a href={downloadOnnxUrl(job.id)} className="text-primary-600 hover:underline font-medium">ONNX</a>
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent("yolo-validate", {
-                      detail: { jobId: job.id, modelVariant: job.modelVariant }
-                    }));
-                  }}
-                  className="text-green-600 hover:underline font-medium"
-                >
-                  验证
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      const resp = await fetch(`${API_BASE}/train/jobs/${job.id}/retrain`, { method: "POST" });
-                      if (resp.ok) { toast.success("重训任务已创建"); qc.invalidateQueries({ queryKey: ["training-jobs"] }); }
-                      else { toast.error("重训失败"); }
-                    } catch { toast.error("重训失败"); }
-                  }}
-                  className="text-orange-500 hover:text-orange-600 font-medium"
-                >重训</button>
-                <button onClick={() => setChartOpen(true)} className="text-gray-500 hover:text-gray-700 font-medium">详情</button>
+                <a href={downloadModelUrl(job.id)} download><Button size="small" type="link">模型</Button></a>
+                <a href={downloadDatasetUrl(job.id)} download><Button size="small" type="link">数据集</Button></a>
+                <a href={downloadOnnxUrl(job.id)}><Button size="small" type="link">ONNX</Button></a>
+                <Button size="small" type="link" style={{ color: "#16a34a" }} onClick={() => {
+                  window.dispatchEvent(new CustomEvent("yolo-validate", {
+                    detail: { jobId: job.id, modelVariant: job.modelVariant }
+                  }));
+                }}>验证</Button>
+                <Button size="small" type="link" style={{ color: "#ea580c" }} onClick={async () => {
+                  try {
+                    const resp = await fetch(`${API_BASE}/train/jobs/${job.id}/retrain`, { method: "POST" });
+                    if (resp.ok) { toast.success("重训任务已创建"); qc.invalidateQueries({ queryKey: ["training-jobs"] }); }
+                    else { toast.error("重训失败"); }
+                  } catch { toast.error("重训失败"); }
+                }}>重训</Button>
+                <Button size="small" type="link" onClick={() => setChartOpen(true)}>详情</Button>
               </>
             )}
-            <button
-              onClick={() => {
-                if (confirm("确定删除该训练任务吗？此操作不可撤销。")) {
-                  deleteTrainingJob(job.id)
-                    .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
-                    .catch(() => toast.error("删除失败"));
-                }
-              }}
-              className="text-red-400 hover:text-red-600 font-medium"
-            >
-              删除
-            </button>
+            <Button size="small" type="link" danger onClick={() => {
+              if (confirm("确定删除该训练任务吗？此操作不可撤销。")) {
+                deleteTrainingJob(job.id)
+                  .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
+                  .catch(() => toast.error("删除失败"));
+              }
+            }}>删除</Button>
           </div>
           <Modal open={chartOpen} onCancel={() => setChartOpen(false)} footer={null} width={800} title="训练曲线">
             <img src={chartUrl(job.id)} alt="训练曲线" className="w-full" />
