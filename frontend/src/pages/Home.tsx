@@ -107,11 +107,22 @@ export function Home() {
 
     try {
       if (validateMode) {
-        const data = await runValidation(files[0]);
-        if (data) {
-          setResult(data);
-          setPreviewUrl(URL.createObjectURL(files[0]));
+        // Batch-validate all files
+        const results: Detection[] = [];
+        setBatchProgress({ current: 0, total: files.length });
+        for (let i = 0; i < files.length; i++) {
+          const data = await runValidation(files[i]);
+          if (data) {
+            results.push(data);
+            setBatchResults([...results]);
+            if (i === 0) {
+              setResult(data);
+              setPreviewUrl(URL.createObjectURL(files[i]));
+            }
+          }
+          setBatchProgress({ current: i + 1, total: files.length });
         }
+        setBatchProgress({ current: 0, total: 0 });
         return;
       }
 
