@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = (
-        "postgresql+psycopg2://somnusochi:somnusochi@localhost:5432/locate_anything"
+        "postgresql+psycopg2://somnusochi:somnusochi@localhost:5432/autolabeling"
     )
 
     # Model (auto-detect: cuda → mps → cpu)

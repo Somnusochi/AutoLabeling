@@ -59,7 +59,7 @@ cd ../frontend
 npm install
 
 # Database
-psql -d postgres -c "CREATE DATABASE locate_anything;"
+psql -d postgres -c "CREATE DATABASE autolabeling;"
 
 # Config
 cp backend/.env.example backend/.env

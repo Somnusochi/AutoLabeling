@@ -60,7 +60,7 @@ cd ../frontend
 npm install
 
 # 4. 数据库
-psql -d postgres -c "CREATE DATABASE locate_anything;"
+psql -d postgres -c "CREATE DATABASE autolabeling;"
 
 # 5. 配置
 cp backend/.env.example backend/.env
