@@ -117,11 +117,8 @@ locate-anything/
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理 |
 
-## 已知问题
-
-- **MPS 训练不稳定**：macOS 上 YOLO 训练推荐使用 CPU 模式（`DEVICE=cpu`），MPS 存在已知 bug（[ultralytics/ultralytics#24036](https://github.com/ultralytics/ultralytics/issues/24036)）
-- **LocateAnything 仅支持非商用**：NVIDIA License 限制，学术研究可免费使用
-
 ## License
 
-本项目代码 MIT。LocateAnything-3B 模型遵循 [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE)（非商用）。
+本项目代码 MIT。
+
+LocateAnything-3B 模型遵循 [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE)（非商用）。

@@ -8,10 +8,6 @@ import json
 import logging
 import os
 import shutil
-import uuid
-
-# MPS fallback — prevents crashes on unsupported ops
-os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -204,20 +200,13 @@ def run_training(
     # Write initial progress
     progress_file.write_text(json.dumps({"epoch": 0, "total_epochs": epochs, "loss": 0}))
 
-    # MPS training: use known workarounds for macOS stability
-    train_device = settings.device
-    train_kwargs = {}
-    if train_device == "mps":
-        train_kwargs = {"amp": False, "workers": 0}  # MPS known issues
-
     results = model.train(
         data=str(work_dir / "data.yaml"),
         epochs=epochs,
         imgsz=imgsz,
         batch=batch,
-        device=train_device,
+        device=settings.device,
         verbose=False,
-        **train_kwargs,
     )
 
     # 3. Save trained model
