@@ -213,7 +213,9 @@ def run_training(
             data["mAP50_95"] = float(rd.get("metrics/mAP50-95(B)", 0))
         progress_file.write_text(json.dumps(data))
 
-    model = YOLO(f"{model_variant}.pt")
+    pretrained_dir = settings.project_root / "pretrained"
+    pretrained_dir.mkdir(exist_ok=True)
+    model = YOLO(str(pretrained_dir / f"{model_variant}.pt"))
     model.add_callback("on_fit_epoch_end", on_fit_epoch_end)
 
     # Write initial progress

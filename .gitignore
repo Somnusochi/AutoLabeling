@@ -30,3 +30,4 @@ backend/.env
 backend/yolo26n.pt
 *.pt
 backend/data.db
+docs/src/
