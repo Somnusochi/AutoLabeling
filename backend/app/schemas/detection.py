@@ -4,14 +4,16 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
+
+from .common import BaseSchema
 
 
 def _coerce_uuid(v: Any) -> str:
     return str(v) if isinstance(v, uuid.UUID) else v
 
 
-class DetectionBoxOut(BaseModel):
+class DetectionBoxOut(BaseSchema):
     id: str
     class_name: str
     x1: int
@@ -28,7 +30,7 @@ class DetectionBoxOut(BaseModel):
         return _coerce_uuid(v)
 
 
-class DetectionOut(BaseModel):
+class DetectionOut(BaseSchema):
     id: str
     image_name: str
     categories: list[str] = []
@@ -50,10 +52,5 @@ class DetectionOut(BaseModel):
         return _coerce_uuid(v)
 
 
-class DetectionListOut(BaseModel):
-    total: int
-    items: list[DetectionOut]
-
-
-class ExportBatchIn(BaseModel):
+class ExportBatchIn(BaseSchema):
     detection_ids: list[str] = Field(..., min_length=1)

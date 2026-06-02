@@ -8,14 +8,13 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
-from pydantic import BaseModel
 from fastapi.responses import FileResponse
 
 from ...core.config import settings
 from ...core.database import get_db
 from ...core.exceptions import AppError, NotFoundError
-from ...schemas.common import APIResponse
-from ...schemas.detection import DetectionListOut, DetectionOut
+from ...schemas.common import APIResponse, BaseSchema
+from ...schemas.detection import DetectionOut
 from ...services.locate_anything import detect
 from ..deps import get_repo, get_request_id
 
@@ -86,25 +85,23 @@ async def create_detection(
     repo.db.refresh(detection)
 
     return APIResponse(
-        data=DetectionOut.model_validate(detection).model_dump(),
-        meta={"request_id": request_id},
+        data=DetectionOut.model_validate(detection).model_dump(by_alias=True),
     )
 
 
 @router.get("/detections")
 def list_detections(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=100, validation_alias="pageSize"),
     repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
     request_id: str = Depends(get_request_id),
 ) -> APIResponse:
     items, total = repo.list(page=page, page_size=page_size)
     return APIResponse(
-        data=DetectionListOut(
-            total=total,
-            items=[DetectionOut.model_validate(d) for d in items],
-        ).model_dump(),
-        meta={"request_id": request_id, "page": page, "page_size": page_size},
+        data=[DetectionOut.model_validate(d).model_dump(by_alias=True) for d in items],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -118,8 +115,7 @@ def get_detection(
     if not det:
         raise NotFoundError("Detection", detection_id)
     return APIResponse(
-        data=DetectionOut.model_validate(det).model_dump(),
-        meta={"request_id": request_id},
+        data=DetectionOut.model_validate(det).model_dump(by_alias=True),
     )
 
 
@@ -157,7 +153,7 @@ def delete_box(
     db.commit()
 
 
-class AddBoxBody(BaseModel):
+class AddBoxBody(BaseSchema):
     class_name: str
     x1: int
     y1: int
@@ -165,7 +161,7 @@ class AddBoxBody(BaseModel):
     y2: int
 
 
-class UpdateBoxBody(BaseModel):
+class UpdateBoxBody(BaseSchema):
     x1: int
     y1: int
     x2: int
@@ -189,7 +185,7 @@ def add_box(
     return APIResponse(data={"ok": True})
 
 
-class ReplaceBoxesBody(BaseModel):
+class ReplaceBoxesBody(BaseSchema):
     boxes: list[dict]  # [{"x1","y1","x2","y2","class_name"}, ...]
 
 
@@ -207,7 +203,7 @@ def replace_boxes(
     return APIResponse(data={"ok": True, "count": len(body.boxes)})
 
 
-class FilterSettingsBody(BaseModel):
+class FilterSettingsBody(BaseSchema):
     filter_mode: str  # best | nms | all
     filter_nms_iou: float | None = None
 

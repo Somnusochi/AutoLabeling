@@ -4,14 +4,16 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
+
+from .common import BaseSchema
 
 
 def _coerce_uuid(v: Any) -> str:
     return str(v) if isinstance(v, uuid.UUID) else v
 
 
-class TrainRequest(BaseModel):
+class TrainRequest(BaseSchema):
     detection_ids: list[str] = Field(..., min_length=1)
     model_variant: str = Field(default="yolo26n")
     epochs: int = Field(default=100, ge=1, le=1000)
@@ -19,7 +21,7 @@ class TrainRequest(BaseModel):
     batch: int = Field(default=16, ge=1, le=128)
 
 
-class TrainingJobOut(BaseModel):
+class TrainingJobOut(BaseSchema):
     id: str
     model_variant: str
     epochs: int
@@ -40,8 +42,3 @@ class TrainingJobOut(BaseModel):
     @classmethod
     def coerce_id(cls, v: Any) -> str:
         return _coerce_uuid(v)
-
-
-class TrainingJobListOut(BaseModel):
-    total: int
-    items: list[TrainingJobOut]

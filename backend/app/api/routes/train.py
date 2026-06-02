@@ -3,14 +3,14 @@ from __future__ import annotations
 import json
 import threading
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from ...core.database import get_db
 from ...models.train import TrainingDetection, TrainingJob
 from ...schemas.common import APIResponse
-from ...schemas.train import TrainingJobListOut, TrainingJobOut, TrainRequest
+from ...schemas.train import TrainingJobOut, TrainRequest
 from ...services.trainer import YOLO_SERIES, run_training_safe
 from ..deps import get_request_id
 
@@ -58,8 +58,7 @@ def create_training_job(
     thread.start()
 
     return APIResponse(
-        data=TrainingJobOut.model_validate(job).model_dump(),
-        meta={"request_id": request_id},
+        data=TrainingJobOut.model_validate(job).model_dump(by_alias=True),
     )
 
 
@@ -122,8 +121,8 @@ async def stream_progress(job_id: str):
 @router.get("/jobs")
 def list_jobs(
     db: Session = Depends(get_db),
-    page: int = 1,
-    page_size: int = 20,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100, validation_alias="pageSize"),
 ) -> APIResponse:
     q = db.query(TrainingJob)
     total = q.count()
@@ -133,10 +132,12 @@ def list_jobs(
         .limit(page_size)
         .all()
     )
-    return APIResponse(data=TrainingJobListOut(
+    return APIResponse(
+        data=[TrainingJobOut.model_validate(j).model_dump(by_alias=True) for j in items],
         total=total,
-        items=[TrainingJobOut.model_validate(j) for j in items],
-    ).model_dump())
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get("/jobs/{job_id}")
@@ -147,7 +148,7 @@ def get_job(
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job:
         raise HTTPException(404, f"Training job {job_id} not found")
-    return APIResponse(data=TrainingJobOut.model_validate(job).model_dump())
+    return APIResponse(data=TrainingJobOut.model_validate(job).model_dump(by_alias=True))
 
 
 @router.post("/jobs/{job_id}/delete", status_code=204)
