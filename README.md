@@ -119,7 +119,7 @@ locate-anything/
 
 ## 已知问题
 
-- **MPS 训练不稳定**：macOS 上 YOLO 训练推荐使用 CPU 模式（`DEVICE=cpu`），MPS 存在已知 bug（ultralytics #24036）
+- **MPS 训练不稳定**：macOS 上 YOLO 训练推荐使用 CPU 模式（`DEVICE=cpu`），MPS 存在已知 bug（[ultralytics/ultralytics#24036](https://github.com/ultralytics/ultralytics/issues/24036)）
 - **LocateAnything 仅支持非商用**：NVIDIA License 限制，学术研究可免费使用
 
 ## License
