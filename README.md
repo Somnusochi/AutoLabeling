@@ -24,7 +24,7 @@
 - Python 3.12+
 - Node.js 20+
 - PostgreSQL 16+
-- 内存/显存：macOS 24GB 统一内存 / NVIDIA 12GB 显存 / CPU 模式 16GB 内存
+- 内存/显存：macOS 24GB 统一内存 / NVIDIA 10GB 显存 / CPU 模式 16GB 内存
 - 推理：CUDA / MPS / CPU 自动检测（macOS / Windows / Linux）
 
 ### 1. 安装依赖
