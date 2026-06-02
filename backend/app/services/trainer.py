@@ -358,7 +358,7 @@ def run_training_safe(
     val_ratio: float = 0.2,
 ) -> None:
     """Run training in background, updating DB status on completion/failure."""
-    from ...core.database import SessionLocal
+    from ..core.database import SessionLocal
     from ..models.train import TrainingJob
 
     db = SessionLocal()
@@ -381,10 +381,16 @@ def run_training_safe(
         )
     except Exception as exc:
         logger.exception("Training job %s failed", job_id)
-        job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
-        if job:
-            job.status = "failed"
-            job.error_message = str(exc)
-            db.commit()
+        try:
+            job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+            if job:
+                job.status = "failed"
+                job.error_message = str(exc)[:1000]
+                db.commit()
+        except Exception:
+            logger.exception("Failed to update job status")
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass
