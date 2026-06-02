@@ -95,7 +95,7 @@ export function TrainingPanel({ detections }: Props) {
       toast.error("请至少选择一条检测记录");
       return;
     }
-    const p = splitPresets[splitPreset];
+    const p = splitPresets[splitPreset] ?? { train: 0.7, val: 0.2 };
     trainMut.mutate({
       detectionIds: [...selected],
       modelVariant: currentVariant,
