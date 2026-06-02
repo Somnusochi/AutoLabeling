@@ -339,7 +339,14 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
   return (
     <div className="rounded border border-gray-100 p-2 text-xs">
       <div className="flex items-center justify-between">
-        <span className="font-medium">{job.modelVariant}</span>
+        <div>
+          <span className="font-medium">{job.modelVariant}</span>
+          {job.completedAt && (
+            <span className="text-gray-400 ml-2">
+              {new Date(job.completedAt).toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+        </div>
         <StatusBadge status={job.status} />
       </div>
 
