@@ -11,11 +11,13 @@ export interface BBox {
 export interface Detection {
   id: string;
   image_name: string;
-  categories: string;
+  categories: string[];
   model_name: string;
   image_width: number;
   image_height: number;
   elapsed_ms: number | null;
+  filter_mode: string | null;
+  filter_nms_iou: number | null;
   status: string;
   created_at: string;
   boxes: BBox[];
@@ -34,9 +36,10 @@ export interface TrainingJob {
   epochs: number;
   imgsz: number;
   batch: number;
-  detection_ids: string;
+  detection_ids: string[];
+  class_map: Record<string, string> | null;
   status: "pending" | "running" | "completed" | "failed";
-  metrics: string | null;
+  metrics: Record<string, unknown> | null;
   model_path: string | null;
   error_message: string | null;
   created_at: string;
