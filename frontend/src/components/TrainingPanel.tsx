@@ -258,21 +258,34 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
         )
       )}
 
-      {job.status === "completed" && (
+      {(job.status === "completed" || job.status === "failed") && (
         <div className="mt-1 flex gap-3">
-          <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">
-            下载 .pt
-          </a>
+          {job.status === "completed" && (
+            <>
+              <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">下载</a>
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("yolo-validate", {
+                    detail: { jobId: job.id, modelVariant: job.model_variant }
+                  }));
+                }}
+                className="text-green-600 hover:underline font-medium"
+              >
+                验证
+              </button>
+            </>
+          )}
           <button
             onClick={() => {
-              // Notify parent to switch to YOLO validation mode
-              window.dispatchEvent(new CustomEvent("yolo-validate", {
-                detail: { jobId: job.id, modelVariant: job.model_variant }
-              }));
+              if (confirm("确定删除该训练任务吗？此操作不可撤销。")) {
+                fetch(`${API_BASE}/train/jobs/${job.id}/delete`, { method: "POST" })
+                  .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
+                  .catch(() => toast.error("删除失败"));
+              }
             }}
-            className="text-green-600 hover:underline font-medium"
+            className="text-red-400 hover:text-red-600 font-medium"
           >
-            验证
+            删除
           </button>
         </div>
       )}

@@ -34,6 +34,9 @@ export function Home() {
 
   // ── YOLO Validation mode ────────────────────────
   const [validateMode, setValidateMode] = useState<{ jobId: string; modelVariant: string } | null>(null);
+  const [validateConf, setValidateConf] = useState(0.25);
+  const [validateIou, setValidateIou] = useState(0.45);
+  const [validating, setValidating] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -73,14 +76,18 @@ export function Home() {
 
     // YOLO validation mode
     if (validateMode) {
-      const form = new FormData();
-      form.append("file", files[0]);
-      const res = await fetch(`${API_BASE}/train/jobs/${validateMode.jobId}/predict`, {
-        method: "POST", body: form,
-      });
-      const json = await res.json();
-      if (!res.ok) { toast.error(json.error?.message ?? "验证失败"); return; }
-      const data = json.data;
+      setValidating(true);
+      try {
+        const form = new FormData();
+        form.append("file", files[0]);
+        form.append("conf", String(validateConf));
+        form.append("iou", String(validateIou));
+        const res = await fetch(`${API_BASE}/train/jobs/${validateMode.jobId}/predict`, {
+          method: "POST", body: form,
+        });
+        const json = await res.json();
+        if (!res.ok) { toast.error(json.detail ?? "验证失败"); return; }
+        const data = json.data;
       setResult({
         id: `validate-${Date.now()}`,
         image_name: files[0].name,
@@ -100,6 +107,9 @@ export function Home() {
           confidence: b.confidence as number,
         })),
       });
+      } finally {
+        setValidating(false);
+      }
       return;
     }
 
@@ -128,7 +138,7 @@ export function Home() {
         }
       }
     } catch { setBatchProgress({ current: 0, total: 0 }); }
-  }, [files, categories, validateMode]);
+  }, [files, categories, validateMode, validateConf, validateIou]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
@@ -168,7 +178,7 @@ export function Home() {
     if (file) setPreviewUrl(URL.createObjectURL(file));
   }, []);
 
-  const loading = detectMut.isPending || batchProgress.total > 0;
+  const loading = detectMut.isPending || batchProgress.total > 0 || validating;
 
   // ── Render ───────────────────────────────────────
 
@@ -185,8 +195,22 @@ export function Home() {
         </h1>
 
         {validateMode && (
-          <div className="rounded bg-green-50 border border-green-200 p-2 text-xs space-y-1">
+          <div className="rounded bg-green-50 border border-green-200 p-2 text-xs space-y-2">
             <p className="text-green-700 font-medium">模型: {validateMode.modelVariant}</p>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-gray-500">Conf</label>
+                <input type="number" min={0.05} max={1} step={0.05} value={validateConf}
+                  onChange={(e) => setValidateConf(Number(e.target.value))}
+                  className="w-full rounded border border-gray-200 px-1 py-0.5 text-xs" />
+              </div>
+              <div className="flex-1">
+                <label className="text-gray-500">IoU</label>
+                <input type="number" min={0.1} max={1} step={0.05} value={validateIou}
+                  onChange={(e) => setValidateIou(Number(e.target.value))}
+                  className="w-full rounded border border-gray-200 px-1 py-0.5 text-xs" />
+              </div>
+            </div>
             <button
               onClick={() => { setValidateMode(null); setResult(null); }}
               className="text-green-600 hover:underline"

@@ -4,7 +4,7 @@ import json
 import logging
 import threading
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -145,6 +145,22 @@ def get_job(
     return APIResponse(data=TrainingJobOut.model_validate(job).model_dump())
 
 
+@router.post("/jobs/{job_id}/delete", status_code=204)
+def delete_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+) -> None:
+    from pathlib import Path
+
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job:
+        raise HTTPException(404, f"Training job {job_id} not found")
+    if job.model_path:
+        Path(job.model_path).unlink(missing_ok=True)
+    db.delete(job)
+    db.commit()
+
+
 @router.get("/jobs/{job_id}/download")
 def download_model(
     job_id: str,
@@ -165,6 +181,8 @@ async def predict_with_model(
     job_id: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    conf: float = Form(0.25),
+    iou: float = Form(0.45),
 ):
     """Run inference with a trained YOLO model on an uploaded image."""
     import io
@@ -174,6 +192,8 @@ async def predict_with_model(
 
     from PIL import Image
     from ultralytics import YOLO
+
+    from ...core.config import settings
 
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
@@ -195,7 +215,7 @@ async def predict_with_model(
 
     try:
         model = YOLO(model_path)
-        results = model.predict(tmp.name, device=settings.device, verbose=False)
+        results = model.predict(tmp.name, device=settings.device, imgsz=640, conf=conf, iou=iou, verbose=False)
         Path(tmp.name).unlink(missing_ok=True)
     except Exception as exc:
         Path(tmp.name).unlink(missing_ok=True)
