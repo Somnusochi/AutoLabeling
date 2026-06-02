@@ -92,6 +92,17 @@ export async function deleteTrainingJob(id: string): Promise<void> {
 
 // ── Utils ───────────────────────────────────────
 
+export async function saveFilterSettings(
+  detectionId: string,
+  filterMode: string,
+  filterNmsIou: number | null,
+): Promise<void> {
+  await client.put(`/detections/${detectionId}/filter-settings`, {
+    filter_mode: filterMode,
+    filter_nms_iou: filterNmsIou,
+  });
+}
+
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

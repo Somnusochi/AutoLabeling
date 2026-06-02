@@ -1,6 +1,7 @@
 import { DetectionCanvas } from "@/components/DetectionCanvas";
 import { ResultTable } from "@/components/ResultTable";
-import { exportSingleUrl, exportBatch, downloadBlob } from "@/services/api";
+import { exportBatch, downloadBlob } from "@/services/api";
+import { downloadYoloTxt } from "@/lib/yoloExport";
 import { API_BASE } from "@/lib/constants";
 import type { Detection } from "@/types";
 
@@ -10,16 +11,21 @@ interface Props {
   batchResults: Detection[];
   batchFiles: File[];
   loading: boolean;
+  elapsedMs: number;
   categories: string[];
   canvasMode: "view" | "draw";
   drawCategory: string;
   recentCategories: string[];
+  hiddenIndices: Set<string>;
+  onToggleVisibility: (boxId: string) => void;
   onCanvasModeChange: (mode: "view" | "draw") => void;
   onDrawCategoryChange: (cat: string) => void;
-  onDeleteBox: (boxIndex: number) => void;
+  onDeleteBox: (boxId: string) => void;
   onSelectBatch: (det: Detection, file?: File) => void;
   onReDetect: () => void;
+  onSaveBoxes: () => void;
   onDrawBox: (box: { x1: number; y1: number; x2: number; y2: number }) => void;
+  isValidation?: boolean;
 }
 
 export function DetectionResult({
@@ -28,16 +34,21 @@ export function DetectionResult({
   batchResults,
   batchFiles,
   loading,
+  elapsedMs,
   categories,
   canvasMode,
   drawCategory,
   recentCategories,
+  hiddenIndices,
+  onToggleVisibility,
   onCanvasModeChange,
   onDrawCategoryChange,
   onDeleteBox,
   onSelectBatch,
   onReDetect,
+  onSaveBoxes,
   onDrawBox,
+  isValidation = false,
 }: Props) {
   const isHistory = batchFiles.length === 0;
 
@@ -50,6 +61,7 @@ export function DetectionResult({
           imgWidth={result.image_width}
           imgHeight={result.image_height}
           mode={canvasMode}
+          hiddenIndices={hiddenIndices}
           onModeChange={onCanvasModeChange}
           onDrawBox={onDrawBox}
         />
@@ -79,11 +91,12 @@ export function DetectionResult({
           </div>
         )}
         {loading && (
-          <div className="absolute inset-0 bg-white/60 rounded-lg flex items-center justify-center">
+          <div className="absolute inset-0 bg-white/60 rounded-lg flex flex-col items-center justify-center gap-2">
             <svg className="animate-spin h-8 w-8 text-primary-500" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
+            <span className="text-sm font-medium text-gray-500">{(elapsedMs / 1000).toFixed(1)}s</span>
           </div>
         )}
       </div>
@@ -104,6 +117,15 @@ export function DetectionResult({
         </h2>
 
         <div className="flex gap-2">
+          {!isValidation && (
+            <button
+              type="button"
+              onClick={onSaveBoxes}
+              className="rounded border border-green-300 px-3 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+            >
+              保存过滤结果
+            </button>
+          )}
           {isHistory && categories.length > 0 && (
             <button
               type="button"
@@ -114,24 +136,26 @@ export function DetectionResult({
               {loading ? "检测中..." : "重新检测"}
             </button>
           )}
-          <a
-            href={exportSingleUrl(result.id)}
-            download
+          <button
+            type="button"
+            onClick={() => downloadYoloTxt(result.boxes, categories, result.image_width, result.image_height, result.image_name)}
             className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors"
           >
             导出 YOLO (.txt)
-          </a>
-          <button
-            type="button"
-            onClick={async () => {
-              const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
-              const blob = await exportBatch(ids);
-              downloadBlob(blob, "yolo_labels.zip");
-            }}
-            className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
-          >
-            {batchResults.length > 1 ? `导出全部 (${batchResults.length} zip)` : "导出 YOLO (zip)"}
           </button>
+          {!isValidation && (
+            <button
+              type="button"
+              onClick={async () => {
+                const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
+                const blob = await exportBatch(ids);
+                downloadBlob(blob, "yolo_labels.zip");
+              }}
+              className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
+            >
+              {batchResults.length > 1 ? `导出全部 (${batchResults.length} zip)` : "导出 YOLO (zip)"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -155,7 +179,7 @@ export function DetectionResult({
         </div>
       )}
 
-      <ResultTable boxes={result.boxes} onDelete={onDeleteBox} />
+      <ResultTable boxes={result.boxes} hiddenIndices={hiddenIndices} onToggleVisibility={onToggleVisibility} onDelete={onDeleteBox} />
     </div>
   );
 }

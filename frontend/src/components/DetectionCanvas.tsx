@@ -10,12 +10,13 @@ interface Props {
   imgWidth: number;
   imgHeight: number;
   mode: Mode;
+  hiddenIndices: Set<string>;
   onModeChange: (mode: Mode) => void;
   onDrawBox: (box: { x1: number; y1: number; x2: number; y2: number }) => void;
 }
 
 export function DetectionCanvas({
-  imageUrl, boxes, imgWidth, imgHeight, mode, onModeChange, onDrawBox,
+  imageUrl, boxes, imgWidth, imgHeight, mode, hiddenIndices, onModeChange, onDrawBox,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +46,7 @@ export function DetectionCanvas({
 
       // Existing boxes
       boxes.forEach((box, idx) => {
+        if (hiddenIndices.has(box.id)) return;
         drawRect(ctx, box.x1 * scale, box.y1 * scale,
           (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale,
           BOX_COLORS[idx % BOX_COLORS.length], box.class_name);
@@ -59,7 +61,7 @@ export function DetectionCanvas({
         drawRect(ctx, x, y, w, h, "#FF9800", "");
       }
     };
-  }, [imageUrl, boxes, scale, drawing, imgWidth, imgHeight]);
+  }, [imageUrl, boxes, scale, drawing, hiddenIndices, imgWidth, imgHeight]);
 
   useEffect(() => {
     redraw();

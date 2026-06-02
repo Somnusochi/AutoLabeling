@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ImageUploader } from "@/components/ImageUploader";
 import { CategoryInput } from "@/components/CategoryInput";
@@ -10,8 +10,10 @@ import { DetectionSkeleton, HistorySkeleton } from "@/components/LoadingSkeleton
 import { useDetectMutation, useDetectionListQuery } from "@/hooks/useDetection";
 import { useYoloValidation } from "@/hooks/useYoloValidation";
 import { useBatchDetection } from "@/hooks/useBatchDetection";
+import { applyFilter } from "@/lib/filterBoxes";
+import type { FilterMode } from "@/lib/filterBoxes";
 import toast from "react-hot-toast";
-import { addBox, deleteBox } from "@/services/api";
+import { addBox, deleteBox, saveFilterSettings } from "@/services/api";
 import { API_BASE } from "@/lib/constants";
 import { parseCategories } from "@/lib/parsers";
 import type { BBox, Detection } from "@/types";
@@ -38,6 +40,41 @@ export function Home() {
   // ── Manual annotation ────────────────────────────
   const [canvasMode, setCanvasMode] = useState<"view" | "draw">("view");
   const [drawCategory, setDrawCategory] = useState("");
+  const [hiddenIndices, setHiddenIndices] = useState<Set<string>>(new Set());
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
+  const [nmsIou, setNmsIou] = useState(0.5);
+
+  const handleSaveBoxes = useCallback(async () => {
+    if (!result) return;
+    try {
+      await saveFilterSettings(result.id, filterMode, filterMode === "nms" ? nmsIou : null);
+      setResult({ ...result, filter_mode: filterMode, filter_nms_iou: filterMode === "nms" ? nmsIou : null });
+      toast.success("过滤设置已保存");
+    } catch {
+      toast.error("保存失败");
+    }
+  }, [result, filterMode, nmsIou]);
+
+  const toggleBoxVisibility = useCallback((boxId: string) => {
+    setHiddenIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(boxId)) { next.delete(boxId); } else { next.add(boxId); }
+      return next;
+    });
+  }, []);
+
+  // ── Detection timer ───────────────────────────────
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startTimer = useCallback(() => {
+    setElapsedMs(0);
+    timerRef.current = setInterval(() => setElapsedMs((prev) => prev + 100), 100);
+  }, []);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
 
   // ── History ──────────────────────────────────────
   const { data: historyData } = useDetectionListQuery();
@@ -57,23 +94,29 @@ export function Home() {
   const handleDetect = useCallback(async () => {
     if (files.length === 0) return;
 
-    if (validateMode) {
-      const data = await runValidation(files[0]);
-      if (data) {
-        setResult(data);
-        setPreviewUrl(URL.createObjectURL(files[0]));
-      }
-      return;
-    }
+    startTimer();
 
-    if (categories.length === 0) return;
-    await runBatch(files, categories, (data, file, i) => {
-      if (i === files.length - 1) {
-        setResult(data);
-        setPreviewUrl(URL.createObjectURL(file));
+    try {
+      if (validateMode) {
+        const data = await runValidation(files[0]);
+        if (data) {
+          setResult(data);
+          setPreviewUrl(URL.createObjectURL(files[0]));
+        }
+        return;
       }
-    });
-  }, [files, categories, validateMode, runValidation, runBatch]);
+
+      if (categories.length === 0) return;
+      await runBatch(files, categories, (data, file, i) => {
+        if (i === files.length - 1) {
+          setResult(data);
+          setPreviewUrl(URL.createObjectURL(file));
+        }
+      });
+    } finally {
+      stopTimer();
+    }
+  }, [files, categories, validateMode, runValidation, runBatch, startTimer, stopTimer]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
@@ -81,17 +124,23 @@ export function Home() {
     setResult(det);
     setBatchResults([]);
     setCategories(parseCategories(det.categories));
+    if (det.filter_mode) setFilterMode(det.filter_mode as FilterMode);
+    else setFilterMode("all");
+    if (det.filter_nms_iou != null) setNmsIou(det.filter_nms_iou);
+    setHiddenIndices(new Set());
   }, [setBatchResults]);
 
   const handleReDetect = useCallback(async () => {
     if (!result) return;
+    startTimer();
     try {
       const blob = await fetch(`${API_BASE}/detections/${result.id}/image`).then((r) => r.blob());
       const data = await detectMut.mutateAsync({ file: new File([blob], result.image_name, { type: blob.type }), categories });
       setResult(data);
       setFiles([]);
     } catch { /* handled by mutation */ }
-  }, [result, categories, detectMut]);
+    finally { stopTimer(); }
+  }, [result, categories, detectMut, startTimer, stopTimer]);
 
   const handleDrawBox = useCallback(async (raw: { x1: number; y1: number; x2: number; y2: number }) => {
     if (!result || !drawCategory.trim()) { toast.error("请先输入标注类别"); return; }
@@ -104,13 +153,13 @@ export function Home() {
     } catch { /* ignore */ }
   }, [result, drawCategory, setBatchResults]);
 
-  const handleDeleteBox = useCallback(async (boxIndex: number) => {
+  const handleDeleteBox = useCallback(async (boxId: string) => {
     if (!result) return;
-    const box = result.boxes[boxIndex];
+    const box = result.boxes.find((b) => b.id === boxId);
     if (!box) return;
     try {
       await deleteBox(result.id, box.id);
-      const updated = { ...result, boxes: result.boxes.filter((_, i) => i !== boxIndex) };
+      const updated = { ...result, boxes: result.boxes.filter((b) => b.id !== boxId) };
       setResult(updated);
       setBatchResults((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     } catch { /* ignore */ }
@@ -122,6 +171,11 @@ export function Home() {
   }, []);
 
   const loading = detectMut.isPending || batchProgress.total > 0 || validating;
+
+  const displayResult = useMemo(
+    () => result ? { ...result, boxes: applyFilter(filterMode, result.boxes, nmsIou) } : null,
+    [result, filterMode, nmsIou],
+  );
 
   // ── Resizable sidebar ─────────────────────────────
   const [sidebarW, setSidebarW] = useState(288);
@@ -196,6 +250,48 @@ export function Home() {
         <BatchProgress current={batchProgress.current} total={batchProgress.total} completed={batchResults.length}
           onCancel={cancelBatch} />
 
+        {result && (
+          <div>
+            <p className="text-sm font-medium text-gray-600 mb-2">过滤模式</p>
+            <div className="flex gap-1 rounded bg-gray-100 p-1 text-xs">
+              {(["best", "nms", "all"] as FilterMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => { setFilterMode(mode); setHiddenIndices(new Set()); }}
+                  className={`flex-1 rounded px-2 py-1 font-medium transition-colors ${
+                    filterMode === mode ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {{ best: "最优", nms: "去重", all: "全部" }[mode]}
+                </button>
+              ))}
+            </div>
+            {filterMode === "nms" && (
+              <>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-gray-400">IoU</span>
+                  <div className="relative flex-1">
+                    <input
+                      type="range" min={0.1} max={0.9} step={0.05} value={nmsIou}
+                      onChange={(e) => setNmsIou(Number(e.target.value))}
+                      className="w-full h-1.5 rounded-full appearance-none bg-gray-200 cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5
+                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500
+                        [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 w-7 text-right">{nmsIou.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-400 px-0.5">
+                  <span>更少框</span>
+                  <span>更多框</span>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         <hr className="border-gray-100" />
 
         <div>
@@ -226,16 +322,17 @@ export function Home() {
           </div>
         )}
         {loading && !result && <DetectionSkeleton />}
-        {result && previewUrl && (
+        {displayResult && previewUrl && (
           <ErrorBoundary>
             <DetectionResult
-              result={result} previewUrl={previewUrl}
-              batchResults={batchResults} batchFiles={files} loading={loading}
+              result={displayResult} previewUrl={previewUrl}
+              batchResults={batchResults} batchFiles={files} loading={loading} elapsedMs={elapsedMs}
               categories={categories} canvasMode={canvasMode} drawCategory={drawCategory}
-              recentCategories={recentCategories}
+              recentCategories={recentCategories} hiddenIndices={hiddenIndices}
+              onToggleVisibility={toggleBoxVisibility} isValidation={!!validateMode}
               onCanvasModeChange={setCanvasMode} onDrawCategoryChange={setDrawCategory}
               onDeleteBox={handleDeleteBox} onSelectBatch={handleBatchSelect}
-              onReDetect={handleReDetect} onDrawBox={handleDrawBox}
+              onReDetect={handleReDetect} onSaveBoxes={handleSaveBoxes} onDrawBox={handleDrawBox}
             />
           </ErrorBoundary>
         )}

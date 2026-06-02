@@ -51,12 +51,14 @@ export function useYoloValidation() {
         return {
           id: `validate-${Date.now()}`,
           image_name: file.name,
-          categories: "[]",
+          categories: [],
           model_name: validateMode.modelVariant,
           image_width: data.image_width,
           image_height: data.image_height,
           status: "completed",
           elapsed_ms: null,
+          filter_mode: null,
+          filter_nms_iou: null,
           created_at: new Date().toISOString(),
           boxes: data.boxes.map((b: Record<string, unknown>, i: number) => ({
             id: `vb-${i}`,
