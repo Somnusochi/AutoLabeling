@@ -1,6 +1,6 @@
 # AutoLabeling
 
-基于 NVIDIA LocateAnything-3B 视觉大模型 + YOLOv26 的端到端预标注训练系统。
+基于 NVIDIA LocateAnything-3B 视觉大模型 + YOLOv5/v8/v11/v26 的端到端预标注训练系统。
 
 **核心流程**：图片 → VLM 预标注 → 人工修正 → 导出 YOLO 数据集 → 训练 → 验证
 
@@ -11,7 +11,7 @@
 | 层 | 技术 |
 |---|------|
 | 视觉定位 | NVIDIA LocateAnything-3B（Qwen2.5-3B + MoonViT） |
-| 目标检测 | YOLOv26（Ultralytics） |
+| 目标检测 | YOLOv5/v8/v11/v26（Ultralytics） |
 | 后端 | Python FastAPI + PostgreSQL + SSE |
 | 前端 | React + TypeScript + Vite + Tailwind CSS |
 | 状态管理 | TanStack Query |
@@ -102,7 +102,7 @@ locate-anything/
 - **VLM + 手动 协同**：VLM 预标注打底 → 删错框 → 补漏框 → 导出训练
 - **批量处理**：支持文件夹上传，串行批量标注
 - **历史管理**：按标签筛选历史记录，重新检测
-- **YOLO 训练**：选中标注记录，一键训练 YOLOv26，SSE 实时进度
+- **YOLO 训练**：标签筛选 + 缩略图预览，多系列可选（v5/v8/v11/v26），SSE 实时进度
 - **模型验证**：用训练好的 YOLO 模型对图片进行推理验证，支持置信度/IoU 调节
 - **YOLO 导出**：支持单张/批量导出 YOLO 格式标注文件
 
@@ -117,8 +117,10 @@ locate-anything/
 | POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | 删除标注框 |
 | GET | `/api/v1/detections/{id}/export` | 导出 YOLO 标注 |
 | POST | `/api/v1/train/jobs` | 创建训练任务 |
+| GET | `/api/v1/train/variants` | 可用 YOLO 系列列表 |
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理 |
+| POST | `/api/v1/train/jobs/{id}/delete` | 删除训练任务 |
 
 ## License
 
