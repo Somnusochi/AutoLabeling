@@ -58,7 +58,6 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
     form.append("file", videoFile, "video.mp4");
     form.append("conf", String(conf));
     form.append("iou", String(iou));
-    form.append("interval", "1.0");
 
     // Use fetch to POST the video, then read the SSE response
     const resp = await fetch(`${API_BASE}/train/jobs/${jobId}/predict-video-stream`, {
@@ -70,7 +69,7 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buf = "";
-    const totalEstimate = Math.ceil(duration);
+    let totalEstimate = 100;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -99,6 +98,7 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
               confidence: b.confidence as number,
             })),
           };
+          if (data.totalFrames) totalEstimate = Math.ceil(data.totalFrames / (data.fps || 30));
           resultsRef.current.push(fr);
           setProgress({ done: resultsRef.current.length, total: totalEstimate });
         } catch { /* skip malformed */ }

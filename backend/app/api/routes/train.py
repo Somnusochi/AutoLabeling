@@ -297,9 +297,8 @@ async def predict_video_stream(
     db: Session = Depends(get_db),
     conf: float = Form(0.25),
     iou: float = Form(0.45),
-    interval: float = Form(1.0),
 ):
-    """SSE endpoint: process video frames and stream YOLO results in real-time."""
+    """SSE endpoint: process every video frame and stream YOLO results in real-time."""
     import asyncio
     import io
     import json
@@ -312,6 +311,7 @@ async def predict_video_stream(
 
     from ...core.config import settings
     from ...services.trainer import predict_trained_model
+    from ...services.video_service import _ffprobe
 
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
@@ -325,15 +325,17 @@ async def predict_video_stream(
     tmp_video.write(await file.read())
     tmp_video.close()
 
+    meta = _ffprobe(tmp_video.name)
+    fps = meta["fps"]
+    total_frames = meta["total_frames"]
+
     async def event_stream():
-        fps = 30.0
-        frame_step = max(1, int(interval * fps))
         frame_num = 0
 
+        # Pipe every frame as JPEG (no frame skip)
         proc = subprocess.Popen(
             ["ffmpeg", "-y", "-i", tmp_video.name,
-             "-vf", f"select='not(mod(n,{frame_step}))'",
-             "-vsync", "vfr", "-f", "image2pipe", "-vcodec", "mjpeg", "-"],
+             "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "5", "-"],
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         )
         assert proc.stdout is not None
@@ -368,7 +370,7 @@ async def predict_video_stream(
                 iou,
             )
 
-            timestamp = round(frame_num * interval, 3)
+            timestamp = round(frame_num / fps, 3) if fps > 0 else frame_num
             boxes_camel = [{
                 "className": b["class_name"],
                 "confidence": b["confidence"],
@@ -376,7 +378,7 @@ async def predict_video_stream(
                 "x2": b["x2"], "y2": b["y2"],
             } for b in result["boxes"]]
 
-            yield f"data: {json.dumps({'frame': frame_num, 'timestamp': timestamp, 'imageWidth': result['image_width'], 'imageHeight': result['image_height'], 'boxes': boxes_camel})}\n\n"
+            yield f"data: {json.dumps({'frame': frame_num, 'fps': fps, 'totalFrames': total_frames, 'timestamp': timestamp, 'imageWidth': result['image_width'], 'imageHeight': result['image_height'], 'boxes': boxes_camel})}\n\n"
 
             frame_num += 1
             processed += 1
