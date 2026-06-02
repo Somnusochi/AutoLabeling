@@ -1,4 +1,5 @@
 import { Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { Button, Segmented, Slider } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ImageUploader } from "@/components/ImageUploader";
@@ -234,20 +235,18 @@ export function Home() {
         className="flex-shrink-0 border-r border-gray-200 bg-white flex flex-col gap-4 overflow-y-auto relative"
         style={{ width: 420, padding: "1rem" }}
       >
-        {/* Mode tabs */}
-        <div className="flex gap-1 rounded bg-gray-100 p-0.5">
-          {(["annotate", "validate"] as const).map((m) => (
-            <button key={m} onClick={() => { setAppMode(m); setResult(null); setValidateVideoId(null); }}
-              className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                appMode === m ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              }`}>
-              {{ annotate: "标注预训练", validate: "YOLO 验证" }[m]}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          block
+          value={appMode}
+          onChange={(v) => { setAppMode(v as "annotate" | "validate"); setResult(null); setValidateVideoId(null); }}
+          options={[
+            { value: "annotate", label: "标注预训练" },
+            { value: "validate", label: "YOLO 验证" },
+          ]}
+        />
 
         {appMode === "validate" && (
-          <div className="rounded bg-green-50 border border-green-200 p-2 text-xs space-y-2">
+          <div className="space-y-2">
             <ModelSelector
               selectedJobId={selectedTrainedJobId}
               onSelectJob={setSelectedTrainedJobId}
@@ -256,39 +255,31 @@ export function Home() {
               externalFile={externalModelFile}
               onExternalFile={setExternalModelFile}
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2 text-xs">
               <div className="flex-1">
-                <label className="text-gray-500">Conf</label>
-                <input type="number" min={0.05} max={1} step={0.05} value={validateConf}
-                  onChange={(e) => setValidateConf(Number(e.target.value))}
-                  className="w-full rounded border border-gray-200 px-1 py-0.5 text-xs" />
+                <div className="text-gray-500 mb-0.5">Conf</div>
+                <Slider min={0.05} max={1} step={0.05} value={validateConf} onChange={setValidateConf}
+                  tooltip={{ formatter: (v) => v?.toFixed(2) }} />
               </div>
               <div className="flex-1">
-                <label className="text-gray-500">IoU</label>
-                <input type="number" min={0.1} max={1} step={0.05} value={validateIou}
-                  onChange={(e) => setValidateIou(Number(e.target.value))}
-                  className="w-full rounded border border-gray-200 px-1 py-0.5 text-xs" />
+                <div className="text-gray-500 mb-0.5">IoU</div>
+                <Slider min={0.1} max={1} step={0.05} value={validateIou} onChange={setValidateIou}
+                  tooltip={{ formatter: (v) => v?.toFixed(2) }} />
               </div>
             </div>
           </div>
         )}
 
         <div>
-          <div className="flex gap-1 rounded bg-gray-100 p-0.5 mb-2">
-            {(["image", "video"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => { setInputMode(mode); setFiles([]); setPreviewUrl(null); setBatchResults([]); }}
-                className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                  inputMode === mode
-                    ? "bg-white text-primary-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {{ image: "图片", video: "视频" }[mode]}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            block
+            value={inputMode}
+            onChange={(v) => { setInputMode(v as "image" | "video"); setFiles([]); setPreviewUrl(null); setBatchResults([]); }}
+            options={[
+              { value: "image", label: "图片" },
+              { value: "video", label: "视频" },
+            ]}
+          />
           {inputMode === "image" ? (
             <ImageUploader onFiles={handleFiles} disabled={loading} />
           ) : (
@@ -307,19 +298,12 @@ export function Home() {
               <CategoryInput categories={categories} onChange={setCategories} disabled={loading} recentCategories={recentCategories} />
             </div>
 
-            <button
-              type="button"
-              disabled={loading || files.length === 0 || (appMode !== "validate" && categories.length === 0)}
-              onClick={handleDetect}
-              className="w-full rounded bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading
-                ? <span className="inline-flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                    检测中 {batchProgress.total > 1 ? `(${batchProgress.current}/${batchProgress.total})` : "..."}
-                  </span>
+            <Button type="primary" block loading={loading}
+              disabled={files.length === 0 || (appMode !== "validate" && categories.length === 0)}
+              onClick={handleDetect}>
+              {loading ? `检测中 ${batchProgress.total > 1 ? `(${batchProgress.current}/${batchProgress.total})` : "..."}`
                 : appMode === "validate" ? "YOLO 验证" : `开始检测${files.length > 1 ? ` (${files.length} 张)` : ""}`}
-            </button>
+            </Button>
           </>
         )}
 
