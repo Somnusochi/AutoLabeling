@@ -207,10 +207,16 @@ Canvas drawing mode for precise box annotation.
 
 ### Model Validation
 
-- Run inference with trained YOLO model on new images
-- Adjustable Conf / IoU thresholds
-- Visualize detections with confidence scores
-- Validation results are temporary; can export single YOLO `.txt`
+- **Dual Model Source Support**: Run inference using trained YOLO models or manually upload custom external YOLO models (`.pt` files).
+- **Threshold Adjustment**: Fine-tune detection results in real time with adjustable Conf and IoU range sliders.
+- **Batch Image Validation**: Run inference and visualize predictions (with bounding boxes and confidence scores) across multiple uploaded test images.
+- **Real-time Video Validation Stream**:
+  - Frame-by-frame live YOLO inference stream using MJPEG.
+  - Interactive play/pause overlay controls with canvas-based freeze-frame capturing, ensuring smooth visual states without black screen flashes.
+  - Automatic end-of-stream detection with a "Playback Completed, click to replay" blurred overlay.
+  - Dedicated "Replay" footer button to bypass browser caching and restart stream validation.
+  - Smooth fixed 16:9 aspect ratio container (`aspect-video`), completely eliminating container resizing or layout jumps.
+- Validation results are temporary; supports exporting predictions as single-image YOLO `.txt` files.
 
 ## API Reference
 
@@ -258,6 +264,9 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 | POST | `/api/v1/train/jobs/{id}/export-onnx` | Export / download ONNX model |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO model inference |
 | POST | `/api/v1/train/jobs/{id}/delete` | Delete training job |
+| POST | `/api/v1/train/upload-model` | Upload external YOLO model (.pt) to get a Token |
+| POST | `/api/v1/train/validate-image/{token}` | Validate image using external model |
+| GET | `/api/v1/train/validate-mjpeg/{token}/{video_id}` | Validate video using external model (MJPEG live stream) |
 
 ### Response Format
 
