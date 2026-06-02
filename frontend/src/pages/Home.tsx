@@ -269,7 +269,7 @@ export function Home() {
             ))}
           </div>
           {inputMode === "image" ? (
-            <ImageUploader onFiles={handleFiles} disabled={loading} />
+            <ImageUploader onFiles={handleFiles} disabled={loading} acceptVideos={!!validateMode} />
           ) : (
             <VideoPanel onLoadKeyframes={handleSelectKeyframe} disabled={loading} />
           )}

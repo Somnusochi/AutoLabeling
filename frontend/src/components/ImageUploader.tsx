@@ -6,9 +6,11 @@ const JPEG_QUALITY = 0.75;
 interface Props {
   onFiles: (files: File[]) => void;
   disabled?: boolean;
+  acceptVideos?: boolean;
 }
 
 function compressImage(file: File): Promise<File> {
+  if (file.type.startsWith("video/")) return Promise.resolve(file);
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -44,7 +46,7 @@ function compressImage(file: File): Promise<File> {
 }
 
 async function processFiles(fileList: FileList | File[]): Promise<File[]> {
-  const images = Array.from(fileList).filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
+  const images = Array.from(fileList).filter((f) => acceptVideos ? (f.type.startsWith("image/") || f.type.startsWith("video/")) : f.type.startsWith("image/"));
   const results: File[] = [];
   for (const f of images) {
     try {
@@ -56,7 +58,7 @@ async function processFiles(fileList: FileList | File[]): Promise<File[]> {
   return results;
 }
 
-export function ImageUploader({ onFiles, disabled }: Props) {
+export function ImageUploader({ onFiles, disabled, acceptVideos }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
   const [compressing, setCompressing] = useState(false);
@@ -130,7 +132,7 @@ export function ImageUploader({ onFiles, disabled }: Props) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/*,video/*"
+          accept={acceptVideos ? "image/*,video/*" : "image/*"}
           multiple
           className="hidden"
           disabled={disabled}
