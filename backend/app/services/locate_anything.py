@@ -17,7 +17,7 @@ from ..core.exceptions import InferenceError, ModelNotLoadedError
 
 logger = logging.getLogger(__name__)
 
-# Ensure decord stub is importable before loading the processor
+# decord is Linux-only; on macOS we provide a stub
 _decord_loaded = False
 
 
@@ -25,9 +25,10 @@ def _ensure_decord_stub():
     global _decord_loaded
     if _decord_loaded:
         return
-    stub_dir = str(Path(settings.resolved_model_dir) / "stubs")
-    if Path(stub_dir).exists() and stub_dir not in sys.path:
-        sys.path.insert(0, stub_dir)
+    if sys.platform == "darwin":
+        stub_dir = str(Path(settings.resolved_model_dir) / "stubs")
+        if Path(stub_dir).exists() and stub_dir not in sys.path:
+            sys.path.insert(0, stub_dir)
     _decord_loaded = True
 
 
@@ -123,7 +124,7 @@ def _get_worker() -> LocateAnythingWorker:
             if Path(settings.resolved_model_dir).exists()
             else settings.model_id
         )
-        _worker = LocateAnythingWorker(model_path, device=settings.device)
+        _worker = LocateAnythingWorker(model_path, device=settings.resolved_device)
     return _worker
 
 
@@ -198,6 +199,8 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
 def unload_model() -> None:
     global _worker
     _worker = None
-    if torch.backends.mps.is_available():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    elif torch.backends.mps.is_available():
         torch.mps.empty_cache()
     logger.info("Model unloaded")

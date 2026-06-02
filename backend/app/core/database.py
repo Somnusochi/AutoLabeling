@@ -21,7 +21,7 @@ Base = declarative_base()
 
 def init_db() -> None:
     """Create all tables. Called at application startup."""
-    import app.models  # noqa: F401  — ensure models are registered
+    import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables created successfully")

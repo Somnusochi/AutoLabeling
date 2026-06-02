@@ -206,7 +206,7 @@ async def predict_with_model(
         Image.open(io.BytesIO(img_bytes)).save(tmp.name)
 
     try:
-        result = predict_trained_model(job.model_path, tmp.name, device=settings.device, conf=conf, iou=iou)
+        result = predict_trained_model(job.model_path, tmp.name, device=settings.resolved_device, conf=conf, iou=iou)
     except Exception as exc:
         raise HTTPException(500, f"Inference failed: {exc}") from exc
     finally:

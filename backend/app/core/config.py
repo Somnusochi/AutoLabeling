@@ -13,10 +13,21 @@ class Settings(BaseSettings):
         "postgresql+psycopg2://somnusochi:somnusochi@localhost:5432/locate_anything"
     )
 
-    # Model
+    # Model (auto-detect: cuda → mps → cpu)
     model_dir: str = ""
-    device: str = "mps"
+    device: str = ""
     model_id: str = "nvidia/LocateAnything-3B"
+
+    @property
+    def resolved_device(self) -> str:
+        if self.device:
+            return self.device
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+        if torch.backends.mps.is_available():
+            return "mps"
+        return "cpu"
 
     # Server
     host: str = "0.0.0.0"

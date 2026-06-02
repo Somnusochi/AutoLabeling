@@ -224,7 +224,7 @@ def run_training(
         epochs=epochs,
         imgsz=imgsz,
         batch=batch,
-        device=settings.device,
+        device=settings.resolved_device,
         verbose=False,
     )
 
