@@ -31,6 +31,8 @@ export interface TrainingJob {
   epochs: number;
   imgsz: number;
   batch: number;
+  splitRatio: number;
+  taskType: string;
   detectionIds: string[];
   classMap: Record<string, string> | null;
   status: "pending" | "running" | "completed" | "failed";

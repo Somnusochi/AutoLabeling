@@ -20,6 +20,8 @@ class TrainingJob(Base):
     epochs: Mapped[int] = mapped_column(Integer, default=100)
     imgsz: Mapped[int] = mapped_column(Integer, default=640)
     batch: Mapped[int] = mapped_column(Integer, default=16)
+    split_ratio: Mapped[float] = mapped_column(Float, default=0.8)
+    task_type: Mapped[str] = mapped_column(String(16), default="detect")
     class_map: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(
         String(32), default="pending",

@@ -70,46 +70,55 @@ def _build_dataset(
     db: "Session",
     work_dir: Path,
 ) -> tuple[int, dict[str, int]]:
-    """Copy images + write YOLO labels into a dataset directory.
+    """Copy images + write YOLO labels into train/val split.
 
-    Returns (num_samples, class_map).
+    Returns (total_samples, class_map, train_count, val_count).
     """
-    from ..models.detection import Detection
+    import random
 
-    img_dir = work_dir / "images"
-    lbl_dir = work_dir / "labels"
-    img_dir.mkdir(parents=True)
-    lbl_dir.mkdir(parents=True)
+    from ..models.detection import Detection
+    from .yolo_format import _get_filtered_boxes
+
+    random.seed(42)
+
+    for sub in ("images/train", "images/val", "labels/train", "labels/val"):
+        (work_dir / sub).mkdir(parents=True, exist_ok=True)
 
     class_map: dict[str, int] = {}
-    samples: list[tuple["Detection", Path]] = []
-    sample_count = 0
+    detections: list["Detection"] = []
 
     for det_id in detection_ids:
         det = db.query(Detection).filter(Detection.id == det_id).first()
         if not det or det.status != "completed":
             continue
-
-        # Copy image
         src = Path(det.image_path)
         if not src.exists():
             continue
-        dst_img = img_dir / f"{det.id}{src.suffix}"
-        shutil.copy2(src, dst_img)
-
-        # Build class map from filtered boxes
-        from .yolo_format import _get_filtered_boxes
         for box in _get_filtered_boxes(det):
             if box["class_name"] not in class_map:
                 class_map[box["class_name"]] = len(class_map)
+        detections.append(det)
 
-        samples.append((det, lbl_dir / f"{det.id}.txt"))
-        sample_count += 1
+    if not detections:
+        return 0, class_map, 0, 0
 
-    for det, dst_lbl in samples:
-        dst_lbl.write_text(yolo_format.detection_to_yolo(det, class_map))
+    random.shuffle(detections)
+    split_idx = max(1, int(len(detections) * split_ratio))
+    train_dets = detections[:split_idx]
+    val_dets = detections[split_idx:]
 
-    return sample_count, class_map
+    def _write_set(dets: list["Detection"], subset: str) -> int:
+        for det in dets:
+            src = Path(det.image_path)
+            dst_img = work_dir / "images" / subset / f"{det.id}{src.suffix}"
+            shutil.copy2(src, dst_img)
+            dst_lbl = work_dir / "labels" / subset / f"{det.id}.txt"
+            dst_lbl.write_text(yolo_format.detection_to_yolo(det, class_map))
+        return len(dets)
+
+    train_count = _write_set(train_dets, "train")
+    val_count = _write_set(val_dets, "val")
+    return train_count + val_count, class_map, train_count, val_count
 
 
 def _metrics_dict(metrics_obj: object | None) -> dict[str, float]:
@@ -154,8 +163,8 @@ def _write_data_yaml(work_dir: Path, class_map: dict[str, int]) -> Path:
     yaml_path = work_dir / "data.yaml"
     yaml_path.write_text(
         f"path: {work_dir}\n"
-        f"train: images\n"
-        f"val: images\n"
+        f"train: images/train\n"
+        f"val: images/val\n"
         f"nc: {len(names)}\n"
         f"names: {json.dumps(names)}\n"
     )
@@ -171,6 +180,7 @@ def run_training(
     epochs: int = 100,
     imgsz: int = 640,
     batch: int = 16,
+    split_ratio: float = 0.8,
 ) -> str:
     """Run YOLO training synchronously. Returns the path to the trained model.
 
@@ -183,8 +193,10 @@ def run_training(
     models_dir = settings.project_root / "trained_models"
     models_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Build dataset
-    sample_count, class_map = _build_dataset(detection_ids, db, work_dir)
+    # 1. Build dataset with train/val split
+    sample_count, class_map, train_n, val_n = _build_dataset(
+        detection_ids, db, work_dir, split_ratio,
+    )
     if sample_count == 0:
         raise ValueError("No valid training samples found")
     if len(class_map) == 0:
@@ -192,8 +204,8 @@ def run_training(
 
     _write_data_yaml(work_dir, class_map)
     logger.info(
-        "Training dataset built: %d samples, %d classes → %s",
-        sample_count, len(class_map), work_dir,
+        "Training dataset built: %d samples (%d train / %d val), %d classes → %s",
+        sample_count, train_n, val_n, len(class_map), work_dir,
     )
 
     # 2. Train — with progress tracking
@@ -301,6 +313,7 @@ def run_training_safe(
     epochs: int,
     imgsz: int,
     batch: int,
+    split_ratio: float = 0.8,
 ) -> None:
     """Run training in background, updating DB status on completion/failure."""
     from ...core.database import SessionLocal
@@ -321,6 +334,7 @@ def run_training_safe(
             epochs=epochs,
             imgsz=imgsz,
             batch=batch,
+            split_ratio=split_ratio,
         )
     except Exception as exc:
         logger.exception("Training job %s failed", job_id)

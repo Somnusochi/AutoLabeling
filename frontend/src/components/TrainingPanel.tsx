@@ -21,6 +21,8 @@ export function TrainingPanel({ detections }: Props) {
   const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
   const [imgsz, setImgsz] = useState(DEFAULT_IMGSZ);
   const [batch, setBatch] = useState(DEFAULT_BATCH);
+  const [splitRatio, setSplitRatio] = useState(0.8);
+  const [taskType, setTaskType] = useState("detect");
   const qc = useQueryClient();
 
   const variantsQuery = useQuery({
@@ -81,6 +83,8 @@ export function TrainingPanel({ detections }: Props) {
       epochs,
       imgsz,
       batch,
+      splitRatio,
+      taskType,
     });
   };
 
@@ -232,6 +236,29 @@ export function TrainingPanel({ detections }: Props) {
             onChange={(e) => setBatch(Number(e.target.value))}
             className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs"
           />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs text-gray-500">训练/验证 比例 ({(splitRatio * 100).toFixed(0)}% / {((1 - splitRatio) * 100).toFixed(0)}%)</label>
+          <input
+            type="range"
+            min={0.1}
+            max={1.0}
+            step={0.05}
+            value={splitRatio}
+            onChange={(e) => setSplitRatio(Number(e.target.value))}
+            className="w-full h-1 accent-primary-500"
+          />
+          <div className="flex justify-between text-[10px] text-gray-400">
+            <span>纯验证</span>
+            <span>纯训练</span>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">任务类型</label>
+          <select value={taskType} onChange={(e) => setTaskType(e.target.value)}
+            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
+            <option value="detect">目标检测</option>
+          </select>
         </div>
       </div>
 

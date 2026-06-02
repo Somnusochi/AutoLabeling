@@ -19,6 +19,8 @@ class TrainRequest(BaseSchema):
     epochs: int = Field(default=100, ge=1, le=1000)
     imgsz: int = Field(default=640, ge=320, le=1920)
     batch: int = Field(default=16, ge=1, le=128)
+    split_ratio: float = Field(default=0.8, ge=0.1, le=1.0, description="train/val split ratio")
+    task_type: str = Field(default="detect", description="detect | segment | classify")
 
 
 class TrainingJobOut(BaseSchema):
@@ -27,6 +29,8 @@ class TrainingJobOut(BaseSchema):
     epochs: int
     imgsz: int
     batch: int
+    split_ratio: float = 0.8
+    task_type: str = "detect"
     detection_ids: list[str] = []
     class_map: dict | None = None
     status: str

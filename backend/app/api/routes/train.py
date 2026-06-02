@@ -34,6 +34,8 @@ def create_training_job(
         epochs=body.epochs,
         imgsz=body.imgsz,
         batch=body.batch,
+        split_ratio=body.split_ratio,
+        task_type=body.task_type,
         status="pending",
     )
     db.add(job)
@@ -52,7 +54,7 @@ def create_training_job(
     thread = threading.Thread(
         target=run_training_safe,
         args=(str(job.id), body.detection_ids, body.model_variant,
-              body.epochs, body.imgsz, body.batch),
+              body.epochs, body.imgsz, body.batch, body.split_ratio),
         daemon=True,
     )
     thread.start()
