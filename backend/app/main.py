@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="YOLO 自动标注训练平台 API",
+    title="AutoLabeling 预标注训练系统 API",
     version="0.1.0",
     lifespan=lifespan,
 )

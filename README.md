@@ -1,8 +1,8 @@
 # AutoLabeling
 
-基于 NVIDIA LocateAnything-3B 视觉大模型 + YOLOv26 的端到端自动标注训练系统。
+基于 NVIDIA LocateAnything-3B 视觉大模型 + YOLOv26 的端到端预标注训练系统。
 
-**核心流程**：图片 → VLM 自动定位标注 → 人工修正 → 导出 YOLO 数据集 → 训练 → 验证
+**核心流程**：图片 → VLM 预标注 → 人工修正 → 导出 YOLO 数据集 → 训练 → 验证
 
 ![截图](docs/screenshot.jpg)
 

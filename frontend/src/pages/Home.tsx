@@ -190,7 +190,7 @@ export function Home() {
           {validateMode ? (
             <span className="text-green-600">YOLO 验证模式</span>
           ) : (
-            "YOLO 自动标注训练"
+            "预标注训练"
           )}
         </h1>
 
