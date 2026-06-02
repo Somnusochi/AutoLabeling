@@ -4,7 +4,11 @@
 
 **核心流程**：图片 → VLM 预标注 → 人工修正 → 导出 YOLO 数据集 → 训练 → 验证
 
-![截图](docs/screenshot.jpg)
+![VLM预标注](docs/1.png)
+
+![手动标注与训练](docs/2.png)
+
+![模型验证](docs/3.png)
 
 ## 技术栈
 
