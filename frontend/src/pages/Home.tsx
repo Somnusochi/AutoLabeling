@@ -28,6 +28,7 @@ export function Home() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [validateVideoFile, setValidateVideoFile] = useState<File | null>(null);
+  const [validateRunKey, setValidateRunKey] = useState(0);
 
   // ── Detection ────────────────────────────────────
   const queryClient = useQueryClient();
@@ -274,7 +275,7 @@ export function Home() {
           ) : (
             <VideoPanel
               onLoadKeyframes={handleSelectKeyframe}
-              onValidateVideo={validateMode ? (file) => { setValidateVideoFile(file); setFiles([file]); } : undefined}
+              onValidateVideo={validateMode ? (file) => { setValidateVideoFile(file); setValidateRunKey((k) => k + 1); setFiles([file]); } : undefined}
               disabled={loading}
             />
           )}
@@ -366,6 +367,7 @@ export function Home() {
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
         {validateVideoFile && validateMode && (
           <VideoValidator
+            key={validateRunKey}
             videoFile={validateVideoFile}
             jobId={validateMode.jobId}
             conf={validateConf}

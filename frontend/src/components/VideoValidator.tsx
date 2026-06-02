@@ -35,6 +35,11 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
     return () => URL.revokeObjectURL(url);
   }, [videoFile]);
 
+  // Auto-start SSE processing on mount
+  useEffect(() => {
+    startProcessing();
+  }, []);
+
   // SSE: send video → receive frame-by-frame detections
   const startProcessing = async () => {
     if (processing) return;
@@ -188,15 +193,11 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
         <button onClick={togglePlay} className="text-sm font-medium text-gray-700 hover:text-primary-600">
           {playing ? "暂停" : "播放"}
         </button>
-        {processing ? (
+        {processing && (
           <span className="text-xs text-gray-500">推理中... {progress.done} 帧</span>
-        ) : (
-          <button onClick={startProcessing} className="rounded bg-green-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-green-700">
-            {resultsRef.current.length > 0 ? "重新推理" : "开始推理"}
-          </button>
         )}
-        {resultsRef.current.length > 0 && !processing && (
-          <span className="text-xs text-gray-400">已处理 {resultsRef.current.length} 帧</span>
+        {!processing && resultsRef.current.length > 0 && (
+          <span className="text-xs text-gray-400">完成 {resultsRef.current.length} 帧</span>
         )}
       </div>
 
