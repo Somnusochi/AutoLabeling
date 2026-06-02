@@ -41,6 +41,19 @@ export async function deleteBox(detectionId: string, boxId: string): Promise<voi
   await client.post(`/detections/${detectionId}/boxes/${boxId}/delete`);
 }
 
+export async function addBox(
+  detectionId: string,
+  box: { class_name: string; x1: number; y1: number; x2: number; y2: number },
+): Promise<void> {
+  const form = new FormData();
+  form.append("class_name", box.class_name);
+  form.append("x1", String(box.x1));
+  form.append("y1", String(box.y1));
+  form.append("x2", String(box.x2));
+  form.append("y2", String(box.y2));
+  await client.post(`/detections/${detectionId}/boxes`, form);
+}
+
 export function exportSingleUrl(id: string): string {
   return `${API_BASE}/detections/${id}/export`;
 }

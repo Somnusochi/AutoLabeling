@@ -157,6 +157,50 @@ def delete_box(
     db.commit()
 
 
+@router.post("/detections/{detection_id}/boxes", status_code=201)
+def add_box(
+    detection_id: str,
+    class_name: str = Form(...),
+    x1: int = Form(...),
+    y1: int = Form(...),
+    x2: int = Form(...),
+    y2: int = Form(...),
+    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+) -> APIResponse:
+    det = repo.get_by_id(detection_id)
+    if not det:
+        raise NotFoundError("Detection", detection_id)
+    repo.add_boxes(detection_id, [{
+        "class_name": class_name,
+        "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+    }])
+    repo.db.commit()
+    return APIResponse(data={"ok": True})
+
+
+@router.put("/detections/{detection_id}/boxes/{box_id}")
+def update_box(
+    detection_id: str,
+    box_id: str,
+    x1: int = Form(...),
+    y1: int = Form(...),
+    x2: int = Form(...),
+    y2: int = Form(...),
+    db: "Session" = Depends(get_db),  # noqa: F821
+) -> APIResponse:
+    from ...models.detection import DetectionBox
+
+    box = db.query(DetectionBox).filter(
+        DetectionBox.id == box_id,
+        DetectionBox.detection_id == detection_id,
+    ).first()
+    if not box:
+        raise NotFoundError("DetectionBox", box_id)
+    box.x1, box.y1, box.x2, box.y2 = x1, y1, x2, y2
+    db.commit()
+    return APIResponse(data={"ok": True})
+
+
 @router.get("/detections/{detection_id}/image")
 def get_detection_image(
     detection_id: str,

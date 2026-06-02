@@ -12,9 +12,14 @@ interface Props {
   batchFiles: File[];
   loading: boolean;
   categories: string[];
+  canvasMode: "view" | "draw";
+  drawCategory: string;
+  onCanvasModeChange: (mode: "view" | "draw") => void;
+  onDrawCategoryChange: (cat: string) => void;
   onDeleteBox: (boxIndex: number) => void;
   onSelectBatch: (det: Detection, file?: File) => void;
   onReDetect: () => void;
+  onDrawBox: (box: { x1: number; y1: number; x2: number; y2: number }) => void;
 }
 
 export function DetectionResult({
@@ -25,9 +30,14 @@ export function DetectionResult({
   batchFiles,
   loading,
   categories,
+  canvasMode,
+  drawCategory,
+  onCanvasModeChange,
+  onDrawCategoryChange,
   onDeleteBox,
   onSelectBatch,
   onReDetect,
+  onDrawBox,
 }: Props) {
   const isHistory = batchFiles.length === 0;
 
@@ -39,7 +49,22 @@ export function DetectionResult({
           boxes={result.boxes}
           imgWidth={result.image_width}
           imgHeight={result.image_height}
+          mode={canvasMode}
+          onModeChange={onCanvasModeChange}
+          onDrawBox={onDrawBox}
         />
+        {canvasMode === "draw" && (
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={drawCategory}
+              onChange={(e) => onDrawCategoryChange(e.target.value)}
+              placeholder="标注类别..."
+              className="rounded border border-gray-300 px-2 py-1 text-xs w-32"
+            />
+            <span className="text-xs text-gray-400">画框前先输入类别名</span>
+          </div>
+        )}
         {loading && (
           <div className="absolute inset-0 bg-white/60 rounded-lg flex items-center justify-center">
             <svg className="animate-spin h-8 w-8 text-primary-500" viewBox="0 0 24 24">

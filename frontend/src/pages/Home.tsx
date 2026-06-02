@@ -12,9 +12,9 @@ import {
   useDetectionListQuery,
 } from "@/hooks/useDetection";
 import toast from "react-hot-toast";
-import { detectImage, deleteBox } from "@/services/api";
+import { addBox, detectImage, deleteBox } from "@/services/api";
 import { API_BASE } from "@/lib/constants";
-import type { Detection } from "@/types";
+import type { BBox, Detection } from "@/types";
 
 export function Home() {
   // ── Upload & categories ──────────────────────────
@@ -37,6 +37,10 @@ export function Home() {
   const [validateConf, setValidateConf] = useState(0.25);
   const [validateIou, setValidateIou] = useState(0.45);
   const [validating, setValidating] = useState(false);
+
+  // ── Manual annotation ────────────────────────────
+  const [canvasMode, setCanvasMode] = useState<"view" | "draw">("view");
+  const [drawCategory, setDrawCategory] = useState("");
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -160,6 +164,25 @@ export function Home() {
       setElapsedMs(Math.round(performance.now() - t0));
     } catch { /* handled by mutation */ }
   }, [result, categories, detectMut]);
+
+  const handleDrawBox = useCallback(async (raw: { x1: number; y1: number; x2: number; y2: number }) => {
+    if (!result || !drawCategory.trim()) {
+      toast.error("请先输入标注类别");
+      return;
+    }
+    try {
+      await addBox(result.id, { ...raw, class_name: drawCategory.trim() });
+      const newBox: BBox = {
+        id: `manual-${Date.now()}`,
+        class_name: drawCategory.trim(),
+        ...raw,
+        confidence: null,
+      };
+      const updated = { ...result, boxes: [...result.boxes, newBox] };
+      setResult(updated);
+      setBatchResults((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    } catch { /* ignore */ }
+  }, [result, drawCategory]);
 
   const handleDeleteBox = useCallback(async (boxIndex: number) => {
     if (!result) return;
@@ -300,9 +323,14 @@ export function Home() {
               batchFiles={files}
               loading={loading}
               categories={categories}
+              canvasMode={canvasMode}
+              drawCategory={drawCategory}
+              onCanvasModeChange={setCanvasMode}
+              onDrawCategoryChange={setDrawCategory}
               onDeleteBox={handleDeleteBox}
               onSelectBatch={handleSelectBatch}
               onReDetect={handleReDetect}
+              onDrawBox={handleDrawBox}
             />
           </ErrorBoundary>
         )}
