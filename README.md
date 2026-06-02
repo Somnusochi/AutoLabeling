@@ -97,22 +97,25 @@ locate-anything/
 
 ## 功能
 
-- **VLM 自动标注**：上传图片，输入目标描述（如 `fire, smoke`），模型自动检测并绘制边界框
+- **VLM 预标注**：上传图片，输入目标描述（如 `fire, smoke`），模型自动检测并绘制边界框
+- **手动标注**：Canvas 画框模式，自由绘制边界框，类别标签快速填充
+- **VLM + 手动 协同**：VLM 预标注打底 → 删错框 → 补漏框 → 导出训练
 - **批量处理**：支持文件夹上传，串行批量标注
-- **手工修正**：删除错误的检测框，修正类别标签
 - **历史管理**：按标签筛选历史记录，重新检测
 - **YOLO 训练**：选中标注记录，一键训练 YOLOv26，SSE 实时进度
-- **模型验证**：用训练好的 YOLO 模型对图片进行推理验证
+- **模型验证**：用训练好的 YOLO 模型对图片进行推理验证，支持置信度/IoU 调节
 - **YOLO 导出**：支持单张/批量导出 YOLO 格式标注文件
 
 ## API 概览
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/v1/detect` | VLM 检测 |
+| POST | `/api/v1/detect` | VLM 预标注 |
 | GET | `/api/v1/detections` | 历史列表 |
+| POST | `/api/v1/detections/{id}/boxes` | 手动添加标注框 |
+| PUT | `/api/v1/detections/{id}/boxes/{box_id}` | 更新标注框坐标 |
+| POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | 删除标注框 |
 | GET | `/api/v1/detections/{id}/export` | 导出 YOLO 标注 |
-| POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | 删除检测框 |
 | POST | `/api/v1/train/jobs` | 创建训练任务 |
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理 |
