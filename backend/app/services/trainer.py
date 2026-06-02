@@ -307,6 +307,19 @@ def run_training(
     return str(output_path)
 
 
+# Model cache — avoid reloading YOLO for every frame
+_model_cache: dict[str, object] = {}
+
+def _get_model(model_path: str, device: str) -> object:
+    if model_path not in _model_cache:
+        from ultralytics import YOLO
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("Loading YOLO model: %s", model_path)
+        _model_cache[model_path] = YOLO(model_path)
+    return _model_cache[model_path]
+
+
 def predict_trained_model(
     model_path: str,
     image_path: str,
@@ -319,9 +332,7 @@ def predict_trained_model(
 
     Returns: {"image_width", "image_height", "boxes": [{"class_name","confidence","x1","y1","x2","y2"}]}
     """
-    from ultralytics import YOLO
-
-    model = YOLO(model_path)
+    model = _get_model(model_path, device)
     results = model.predict(image_path, device=device, imgsz=640, conf=conf, iou=iou, verbose=False)
 
     boxes_out: list[dict] = []
