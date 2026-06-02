@@ -77,27 +77,39 @@ cp backend/.env.example backend/.env
 ## 项目结构
 
 ```
-locate-anything/
+AutoLabeling/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/       # REST API 路由
-│   │   ├── core/             # 配置、数据库、中间件、日志
-│   │   ├── models/           # SQLAlchemy ORM
-│   │   ├── repositories/     # 数据访问层
-│   │   ├── schemas/          # Pydantic 模型
-│   │   ├── services/         # 模型推理、YOLO 训练、导出
-│   │   └── main.py           # FastAPI 入口
-│   ├── alembic/              # 数据库迁移
+│   │   ├── api/deps.py          # 依赖注入
+│   │   ├── api/routes/          # REST API 路由
+│   │   │   ├── detection.py     # 检测 CRUD、手动标注
+│   │   │   ├── export.py        # YOLO 格式导出
+│   │   │   └── train.py         # 训练任务、SSE 进度、模型验证
+│   │   ├── core/                # 配置、数据库、中间件、日志、异常
+│   │   ├── models/              # SQLAlchemy ORM (Detection, TrainingJob)
+│   │   ├── repositories/        # 数据访问层
+│   │   ├── schemas/             # Pydantic 请求/响应模型
+│   │   ├── services/            # 业务逻辑
+│   │   │   ├── locate_anything.py  # VLM 模型推理
+│   │   │   ├── trainer.py          # YOLO 训练 + 验证
+│   │   │   ├── export.py           # YOLO 标注导出
+│   │   │   └── yolo_format.py      # YOLO 格式转换（共享）
+│   │   └── main.py              # FastAPI 入口
+│   ├── alembic/                 # 数据库迁移
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
-│       ├── components/       # React 组件
-│       ├── pages/            # 页面
-│       ├── hooks/            # TanStack Query hooks
-│       ├── services/         # API 调用层
-│       └── types/            # TypeScript 类型
-├── docker-compose.yml        # Docker 一键部署
-├── start.sh                  # 本地一键启动
+│       ├── components/          # React 组件
+│       ├── pages/Home.tsx       # 主页面
+│       ├── hooks/               # 自定义 hooks
+│       │   ├── useDetection.ts       # 检测查询/变更
+│       │   ├── useBatchDetection.ts  # 批量处理
+│       │   └── useYoloValidation.ts  # YOLO 验证
+│       ├── services/api.ts      # API 调用层 (axios)
+│       ├── lib/                 # 常量 + 解析工具
+│       └── types/               # TypeScript 类型
+├── docker-compose.yml
+├── start.sh / start.bat
 └── README.md
 ```
 
