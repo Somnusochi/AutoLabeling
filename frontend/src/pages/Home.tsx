@@ -27,7 +27,7 @@ export function Home() {
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
-  const [validateVideoFile, setValidateVideoFile] = useState<File | null>(null);
+  const [validateVideoId, setValidateVideoId] = useState<string | null>(null);
   const [validateRunKey, setValidateRunKey] = useState(0);
 
   // ── Detection ────────────────────────────────────
@@ -275,13 +275,13 @@ export function Home() {
           ) : (
             <VideoPanel
               onLoadKeyframes={handleSelectKeyframe}
-              onValidateVideo={validateMode ? (file) => { setValidateVideoFile(file); setValidateRunKey((k) => k + 1); setFiles([file]); } : undefined}
+              onValidateVideo={validateMode ? (videoId) => { setValidateVideoId(videoId); setValidateRunKey((k) => k + 1); } : undefined}
               disabled={loading}
             />
           )}
         </div>
 
-        {!(validateMode && inputMode === "video") && (
+        {!(validateMode && inputMode === "video" && validateVideoId) && (
           <>
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2">目标类别</p>
@@ -306,7 +306,7 @@ export function Home() {
 
         {validateMode && inputMode === "video" && (
           <div className="text-xs text-gray-400 text-center py-2">
-            {validateVideoFile ? '视频推理中，调整上方 Conf/IoU 后重新点击「验证视频」' : '选择一个视频，展开后点击「验证视频」'}
+            {validateVideoId ? '视频推理中，调整上方 Conf/IoU 后重新点击「验证视频」' : '选择一个视频，展开后点击「验证视频」'}
           </div>
         )}
 
@@ -375,17 +375,17 @@ export function Home() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
-        {validateVideoFile && validateMode && (
+        {validateVideoId && validateMode && (
           <VideoValidator
             key={validateRunKey}
-            videoFile={validateVideoFile}
+            videoId={validateVideoId}
             jobId={validateMode.jobId}
             conf={validateConf}
             iou={validateIou}
           />
         )}
 
-        {!validateVideoFile && !result && !loading && (
+        {!validateVideoId && !result && !loading && (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             上传图片/视频并输入目标类别，点击"开始检测"
           </div>

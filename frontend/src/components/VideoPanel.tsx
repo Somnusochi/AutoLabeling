@@ -3,12 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "antd";
 import toast from "react-hot-toast";
 import { uploadVideo, listVideos, extractKeyframes, deleteVideo, keyframeImageUrl } from "@/services/api";
-import { API_BASE } from "@/lib/constants";
 import type { VideoInfo } from "@/types";
 
 interface Props {
   onLoadKeyframes: (files: File[], videoName: string) => void;
-  onValidateVideo?: (file: File) => void;
+  onValidateVideo?: (videoId: string) => void;
   disabled?: boolean;
 }
 
@@ -38,7 +37,6 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
   const [maxFrames, setMaxFrames] = useState(100);
   const [ssimThreshold, setSsimThreshold] = useState(0.95);
   const [selectedFrameIds, setSelectedFrameIds] = useState<Set<string>>(new Set());
-  const fileCache = useRef<Map<string, File>>(new Map());
 
   const { data: videoList } = useQuery({
     queryKey: ["videos"],
@@ -46,11 +44,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
   });
 
   const uploadMut = useMutation({
-    mutationFn: async (file: File) => {
-      const result = await uploadVideo(file);
-      fileCache.current.set(result.id, file);
-      return result;
-    },
+    mutationFn: uploadVideo,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
       toast.success("视频上传成功");
@@ -207,21 +201,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
         isValidation ? (
           <div className="rounded border border-gray-200 p-2.5">
             <button
-              onClick={async () => {
-                let f = fileCache.current.get(selectedVideo.id);
-                if (!f) {
-                  try {
-                    const resp = await fetch(`${API_BASE}/videos/${selectedVideo.id}/file`);
-                    if (resp.ok) {
-                      const blob = await resp.blob();
-                      f = new File([blob], selectedVideo.fileName, { type: "video/mp4" });
-                      fileCache.current.set(selectedVideo.id, f);
-                    }
-                  } catch { /* ignore */ }
-                }
-                if (f) onValidateVideo!(f);
-                else toast.error("视频文件已失效，请重新上传");
-              }}
+              onClick={() => onValidateVideo!(selectedVideo.id)}
               className="w-full rounded bg-green-600 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
             >
               验证视频（实时推理）

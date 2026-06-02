@@ -290,18 +290,17 @@ def download_model(
     )
 
 
-@router.post("/jobs/{job_id}/validate-mjpeg")
+@router.get("/jobs/{job_id}/validate-mjpeg/{video_id}")
 async def validate_mjpeg(
     job_id: str,
-    file: UploadFile = File(...),
+    video_id: str,
     db: Session = Depends(get_db),
-    conf: float = Form(0.25),
-    iou: float = Form(0.45),
+    conf: float = Query(0.25),
+    iou: float = Query(0.45),
 ):
     """MJPEG endpoint: process every video frame, draw boxes, stream as MJPEG."""
     import asyncio
     import subprocess
-    import tempfile
     from pathlib import Path
 
     from starlette.responses import StreamingResponse
@@ -309,6 +308,7 @@ async def validate_mjpeg(
     from ...core.config import settings
     from ...services.trainer import predict_trained_model
     from ...services.video_service import _ffprobe
+    from ...models.video import Video
 
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
@@ -318,16 +318,19 @@ async def validate_mjpeg(
     if not Path(job.model_path).exists():
         raise HTTPException(404, "Model file not found on disk")
 
-    tmp_video = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
-    tmp_video.write(await file.read())
-    tmp_video.close()
+    video = db.query(Video).filter(Video.id == video_id).first()
+    if not video:
+        raise HTTPException(404, "Video not found")
+    if not Path(video.file_path).exists():
+        raise HTTPException(404, "Video file not found on disk")
 
-    meta = _ffprobe(tmp_video.name)
+    video_path = video.file_path
+    meta = _ffprobe(video_path)
     fps = meta["fps"]
 
     async def mjpeg_stream():
         proc = subprocess.Popen(
-            ["ffmpeg", "-y", "-i", tmp_video.name,
+            ["ffmpeg", "-y", "-i", video_path,
              "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "5", "-"],
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         )
@@ -354,7 +357,6 @@ async def validate_mjpeg(
             frame_num += 1
 
         proc.terminate()
-        Path(tmp_video.name).unlink(missing_ok=True)
 
     return StreamingResponse(
         mjpeg_stream(),
