@@ -203,7 +203,7 @@ def run_training(
         """Callback: write progress after each epoch."""
         data = {
             "epoch": trainer.epoch + 1,
-            "total_epochs": trainer.epochs,
+            "totalEpochs": trainer.epochs,
             "loss": float(trainer.loss_items.mean()) if hasattr(trainer, "loss_items") else 0,
         }
         # Extract metrics if available
@@ -220,7 +220,7 @@ def run_training(
     model.add_callback("on_fit_epoch_end", on_fit_epoch_end)
 
     # Write initial progress
-    progress_file.write_text(json.dumps({"epoch": 0, "total_epochs": epochs, "loss": 0}))
+    progress_file.write_text(json.dumps({"epoch": 0, "totalEpochs": epochs, "loss": 0}))
 
     results = model.train(
         data=str(work_dir / "data.yaml"),

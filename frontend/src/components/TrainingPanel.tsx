@@ -263,7 +263,7 @@ export function TrainingPanel({ detections }: Props) {
 function TrainingJobItem({ job }: { job: TrainingJob }) {
   const qc = useQueryClient();
   const [progress, setProgress] = useState<{
-    epoch: number; total_epochs: number; loss: number; mAP50?: number; mAP50_95?: number;
+    epoch: number; totalEpochs: number; loss: number; mAP50?: number; mAP50_95?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -273,7 +273,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
       try {
         const data = JSON.parse(e.data);
         setProgress(data);
-        if (data.epoch >= data.total_epochs && data.total_epochs > 0) {
+        if (data.epoch >= data.totalEpochs && data.totalEpochs > 0) {
           es.close();
           qc.invalidateQueries({ queryKey: ["training-jobs"] });
         }
@@ -293,16 +293,16 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
       </div>
 
       {(job.status === "pending" || job.status === "running") && (
-        progress && progress.total_epochs > 0 ? (
+        progress && progress.totalEpochs > 0 ? (
           <div className="mt-1.5 space-y-1">
             <div className="flex justify-between text-gray-400">
-              <span>Epoch {progress.epoch}/{progress.total_epochs}</span>
-              <span>{Math.round((progress.epoch / progress.total_epochs) * 100)}%</span>
+              <span>Epoch {progress.epoch}/{progress.totalEpochs}</span>
+              <span>{Math.round((progress.epoch / progress.totalEpochs) * 100)}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
               <div
                 className="h-full rounded-full bg-blue-500 transition-all duration-500"
-                style={{ width: `${(progress.epoch / progress.total_epochs) * 100}%` }}
+                style={{ width: `${(progress.epoch / progress.totalEpochs) * 100}%` }}
               />
             </div>
             <div className="flex justify-between text-gray-400">

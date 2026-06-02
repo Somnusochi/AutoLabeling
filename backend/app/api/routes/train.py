@@ -72,7 +72,7 @@ def get_progress(job_id: str) -> APIResponse:
 
     progress_file = settings.project_root / "training_runs" / job_id / "progress.json"
     if not progress_file.exists():
-        return APIResponse(data={"epoch": 0, "total_epochs": 0, "loss": 0})
+        return APIResponse(data={"epoch": 0, "totalEpochs": 0, "loss": 0})
 
     try:
         data = json.loads(progress_file.read_text())
@@ -107,7 +107,7 @@ async def stream_progress(job_id: str):
                     last = current
                     yield f"data: {current}\n\n"
                     data = json.loads(current)
-                    if data.get("epoch", 0) >= data.get("total_epochs", 0) and data["total_epochs"] > 0:
+                    if data.get("epoch", 0) >= data.get("totalEpochs", 0) and data.get("totalEpochs", 0) > 0:
                         yield f"data: {current}\n\n"
                         break
 
