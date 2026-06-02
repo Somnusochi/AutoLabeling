@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Select } from "antd";
+import { Modal, Select } from "antd";
 import type { Detection, TrainingJob } from "@/types";
 import { API_BASE, BOX_COLORS, DEFAULT_BATCH, DEFAULT_EPOCHS, DEFAULT_IMGSZ } from "@/lib/constants";
 import { parseCategories } from "@/lib/parsers";
@@ -12,19 +12,11 @@ function chartUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/charts/results.png`;
 }
 
+function downloadOnnxUrl(jobId: string): string {
+  return `${API_BASE}/train/jobs/${jobId}/export-onnx`;
+}
 function downloadDatasetUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/dataset`;
-}
-async function exportOnnx(jobId: string): Promise<void> {
-  const resp = await fetch(`${API_BASE}/train/jobs/${jobId}/export-onnx`, { method: "POST" });
-  if (!resp.ok) throw new Error("Export failed");
-  const blob = await resp.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "model.onnx";
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 // ── Component ───────────────────────────────────────
@@ -320,6 +312,7 @@ export function TrainingPanel({ detections }: Props) {
 
 function TrainingJobItem({ job }: { job: TrainingJob }) {
   const qc = useQueryClient();
+  const [chartOpen, setChartOpen] = useState(false);
   const [progress, setProgress] = useState<{
     epoch: number; totalEpochs: number; loss: number; mAP50?: number; mAP50_95?: number;
   } | null>(null);
@@ -397,24 +390,12 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
             </div>
           )}
-          {job.status === "completed" && (
-            <div className="mt-2 rounded overflow-hidden border border-gray-200">
-              <img src={chartUrl(job.id)} alt="训练曲线" className="w-full"
-                onError={(e) => { (e.target as HTMLElement).style.display = "none"; }} />
-            </div>
-          )}
           <div className="mt-1.5 flex gap-3">
             {job.status === "completed" && (
               <>
                 <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">模型</a>
                 <a href={downloadDatasetUrl(job.id)} download className="text-primary-600 hover:underline font-medium">数据集</a>
-                <button
-                  onClick={async () => {
-                    try { await exportOnnx(job.id); toast.success("ONNX 导出成功"); }
-                    catch { toast.error("ONNX 导出失败"); }
-                  }}
-                  className="text-primary-600 hover:underline font-medium"
-                >ONNX</button>
+                <a href={downloadOnnxUrl(job.id)} className="text-primary-600 hover:underline font-medium">ONNX</a>
                 <button
                   onClick={() => {
                     window.dispatchEvent(new CustomEvent("yolo-validate", {
@@ -425,6 +406,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
                 >
                   验证
                 </button>
+                <button onClick={() => setChartOpen(true)} className="text-gray-500 hover:text-gray-700 font-medium">详情</button>
               </>
             )}
             <button
@@ -440,6 +422,9 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               删除
             </button>
           </div>
+          <Modal open={chartOpen} onCancel={() => setChartOpen(false)} footer={null} width={800} title="训练曲线">
+            <img src={chartUrl(job.id)} alt="训练曲线" className="w-full" />
+          </Modal>
         </>
       )}
 

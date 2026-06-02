@@ -38,6 +38,7 @@ class TrainingJobOut(BaseSchema):
     status: str
     metrics: dict | None = None
     model_path: str | None = None
+    onnx_path: str | None = None
     error_message: str | None = None
     created_at: datetime
     completed_at: datetime | None = None

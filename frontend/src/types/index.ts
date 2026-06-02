@@ -39,6 +39,7 @@ export interface TrainingJob {
   status: "pending" | "running" | "completed" | "failed";
   metrics: Record<string, unknown> | null;
   modelPath: string | null;
+  onnxPath: string | null;
   errorMessage: string | null;
   createdAt: string;
   completedAt: string | null;

@@ -229,7 +229,7 @@ def export_onnx(
     job_id: str,
     db: Session = Depends(get_db),
 ):
-    """Export trained PT model to ONNX format."""
+    """Download pre-converted ONNX model, or convert on demand."""
     from pathlib import Path
 
     from ...core.config import settings
@@ -241,6 +241,15 @@ def export_onnx(
     if job.status != "completed":
         raise HTTPException(400, "Training not completed")
 
+    # Use pre-converted file if available
+    if job.onnx_path and Path(job.onnx_path).exists():
+        return FileResponse(
+            job.onnx_path,
+            media_type="application/octet-stream",
+            filename=f"{job.model_variant}_finetuned.onnx",
+        )
+
+    # Convert on demand
     pt_path = Path(job.model_path)
     if not pt_path.exists():
         raise HTTPException(404, "Model file not found on disk")
@@ -248,9 +257,12 @@ def export_onnx(
     try:
         model = YOLO(str(pt_path))
         export_path = model.export(format="onnx", imgsz=640, half=False)
-        onnx_path = str(export_path) if isinstance(export_path, str) else str(pt_path.with_suffix(".onnx"))
+        onnx = str(export_path) if isinstance(export_path, str) else str(pt_path.with_suffix(".onnx"))
+        # Cache path for future requests
+        job.onnx_path = onnx
+        db.commit()
         return FileResponse(
-            onnx_path,
+            onnx,
             media_type="application/octet-stream",
             filename=f"{job.model_variant}_finetuned.onnx",
         )

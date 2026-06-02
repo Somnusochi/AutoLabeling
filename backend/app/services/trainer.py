@@ -268,6 +268,18 @@ def run_training(
     for chart in run_dir.glob("*.png"):
         shutil.copy2(chart, work_dir / chart.name)
 
+    # 4. Export ONNX
+    onnx_path = models_dir / f"{job_id}.onnx"
+    try:
+        model.export(format="onnx", imgsz=imgsz, half=False)
+        # Ultralytics saves onnx next to the pt file
+        onnx_src = run_dir / "weights" / "best.onnx"
+        if onnx_src.exists():
+            shutil.copy2(onnx_src, onnx_path)
+            logger.info("ONNX exported: %s", onnx_path)
+    except Exception:
+        logger.warning("ONNX export failed, continuing", exc_info=True)
+
     # 4. Collect metrics
     metrics = _training_metrics(results, sample_count, class_map)
 
@@ -280,6 +292,7 @@ def run_training(
         job.metrics = metrics
         job.class_map = class_map
         job.model_path = str(output_path)
+        job.onnx_path = str(onnx_path) if onnx_path.exists() else None
         job.completed_at = datetime.now(timezone.utc)
         db.commit()
 

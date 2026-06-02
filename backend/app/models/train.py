@@ -29,6 +29,7 @@ class TrainingJob(Base):
     )
     metrics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     model_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    onnx_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
