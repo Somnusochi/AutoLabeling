@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 class TrainRequest(BaseModel):
     detection_ids: list[str] = Field(..., min_length=1)
-    model_variant: str = Field(default="yolo26n")
+    model_variant: str = Field(default="yolo26n")  # yolo26n, yolo11s, yolov8m, yolov5n, etc.
     epochs: int = Field(default=100, ge=1, le=1000)
     imgsz: int = Field(default=640, ge=320, le=1920)
     batch: int = Field(default=16, ge=1, le=128)

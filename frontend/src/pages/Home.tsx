@@ -325,6 +325,7 @@ export function Home() {
               categories={categories}
               canvasMode={canvasMode}
               drawCategory={drawCategory}
+              recentCategories={recentCategories}
               onCanvasModeChange={setCanvasMode}
               onDrawCategoryChange={setDrawCategory}
               onDeleteBox={handleDeleteBox}

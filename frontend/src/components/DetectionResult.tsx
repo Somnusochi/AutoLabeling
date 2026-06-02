@@ -14,6 +14,7 @@ interface Props {
   categories: string[];
   canvasMode: "view" | "draw";
   drawCategory: string;
+  recentCategories: string[];
   onCanvasModeChange: (mode: "view" | "draw") => void;
   onDrawCategoryChange: (cat: string) => void;
   onDeleteBox: (boxIndex: number) => void;
@@ -32,6 +33,7 @@ export function DetectionResult({
   categories,
   canvasMode,
   drawCategory,
+  recentCategories,
   onCanvasModeChange,
   onDrawCategoryChange,
   onDeleteBox,
@@ -62,7 +64,20 @@ export function DetectionResult({
               placeholder="标注类别..."
               className="rounded border border-gray-300 px-2 py-1 text-xs w-32"
             />
-            <span className="text-xs text-gray-400">画框前先输入类别名</span>
+            {recentCategories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => onDrawCategoryChange(c)}
+                className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                  drawCategory === c
+                    ? "bg-primary-500 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
           </div>
         )}
         {loading && (

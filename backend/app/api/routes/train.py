@@ -12,7 +12,7 @@ from ...core.database import get_db
 from ...models.train import TrainingJob
 from ...schemas.common import APIResponse
 from ...schemas.train import TrainingJobListOut, TrainingJobOut, TrainRequest
-from ...services.trainer import run_training, YOLO_VARIANTS
+from ...services.trainer import YOLO_SERIES, run_training
 from ..deps import get_request_id
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/v1/train", tags=["train"])
 @router.get("/variants")
 def list_variants() -> APIResponse:
     """Return available YOLO model variants."""
-    return APIResponse(data=YOLO_VARIANTS)
+    return APIResponse(data=YOLO_SERIES)
 
 
 @router.post("/jobs", status_code=201)

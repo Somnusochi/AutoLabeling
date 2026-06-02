@@ -20,12 +20,47 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-YOLO_VARIANTS = {
-    "yolo26n": "YOLOv26 Nano (fastest, lowest accuracy)",
-    "yolo26s": "YOLOv26 Small",
-    "yolo26m": "YOLOv26 Medium",
-    "yolo26l": "YOLOv26 Large",
-    "yolo26x": "YOLOv26 XLarge (slowest, highest accuracy)",
+YOLO_SERIES = {
+    "yolo26": {
+        "label": "YOLOv26 (2026, latest)",
+        "variants": {
+            "yolo26n": "Nano (fastest)",
+            "yolo26s": "Small",
+            "yolo26m": "Medium",
+            "yolo26l": "Large",
+            "yolo26x": "XLarge (most accurate)",
+        },
+    },
+    "yolo11": {
+        "label": "YOLOv11 (2024, stable)",
+        "variants": {
+            "yolo11n": "Nano",
+            "yolo11s": "Small",
+            "yolo11m": "Medium",
+            "yolo11l": "Large",
+            "yolo11x": "XLarge",
+        },
+    },
+    "yolov8": {
+        "label": "YOLOv8 (2023, classic)",
+        "variants": {
+            "yolov8n": "Nano",
+            "yolov8s": "Small",
+            "yolov8m": "Medium",
+            "yolov8l": "Large",
+            "yolov8x": "XLarge",
+        },
+    },
+    "yolov5": {
+        "label": "YOLOv5 (legacy)",
+        "variants": {
+            "yolov5n": "Nano",
+            "yolov5s": "Small",
+            "yolov5m": "Medium",
+            "yolov5l": "Large",
+            "yolov5x": "XLarge",
+        },
+    },
 }
 
 

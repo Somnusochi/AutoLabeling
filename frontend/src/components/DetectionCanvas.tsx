@@ -23,7 +23,9 @@ export function DetectionCanvas({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scale = 1; // Always 1:1 for pixel-accurate drawing
+  const MAX_W = 700;
+  const MAX_H = 500;
+  const scale = Math.min(MAX_W / imgWidth, MAX_H / imgHeight, 1);
   const [drawing, setDrawing] = useState<{
     startX: number; startY: number; currentX: number; currentY: number;
   } | null>(null);

@@ -41,11 +41,33 @@ interface Props {
 
 export function TrainingPanel({ detections }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [series, setSeries] = useState("yolo26");
   const [variant, setVariant] = useState("yolo26n");
   const [epochs, setEpochs] = useState(100);
   const [imgsz, setImgsz] = useState(640);
   const [batch, setBatch] = useState(16);
   const qc = useQueryClient();
+
+  const variantsQuery = useQuery({
+    queryKey: ["yolo-variants"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/train/variants`);
+      const json = await res.json();
+      return json.data as Record<string, { label: string; variants: Record<string, string> }>;
+    },
+    staleTime: Infinity,
+  });
+
+  const seriesOptions = variantsQuery.data ?? {};
+  const variantOptions = seriesOptions[series]?.variants ?? {};
+
+  // Reset variant when series changes
+  useEffect(() => {
+    const variants = Object.keys(variantOptions);
+    if (variants.length > 0 && !(variant in variantOptions)) {
+      setVariant(variants[0]);
+    }
+  }, [series]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const jobsQuery = useQuery({
     queryKey: ["training-jobs"],
@@ -132,17 +154,21 @@ export function TrainingPanel({ detections }: Props) {
       {/* Training params */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-xs text-gray-500">模型</label>
-          <select
-            value={variant}
-            onChange={(e) => setVariant(e.target.value)}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs"
-          >
-            <option value="yolo26n">YOLOv26 Nano</option>
-            <option value="yolo26s">YOLOv26 Small</option>
-            <option value="yolo26m">YOLOv26 Medium</option>
-            <option value="yolo26l">YOLOv26 Large</option>
-            <option value="yolo26x">YOLOv26 XLarge</option>
+          <label className="text-xs text-gray-500">系列</label>
+          <select value={series} onChange={(e) => setSeries(e.target.value)}
+            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
+            {Object.entries(seriesOptions).map(([key, s]) => (
+              <option key={key} value={key}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">规格</label>
+          <select value={variant} onChange={(e) => setVariant(e.target.value)}
+            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
+            {Object.entries(variantOptions).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
           </select>
         </div>
         <div>
