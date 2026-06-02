@@ -209,10 +209,16 @@ Canvas 画框模式，自由绘制边界框。
 
 ### 模型验证
 
-- 用训练好的 YOLO 模型推理新图片
-- Conf / IoU 可调节
-- 可预览标注框效果，置信度一目了然
-- 验证结果是临时结果，可直接导出单图 YOLO `.txt`
+- **双模型源支持**：支持使用训练出的 YOLO 模型，或手动上传本地外部 YOLO 模型（`.pt` 文件）进行推理验证
+- **Conf / IoU 调节**：支持置信度阈值 (Conf) 与重叠阈值 (IoU) 滑块实时微调框过滤效果
+- **图片多图批量验证**：支持对选中的多张测试图片进行批处理验证，置信度及边界框一目了然
+- **视频实时流推理验证**：
+  - 基于 MJPEG 的帧级 YOLO 实时推理流（逐帧自动检测并渲染覆盖层）
+  - 支持点击视频画面暂停/恢复播放，暂停时通过 Canvas 保持当前帧的毛玻璃效果状态，无闪烁
+  - 视频播放完毕自动呈现“播放完成，点击重播”毛玻璃覆盖层
+  - 底栏右侧提供“重新播放”按钮，防浏览器缓存一键重新拉流推理验证
+  - 容器固定 16:9 比例自适应（aspect-video），消除所有加载和切换时的画面尺寸收缩与抖动
+- 验证结果是临时结果，可直接导出单图 YOLO `.txt` 标注文件
 
 ## API 概览
 
@@ -260,6 +266,9 @@ Canvas 画框模式，自由绘制边界框。
 | POST | `/api/v1/train/jobs/{id}/export-onnx` | 导出 / 下载 ONNX 模型 |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理验证 |
 | POST | `/api/v1/train/jobs/{id}/delete` | 删除训练任务 |
+| POST | `/api/v1/train/upload-model` | 上传外部本地 YOLO 模型 (.pt) 并获取 Token |
+| POST | `/api/v1/train/validate-image/{token}` | 使用外部模型验证图片 |
+| GET | `/api/v1/train/validate-mjpeg/{token}/{video_id}` | 使用外部模型验证视频（MJPEG 实时流） |
 
 ### 响应格式
 
