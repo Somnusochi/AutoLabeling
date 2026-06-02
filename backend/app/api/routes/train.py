@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
@@ -146,7 +147,7 @@ def list_jobs(
 
 @router.get("/jobs/{job_id}")
 def get_job(
-    job_id: str,
+    job_id: UUID,
     db: Session = Depends(get_db),
 ) -> APIResponse:
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
@@ -157,7 +158,7 @@ def get_job(
 
 @router.post("/jobs/{job_id}/delete", status_code=204)
 def delete_job(
-    job_id: str,
+    job_id: UUID,
     db: Session = Depends(get_db),
 ) -> None:
     from pathlib import Path
@@ -173,7 +174,7 @@ def delete_job(
 
 @router.get("/jobs/{job_id}/dataset")
 def download_dataset(
-    job_id: str,
+    job_id: UUID,
     db: Session = Depends(get_db),
 ):
     """Download the training dataset (images + labels + data.yaml) as a zip."""
@@ -209,7 +210,7 @@ def download_dataset(
 
 @router.get("/jobs/{job_id}/charts/{chart_name}", response_class=FileResponse)
 def get_chart(
-    job_id: str,
+    job_id: UUID,
     chart_name: str,
     db: Session = Depends(get_db),
 ):
@@ -232,7 +233,7 @@ def get_chart(
 
 @router.post("/jobs/{job_id}/export-onnx")
 def export_onnx(
-    job_id: str,
+    job_id: UUID,
     db: Session = Depends(get_db),
 ):
     """Download pre-converted ONNX model, or convert on demand."""
@@ -278,7 +279,7 @@ def export_onnx(
 
 @router.get("/jobs/{job_id}/download")
 def download_model(
-    job_id: str,
+    job_id: UUID,
     db: Session = Depends(get_db),
 ):
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
@@ -315,10 +316,58 @@ async def upload_external_model(file: UploadFile = File(...)):
     return APIResponse(data={"token": token, "fileName": file.filename})
 
 
+@router.post("/validate-image/{token}")
+async def predict_external_model(
+    token: str,
+    file: UploadFile = File(...),
+    conf: float = Form(0.25),
+    iou: float = Form(0.45),
+):
+    """Run inference with an uploaded external YOLO model (via token) on an image."""
+    import io
+    import tempfile
+    from pathlib import Path
+    from PIL import Image
+
+    from ...core.config import settings
+    from ...services.trainer import predict_trained_model
+
+    model_path = _token_path(token)
+    if not model_path.exists():
+        raise HTTPException(404, "Model token not found or expired")
+
+    img_bytes = await file.read()
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+        Image.open(io.BytesIO(img_bytes)).save(tmp.name)
+
+    try:
+        result = predict_trained_model(str(model_path), tmp.name, device=settings.resolved_device, conf=conf, iou=iou)
+    except Exception as exc:
+        raise HTTPException(500, f"Inference failed: {exc}") from exc
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
+
+    boxes_camel = [
+        {
+            "className": b["class_name"],
+            "confidence": b["confidence"],
+            "x1": b["x1"], "y1": b["y1"],
+            "x2": b["x2"], "y2": b["y2"],
+        }
+        for b in result["boxes"]
+    ]
+    return APIResponse(data={
+        "imageWidth": result["image_width"],
+        "imageHeight": result["image_height"],
+        "boxes": boxes_camel,
+    })
+
+
+
 @router.get("/validate-mjpeg/{token}/{video_id}")
 async def validate_mjpeg_external(
     token: str,
-    video_id: str,
+    video_id: UUID,
     conf: float = Query(0.25),
     iou: float = Query(0.45),
 ):
@@ -365,13 +414,15 @@ async def validate_mjpeg_external(
             buf += chunk
             end = buf.find(b"\xff\xd9")
             if end == -1: continue
-            jpg = buf[:end + 1]; buf = buf[end + 1:]
+            jpg = buf[:end + 2]; buf = buf[end + 2:]
             annotated = await asyncio.get_event_loop().run_in_executor(None, _draw_frame, model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps)
             if annotated:
                 yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
                 await asyncio.sleep(0)
             frame_num += 1
         proc.terminate()
+        # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
+        yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
 
     return StreamingResponse(mjpeg_stream(), media_type="multipart/x-mixed-replace; boundary=frame",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -379,8 +430,8 @@ async def validate_mjpeg_external(
 
 @router.get("/jobs/{job_id}/validate-mjpeg/{video_id}")
 async def validate_mjpeg(
-    job_id: str,
-    video_id: str,
+    job_id: UUID,
+    video_id: UUID,
     db: Session = Depends(get_db),
     conf: float = Query(0.25),
     iou: float = Query(0.45),
@@ -444,6 +495,8 @@ async def validate_mjpeg(
             frame_num += 1
 
         proc.terminate()
+        # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
+        yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
 
     return StreamingResponse(
         mjpeg_stream(),
@@ -490,7 +543,7 @@ def _draw_frame(model_path: str, jpg: bytes, device: str, conf: float, iou: floa
 
 @router.post("/jobs/{job_id}/predict-video-stream")
 async def predict_video_stream(
-    job_id: str,
+    job_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     conf: float = Form(0.25),
@@ -614,7 +667,7 @@ def _predict_frame(model_path: str, jpg_data: bytes, device: str, conf: float, i
 
 @router.post("/jobs/{job_id}/predict-video")
 def predict_video(
-    job_id: str,
+    job_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     conf: float = Form(0.25),
@@ -710,7 +763,7 @@ def predict_video(
 
 @router.post("/jobs/{job_id}/retrain")
 def retrain_job(
-    job_id: str,
+    job_id: UUID,
     db: Session = Depends(get_db),
 ):
     """Re-run training with the same detection_ids and settings."""
@@ -755,7 +808,7 @@ def retrain_job(
 
 @router.post("/jobs/{job_id}/predict")
 async def predict_with_model(
-    job_id: str,
+    job_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     conf: float = Form(0.25),
