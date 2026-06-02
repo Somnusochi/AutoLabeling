@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Radio, Select, Upload, Button } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { Select } from "antd";
 import { fetchTrainingJobs } from "@/services/api";
 
 interface Props {
@@ -22,11 +21,18 @@ export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourc
 
   return (
     <div className="space-y-2">
-      <Radio.Group value={modelSource} onChange={(e) => onSourceChange(e.target.value)} size="small"
-        optionType="button" buttonStyle="solid" block>
-        <Radio.Button value="trained">已训练模型</Radio.Button>
-        <Radio.Button value="upload">上传模型</Radio.Button>
-      </Radio.Group>
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input type="radio" checked={modelSource === "trained"}
+            onChange={() => onSourceChange("trained")} className="h-3 w-3" />
+          <span className="text-gray-600">已训练模型</span>
+        </label>
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input type="radio" checked={modelSource === "upload"}
+            onChange={() => onSourceChange("upload")} className="h-3 w-3" />
+          <span className="text-gray-600">上传模型</span>
+        </label>
+      </div>
 
       {modelSource === "trained" && (
         <Select
@@ -43,12 +49,11 @@ export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourc
       )}
 
       {modelSource === "upload" && (
-        <Upload accept=".pt" maxCount={1} showUploadList={false}
-          beforeUpload={(f) => { onExternalFile(f); return false; }}>
-          <Button size="small" icon={<UploadOutlined />} block>
-            {externalFile ? externalFile.name : "选择 .pt 文件"}
-          </Button>
-        </Upload>
+        <div>
+          <input type="file" accept=".pt" className="text-[10px]"
+            onChange={(e) => onExternalFile(e.target.files?.[0] ?? null)} />
+          {externalFile && <div className="text-green-700 text-[10px] mt-0.5">{externalFile.name}</div>}
+        </div>
       )}
     </div>
   );
