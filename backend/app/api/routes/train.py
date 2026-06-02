@@ -290,24 +290,27 @@ def download_model(
     )
 
 
-# Temp storage for uploaded external models
-_external_models: dict[str, str] = {}
+# Persistent storage for uploaded external models
+import shutil as _shutil
+_external_models_dir = Path(__file__).resolve().parent.parent.parent.parent / "external_models"
+_external_models_dir.mkdir(exist_ok=True)
+
+def _token_path(token: str) -> Path:
+    return _external_models_dir / f"{token}.pt"
 
 @router.post("/upload-model")
 async def upload_external_model(file: UploadFile = File(...)):
     """Upload an external YOLO .pt model, return a token for MJPEG validation."""
     import uuid
-    import tempfile
 
     if not file.filename or not file.filename.endswith(".pt"):
         raise HTTPException(400, "Only .pt files are accepted")
 
-    model_tmp = tempfile.NamedTemporaryFile(suffix=".pt", delete=False)
-    model_tmp.write(await file.read())
-    model_tmp.close()
-
     token = uuid.uuid4().hex
-    _external_models[token] = model_tmp.name
+    dst = _token_path(token)
+    content = await file.read()
+    dst.write_bytes(content)
+
     return APIResponse(data={"token": token, "fileName": file.filename})
 
 
@@ -330,9 +333,10 @@ async def validate_mjpeg_external(
     from ...models.video import Video
     from ...services.video_service import _ffprobe
 
-    model_path = _external_models.get(token)
-    if not model_path:
+    model_path = _token_path(token)
+    if not model_path.exists():
         raise HTTPException(404, "Model token not found or expired")
+    model_path = str(model_path)
 
     db = SessionLocal()
     try:
