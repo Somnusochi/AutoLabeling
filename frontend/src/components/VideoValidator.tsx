@@ -40,6 +40,9 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
     if (processing) return;
     setProcessing(true);
     resultsRef.current = [];
+    currentBoxesRef.current = [];
+    setProgress({ done: 0, total: 0 });
+    drawBoxes([]);
 
     const form = new FormData();
     form.append("file", videoFile, "video.mp4");
@@ -185,16 +188,15 @@ export function VideoValidator({ videoFile, jobId, conf, iou }: Props) {
         <button onClick={togglePlay} className="text-sm font-medium text-gray-700 hover:text-primary-600">
           {playing ? "暂停" : "播放"}
         </button>
-        {!processing && resultsRef.current.length === 0 && (
+        {processing ? (
+          <span className="text-xs text-gray-500">推理中... {progress.done} 帧</span>
+        ) : (
           <button onClick={startProcessing} className="rounded bg-green-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-green-700">
-            开始推理
+            {resultsRef.current.length > 0 ? "重新推理" : "开始推理"}
           </button>
         )}
-        {processing && (
-          <span className="text-xs text-gray-500">推理中... {progress.done} 帧</span>
-        )}
-        {!processing && resultsRef.current.length > 0 && (
-          <span className="text-xs text-gray-400">已处理 {resultsRef.current.length} 帧，播放自动同步</span>
+        {resultsRef.current.length > 0 && !processing && (
+          <span className="text-xs text-gray-400">已处理 {resultsRef.current.length} 帧</span>
         )}
       </div>
 
