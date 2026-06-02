@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useDeleteDetectionMutation } from "@/hooks/useDetection";
 import { exportSingleUrl } from "@/services/api";
+import { API_BASE } from "@/lib/constants";
 import type { Detection } from "@/types";
 
 interface Props {
@@ -137,10 +138,17 @@ export function HistoryList({ data, onSelect }: Props) {
               onClick={() => onSelect(det)}
               className="rounded border border-gray-100 p-2 hover:bg-gray-50 cursor-pointer transition-colors"
             >
-              <p className="text-xs font-medium text-gray-700 truncate">{det.image_name}</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {new Date(det.created_at).toLocaleString("zh-CN")}
-              </p>
+              <div className="flex gap-2">
+                <img
+                  src={`${API_BASE}/detections/${det.id}/image`}
+                  alt="" loading="lazy"
+                  className="h-12 w-12 rounded object-cover flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-700 truncate">{det.image_name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {new Date(det.created_at).toLocaleString("zh-CN")}
+                  </p>
               <div className="flex flex-wrap gap-1 mt-0.5">
                 {(() => {
                   try {
@@ -164,6 +172,8 @@ export function HistoryList({ data, onSelect }: Props) {
                 >
                   删除
                 </button>
+              </div>
+                </div>
               </div>
             </div>
           ))}
