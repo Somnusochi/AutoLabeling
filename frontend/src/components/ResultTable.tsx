@@ -32,7 +32,7 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
           {boxes.map((box, i) => (
             <tr key={box.id} className="border-t border-gray-100 hover:bg-gray-50">
               <td className="px-4 py-2 text-gray-400">{i + 1}</td>
-              <td className="px-4 py-2 font-medium text-gray-800">{box.class_name}</td>
+              <td className="px-4 py-2 font-medium text-gray-800">{box.className}</td>
               <td className="px-4 py-2 text-gray-600">{box.x1}</td>
               <td className="px-4 py-2 text-gray-600">{box.y1}</td>
               <td className="px-4 py-2 text-gray-600">{box.x2}</td>

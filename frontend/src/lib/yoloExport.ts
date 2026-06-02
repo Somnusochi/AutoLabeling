@@ -5,7 +5,7 @@ export function generateYoloTxt(boxes: BBox[], categories: string[], imgW: numbe
   const lines: string[] = [];
 
   for (const box of boxes) {
-    const cid = catId.get(box.class_name);
+    const cid = catId.get(box.className);
     if (cid === undefined) continue;
     const cx = ((box.x1 + box.x2) / 2) / imgW;
     const cy = ((box.y1 + box.y2) / 2) / imgH;

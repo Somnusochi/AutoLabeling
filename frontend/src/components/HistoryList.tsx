@@ -144,9 +144,9 @@ export function HistoryList({ data, onSelect }: Props) {
                   className="h-12 w-12 rounded object-cover flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-700 truncate">{det.image_name}</p>
+                  <p className="text-xs font-medium text-gray-700 truncate">{det.imageName}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(det.created_at).toLocaleString("zh-CN")}
+                    {new Date(det.createdAt).toLocaleString("zh-CN")}
                   </p>
               <div className="flex flex-wrap gap-1 mt-0.5">
                 {parseCategories(det.categories).map((c) => (

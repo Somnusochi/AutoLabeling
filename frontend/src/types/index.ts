@@ -1,6 +1,6 @@
 export interface BBox {
   id: string;
-  class_name: string;
+  className: string;
   x1: number;
   y1: number;
   x2: number;
@@ -10,38 +10,67 @@ export interface BBox {
 
 export interface Detection {
   id: string;
-  image_name: string;
+  imageName: string;
   categories: string[];
-  model_name: string;
-  image_width: number;
-  image_height: number;
-  elapsed_ms: number | null;
-  filter_mode: string | null;
-  filter_nms_iou: number | null;
+  modelName: string;
+  imageWidth: number;
+  imageHeight: number;
+  elapsedMs: number | null;
+  filterMode: string | null;
+  filterNmsIou: number | null;
   status: string;
-  created_at: string;
+  createdAt: string;
   boxes: BBox[];
-}
-
-export interface DetectionList {
-  total: number;
-  items: Detection[];
 }
 
 export type DetectResponse = Detection;
 
 export interface TrainingJob {
   id: string;
-  model_variant: string;
+  modelVariant: string;
   epochs: number;
   imgsz: number;
   batch: number;
-  detection_ids: string[];
-  class_map: Record<string, string> | null;
+  detectionIds: string[];
+  classMap: Record<string, string> | null;
   status: "pending" | "running" | "completed" | "failed";
   metrics: Record<string, unknown> | null;
-  model_path: string | null;
-  error_message: string | null;
-  created_at: string;
-  completed_at: string | null;
+  modelPath: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface KeyFrame {
+  id: string;
+  videoId: string;
+  frameNumber: number;
+  timestampSeconds: number;
+  sceneScore: number | null;
+  createdAt: string;
+}
+
+export interface VideoInfo {
+  id: string;
+  fileName: string;
+  duration: number | null;
+  fps: number | null;
+  totalFrames: number | null;
+  width: number | null;
+  height: number | null;
+  status: string;
+  createdAt: string;
+  keyframes: KeyFrame[];
+}
+
+export interface VideoList {
+  total: number;
+  items: VideoInfo[];
+}
+
+export interface ListResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 }

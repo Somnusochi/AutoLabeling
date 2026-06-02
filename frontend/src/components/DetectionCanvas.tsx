@@ -49,7 +49,7 @@ export function DetectionCanvas({
         if (hiddenIndices.has(box.id)) return;
         drawRect(ctx, box.x1 * scale, box.y1 * scale,
           (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale,
-          BOX_COLORS[idx % BOX_COLORS.length], box.class_name);
+          BOX_COLORS[idx % BOX_COLORS.length], box.className);
       });
 
       // Drawing preview

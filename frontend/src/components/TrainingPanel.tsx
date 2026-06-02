@@ -76,8 +76,8 @@ export function TrainingPanel({ detections }: Props) {
       return;
     }
     trainMut.mutate({
-      detection_ids: [...selected],
-      model_variant: currentVariant,
+      detectionIds: [...selected],
+      modelVariant: currentVariant,
       epochs,
       imgsz,
       batch,
@@ -174,7 +174,7 @@ export function TrainingPanel({ detections }: Props) {
             />
             <img src={`${API_BASE}/detections/${det.id}/image`} alt=""
               className="h-8 w-8 rounded object-cover flex-shrink-0" />
-            <span className="truncate flex-1">{det.image_name}</span>
+            <span className="truncate flex-1">{det.imageName}</span>
             <span className="text-gray-400 flex-shrink-0">{det.boxes.length} 目标</span>
             <div className="preview-pop hidden"
               onMouseEnter={(e) => (e.currentTarget as HTMLElement).classList.remove("hidden")}
@@ -288,7 +288,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
   return (
     <div className="rounded border border-gray-100 p-2 text-xs">
       <div className="flex items-center justify-between">
-        <span className="font-medium">{job.model_variant}</span>
+        <span className="font-medium">{job.modelVariant}</span>
         <StatusBadge status={job.status} />
       </div>
 
@@ -322,39 +322,57 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
       )}
 
       {(job.status === "completed" || job.status === "failed") && (
-        <div className="mt-1 flex gap-3">
-          {job.status === "completed" && (
-            <>
-              <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">下载</a>
-              <button
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent("yolo-validate", {
-                    detail: { jobId: job.id, modelVariant: job.model_variant }
-                  }));
-                }}
-                className="text-green-600 hover:underline font-medium"
-              >
-                验证
-              </button>
-            </>
+        <>
+          {job.status === "completed" && job.metrics && (
+            <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5 text-[11px]">
+              <span className="text-gray-400">mAP50</span>
+              <span className="text-gray-400">mAP50-95</span>
+              <span className="text-gray-400">Precision</span>
+              <span className="font-medium">{(job.metrics.mAP50 as number)?.toFixed(3) ?? "-"}</span>
+              <span className="font-medium">{(job.metrics["mAP50-95"] as number)?.toFixed(3) ?? "-"}</span>
+              <span className="font-medium">{(job.metrics.precision as number)?.toFixed(3) ?? "-"}</span>
+              <span className="text-gray-400">Recall</span>
+              <span className="text-gray-400">样本</span>
+              <span className="text-gray-400">类别</span>
+              <span className="font-medium">{(job.metrics.recall as number)?.toFixed(3) ?? "-"}</span>
+              <span className="font-medium">{String(job.metrics.num_samples ?? "-")}</span>
+              <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
+            </div>
           )}
-          <button
-            onClick={() => {
-              if (confirm("确定删除该训练任务吗？此操作不可撤销。")) {
-                deleteTrainingJob(job.id)
-                  .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
-                  .catch(() => toast.error("删除失败"));
-              }
-            }}
-            className="text-red-400 hover:text-red-600 font-medium"
-          >
-            删除
-          </button>
-        </div>
+          <div className="mt-1.5 flex gap-3">
+            {job.status === "completed" && (
+              <>
+                <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">下载</a>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("yolo-validate", {
+                      detail: { jobId: job.id, modelVariant: job.modelVariant }
+                    }));
+                  }}
+                  className="text-green-600 hover:underline font-medium"
+                >
+                  验证
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => {
+                if (confirm("确定删除该训练任务吗？此操作不可撤销。")) {
+                  deleteTrainingJob(job.id)
+                    .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
+                    .catch(() => toast.error("删除失败"));
+                }
+              }}
+              className="text-red-400 hover:text-red-600 font-medium"
+            >
+              删除
+            </button>
+          </div>
+        </>
       )}
 
-      {job.status === "failed" && job.error_message && (
-        <p className="mt-1 text-red-500">{job.error_message}</p>
+      {job.status === "failed" && job.errorMessage && (
+        <p className="mt-1 text-red-500">{job.errorMessage}</p>
       )}
     </div>
   );
@@ -362,12 +380,12 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
 
 function TrainingPreview({ detection }: { detection: Detection }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Build class_name → color map at component level (used by both canvas and chips)
+  // Build className → color map at component level (used by both canvas and chips)
   const colorMap = useMemo(() => {
     const map = new Map<string, string>();
     detection.boxes.forEach((box) => {
-      if (!map.has(box.class_name)) {
-        map.set(box.class_name, BOX_COLORS[map.size % BOX_COLORS.length]);
+      if (!map.has(box.className)) {
+        map.set(box.className, BOX_COLORS[map.size % BOX_COLORS.length]);
       }
     });
     return map;
@@ -388,16 +406,16 @@ function TrainingPreview({ detection }: { detection: Detection }) {
       detection.boxes.forEach((box) => {
         const x = box.x1 * scale, y = box.y1 * scale;
         const w = (box.x2 - box.x1) * scale, h = (box.y2 - box.y1) * scale;
-        const color = colorMap.get(box.class_name)!;
+        const color = colorMap.get(box.className)!;
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(x, y, w, h);
         ctx.font = "10px system-ui";
-        const tw = ctx.measureText(box.class_name).width + 4;
+        const tw = ctx.measureText(box.className).width + 4;
         ctx.fillStyle = color;
         ctx.fillRect(x, y - 14, tw, 14);
         ctx.fillStyle = "#fff";
-        ctx.fillText(box.class_name, x + 2, y - 4);
+        ctx.fillText(box.className, x + 2, y - 4);
       });
     };
   }, [colorMap, detection]);
@@ -406,12 +424,12 @@ function TrainingPreview({ detection }: { detection: Detection }) {
     <div className="w-[min(520px,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-3 shadow-xl">
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-gray-700">{detection.image_name}</p>
+          <p className="truncate text-xs font-semibold text-gray-700">{detection.imageName}</p>
           <p className="mt-0.5 text-[11px] text-gray-400">{detection.boxes.length} 个目标</p>
         </div>
         {(() => {
           const cats = new Set<string>();
-          detection.boxes.forEach((b) => cats.add(b.class_name));
+          detection.boxes.forEach((b) => cats.add(b.className));
           parseCategories(detection.categories).forEach((c) => cats.add(c));
           if (cats.size === 0) return null;
           return (

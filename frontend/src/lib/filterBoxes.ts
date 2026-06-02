@@ -31,8 +31,8 @@ export function applyFilter(mode: FilterMode, boxes: BBox[], iouThreshold: numbe
     case "best": {
       const seen = new Set<string>();
       return boxes.filter((b) => {
-        if (seen.has(b.class_name)) return false;
-        seen.add(b.class_name);
+        if (seen.has(b.className)) return false;
+        seen.add(b.className);
         return true;
       });
     }

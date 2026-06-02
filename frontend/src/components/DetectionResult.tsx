@@ -50,16 +50,14 @@ export function DetectionResult({
   onDrawBox,
   isValidation = false,
 }: Props) {
-  const isHistory = batchFiles.length === 0;
-
   return (
     <div className="space-y-4">
       <div className="relative">
         <DetectionCanvas
           imageUrl={previewUrl}
           boxes={result.boxes}
-          imgWidth={result.image_width}
-          imgHeight={result.image_height}
+          imgWidth={result.imageWidth}
+          imgHeight={result.imageHeight}
           mode={canvasMode}
           hiddenIndices={hiddenIndices}
           onModeChange={onCanvasModeChange}
@@ -104,14 +102,14 @@ export function DetectionResult({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-gray-700">
           检测结果 ({result.boxes.length} 个目标)
-          {result.elapsed_ms != null && result.elapsed_ms > 0 && (
+          {result.elapsedMs != null && result.elapsedMs > 0 && (
             <span className="ml-2 text-gray-400 font-normal">
-              耗时 {result.elapsed_ms >= 1000 ? `${(result.elapsed_ms / 1000).toFixed(1)}s` : `${result.elapsed_ms}ms`}
+              耗时 {result.elapsedMs >= 1000 ? `${(result.elapsedMs / 1000).toFixed(1)}s` : `${result.elapsedMs}ms`}
             </span>
           )}
           {batchResults.length > 1 && (
             <span className="ml-2 text-gray-400 font-normal">
-              — {result.image_name} ({batchResults.indexOf(result) + 1}/{batchResults.length})
+              — {result.imageName} ({batchResults.indexOf(result) + 1}/{batchResults.length})
             </span>
           )}
         </h2>
@@ -126,7 +124,7 @@ export function DetectionResult({
               保存过滤结果
             </button>
           )}
-          {isHistory && categories.length > 0 && (
+          {!isValidation && categories.length > 0 && (
             <button
               type="button"
               disabled={loading}
@@ -138,7 +136,7 @@ export function DetectionResult({
           )}
           <button
             type="button"
-            onClick={() => downloadYoloTxt(result.boxes, categories, result.image_width, result.image_height, result.image_name)}
+            onClick={() => downloadYoloTxt(result.boxes, categories, result.imageWidth, result.imageHeight, result.imageName)}
             className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors"
           >
             导出 YOLO (.txt)
@@ -171,7 +169,7 @@ export function DetectionResult({
             >
               <img
                 src={`${API_BASE}/detections/${res.id}/image`}
-                alt={res.image_name}
+                alt={res.imageName}
                 className="h-14 w-14 rounded object-cover"
               />
             </button>

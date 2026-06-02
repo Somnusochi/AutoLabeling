@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Detection, DetectionList, DetectResponse, TrainingJob } from "@/types";
+import type { Detection, DetectResponse, TrainingJob, VideoInfo, ListResponse } from "@/types";
 import { API_BASE } from "@/lib/constants";
 
 const client = axios.create({
@@ -21,11 +21,11 @@ export async function detectImage(
 export async function listDetections(
   page = 1,
   pageSize = 20,
-): Promise<DetectionList> {
-  const { data } = await client.get<{ data: DetectionList }>("/detections", {
-    params: { page, page_size: pageSize },
+): Promise<{ items: Detection[]; total: number }> {
+  const { data } = await client.get<ListResponse<Detection>>("/detections", {
+    params: { page, pageSize },
   });
-  return data.data;
+  return { items: data.data, total: data.total };
 }
 
 export async function getDetection(id: string): Promise<Detection> {
@@ -43,7 +43,7 @@ export async function deleteBox(detectionId: string, boxId: string): Promise<voi
 
 export async function addBox(
   detectionId: string,
-  box: { class_name: string; x1: number; y1: number; x2: number; y2: number },
+  box: { className: string; x1: number; y1: number; x2: number; y2: number },
 ): Promise<void> {
   await client.post(`/detections/${detectionId}/boxes`, box);
 }
@@ -55,7 +55,7 @@ export function exportSingleUrl(id: string): string {
 export async function exportBatch(ids: string[]): Promise<Blob> {
   const { data } = await client.post(
     "/detections/export-batch",
-    { detection_ids: ids },
+    { detectionIds: ids },
     { responseType: "blob" },
   );
   return data;
@@ -71,8 +71,8 @@ export async function fetchYoloSeries(): Promise<YoloSeries> {
 }
 
 export async function startTraining(params: {
-  detection_ids: string[];
-  model_variant: string;
+  detectionIds: string[];
+  modelVariant: string;
   epochs: number;
   imgsz: number;
   batch: number;
@@ -82,8 +82,8 @@ export async function startTraining(params: {
 }
 
 export async function fetchTrainingJobs(): Promise<TrainingJob[]> {
-  const { data } = await client.get<{ data: { items: TrainingJob[] } }>("/train/jobs");
-  return data.data?.items ?? [];
+  const { data } = await client.get<ListResponse<TrainingJob>>("/train/jobs");
+  return data.data ?? [];
 }
 
 export async function deleteTrainingJob(id: string): Promise<void> {
@@ -98,8 +98,8 @@ export async function saveFilterSettings(
   filterNmsIou: number | null,
 ): Promise<void> {
   await client.put(`/detections/${detectionId}/filter-settings`, {
-    filter_mode: filterMode,
-    filter_nms_iou: filterNmsIou,
+    filterMode,
+    filterNmsIou,
   });
 }
 
@@ -110,4 +110,44 @@ export function downloadBlob(blob: Blob, filename: string): void {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ── Video ───────────────────────────────────────
+
+export async function uploadVideo(file: File): Promise<VideoInfo> {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await client.post<{ data: VideoInfo }>("/videos/upload", form);
+  return data.data;
+}
+
+export async function listVideos(page = 1, pageSize = 20): Promise<{ items: VideoInfo[]; total: number }> {
+  const { data } = await client.get<ListResponse<VideoInfo>>("/videos", {
+    params: { page, pageSize },
+  });
+  return { items: data.data, total: data.total };
+}
+
+export async function getVideo(id: string): Promise<VideoInfo> {
+  const { data } = await client.get<{ data: VideoInfo }>(`/videos/${id}`);
+  return data.data;
+}
+
+export async function extractKeyframes(
+  videoId: string,
+  params: { method: string; threshold?: number; intervalSeconds?: number; maxFrames?: number; ssimThreshold?: number },
+): Promise<VideoInfo> {
+  const { data } = await client.post<{ data: VideoInfo }>(
+    `/videos/${videoId}/extract-keyframes`,
+    params,
+  );
+  return data.data;
+}
+
+export async function deleteVideo(id: string): Promise<void> {
+  await client.post(`/videos/${id}/delete`);
+}
+
+export function keyframeImageUrl(videoId: string, keyframeId: string): string {
+  return `${API_BASE}/videos/${videoId}/keyframes/${keyframeId}/image`;
 }
