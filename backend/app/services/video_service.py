@@ -217,14 +217,16 @@ def _ffmpeg_interval(filepath: str, output_dir: Path, interval: float, max_frame
 
 
 def _ssim(a: np.ndarray, b: np.ndarray) -> float:
+    a_f = a.astype(np.float32)
+    b_f = b.astype(np.float32)
     C1 = (0.01 * 255) ** 2
     C2 = (0.03 * 255) ** 2
-    mu_a = cv2.GaussianBlur(a, (11, 11), 1.5)
-    mu_b = cv2.GaussianBlur(b, (11, 11), 1.5)
+    mu_a = cv2.GaussianBlur(a_f, (11, 11), 1.5)
+    mu_b = cv2.GaussianBlur(b_f, (11, 11), 1.5)
     mu_a2, mu_b2, mu_ab = mu_a ** 2, mu_b ** 2, mu_a * mu_b
-    sigma_a2 = cv2.GaussianBlur(a ** 2, (11, 11), 1.5) - mu_a2
-    sigma_b2 = cv2.GaussianBlur(b ** 2, (11, 11), 1.5) - mu_b2
-    sigma_ab = cv2.GaussianBlur(a * b, (11, 11), 1.5) - mu_ab
+    sigma_a2 = cv2.GaussianBlur(a_f ** 2, (11, 11), 1.5) - mu_a2
+    sigma_b2 = cv2.GaussianBlur(b_f ** 2, (11, 11), 1.5) - mu_b2
+    sigma_ab = cv2.GaussianBlur(a_f * b_f, (11, 11), 1.5) - mu_ab
     num = (2 * mu_ab + C1) * (2 * sigma_ab + C2)
     den = (mu_a2 + mu_b2 + C1) * (sigma_a2 + sigma_b2 + C2)
     return float(np.mean(num / (den + 1e-8)))
@@ -245,13 +247,14 @@ def _deduplicate(frames: list[dict], ssim_threshold: float) -> list[dict]:
         curr = cv2.imread(fd["image_path"], cv2.IMREAD_GRAYSCALE)
         if curr is None:
             kept.append(fd)
+            last_img = None
             continue
-        sim = _ssim(cv2.resize(last_img, target_size), cv2.resize(curr, target_size))
+        sim = _ssim(cv2.resize(last_img, target_size), cv2.resize(curr, target_size)) if last_img is not None else 0.0
         if sim < ssim_threshold:
             kept.append(fd)
-            last_img = curr
         else:
             Path(fd["image_path"]).unlink(missing_ok=True)
+        last_img = curr
 
     removed = len(frames) - len(kept)
     if removed:
