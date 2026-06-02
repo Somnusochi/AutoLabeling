@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import type { Detection, TrainingJob } from "@/types";
@@ -114,39 +114,79 @@ export function TrainingPanel({ detections }: Props) {
     });
   };
 
+  // Tag filter for training candidates
+  const trainCategories = useMemo(() => {
+    const count = new Map<string, number>();
+    detections.forEach((d) => {
+      try { (JSON.parse(d.categories) as string[]).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1)); } catch {}
+    });
+    return [...count.entries()].sort((a, b) => b[1] - a[1]);
+  }, [detections]);
+  const [trainFilter, setTrainFilter] = useState<Set<string>>(new Set());
+  const filteredDetections = useMemo(() => {
+    if (trainFilter.size === 0) return detections;
+    return detections.filter((d) => {
+      try { return (JSON.parse(d.categories) as string[]).some((c) => trainFilter.has(c)); } catch { return false; }
+    });
+  }, [detections, trainFilter]);
+
   const selectedCount = selected.size;
 
   return (
     <div className="space-y-3">
+      {/* Tag filter */}
+      {trainCategories.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {trainCategories.map(([name, count]) => (
+            <button key={name} type="button"
+              onClick={() => setTrainFilter((prev) => {
+                const next = new Set(prev);
+                next.has(name) ? next.delete(name) : next.add(name);
+                return next;
+              })}
+              className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                trainFilter.has(name) ? "bg-primary-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {name} ({count})
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Selection summary */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          已选 {selectedCount} / {detections.length} 条
+          已选 {selectedCount}{trainFilter.size > 0 ? ` / ${filteredDetections.length}` : ""} / {detections.length} 条
         </span>
-        <button
-          type="button"
-          onClick={selectAll}
-          className="text-xs text-primary-600 hover:underline"
-        >
+        <button type="button" onClick={selectAll}
+          className="text-xs text-primary-600 hover:underline">
           {selectedCount === detections.length ? "取消全选" : "全选"}
         </button>
       </div>
 
-      {/* Detection checklist */}
-      <div className="max-h-40 overflow-y-auto space-y-0.5 rounded border border-gray-100 p-2">
-        {detections.map((det) => (
+      {/* Detection checklist with thumbnails */}
+      <div className="max-h-44 overflow-y-auto space-y-0.5 rounded border border-gray-100 p-2">
+        {filteredDetections.map((det) => (
           <label
             key={det.id}
-            className="flex items-center gap-2 text-xs py-0.5 cursor-pointer hover:bg-gray-50 rounded px-1"
+            className="group flex items-center gap-2 text-xs py-0.5 cursor-pointer hover:bg-gray-50 rounded px-1 relative"
           >
             <input
               type="checkbox"
               checked={selected.has(det.id)}
               onChange={() => toggleSelect(det.id)}
-              className="h-3.5 w-3.5 rounded border-gray-300"
+              className="h-3.5 w-3.5 rounded border-gray-300 flex-shrink-0"
             />
+            <img src={`${API_BASE}/detections/${det.id}/image`} alt=""
+              className="h-8 w-8 rounded object-cover flex-shrink-0" />
             <span className="truncate flex-1">{det.image_name}</span>
-            <span className="text-gray-400">{det.boxes.length} 目标</span>
+            <span className="text-gray-400 flex-shrink-0">{det.boxes.length} 目标</span>
+            {/* Hover preview */}
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-20 hidden group-hover:block">
+              <img src={`${API_BASE}/detections/${det.id}/image`} alt=""
+                className="h-32 w-auto rounded shadow-lg border border-gray-200 object-contain bg-white" />
+            </div>
           </label>
         ))}
       </div>
