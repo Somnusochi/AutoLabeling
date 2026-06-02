@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Select } from "antd";
 import type { Detection, TrainingJob } from "@/types";
 import { API_BASE, BOX_COLORS, DEFAULT_BATCH, DEFAULT_EPOCHS, DEFAULT_IMGSZ } from "@/lib/constants";
 import { parseCategories } from "@/lib/parsers";
@@ -24,7 +25,8 @@ export function TrainingPanel({ detections }: Props) {
   const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
   const [imgsz, setImgsz] = useState(DEFAULT_IMGSZ);
   const [batch, setBatch] = useState(DEFAULT_BATCH);
-  const [splitRatio, setSplitRatio] = useState(0.8);
+  const [trainRatio, setTrainRatio] = useState(0.7);
+  const [valRatio, setValRatio] = useState(0.2);
   const [taskType, setTaskType] = useState("detect");
   const qc = useQueryClient();
 
@@ -86,7 +88,8 @@ export function TrainingPanel({ detections }: Props) {
       epochs,
       imgsz,
       batch,
-      splitRatio,
+      trainRatio,
+      valRatio,
       taskType,
     });
   };
@@ -241,31 +244,39 @@ export function TrainingPanel({ detections }: Props) {
           />
         </div>
         <div className="col-span-2">
-          <label className="text-xs text-gray-500">训练/验证 比例 ({(splitRatio * 100).toFixed(0)}% / {((1 - splitRatio) * 100).toFixed(0)}%)</label>
-          <input
-            type="range"
-            min={0.1}
-            max={1.0}
-            step={0.05}
-            value={splitRatio}
-            onChange={(e) => setSplitRatio(Number(e.target.value))}
-            className="w-full h-1 accent-primary-500"
-          />
-          <div className="flex justify-between text-[10px] text-gray-400">
-            <span>纯验证</span>
-            <span>纯训练</span>
+          <label className="text-xs text-gray-500">
+            训练/验证/测试 ({Math.round(trainRatio * 100)}% / {Math.round(valRatio * 100)}% / {Math.max(0, Math.round((1 - trainRatio - valRatio) * 100))}%)
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400 w-10 text-right">训练</span>
+            <input type="range" min={0.1} max={0.9} step={0.05} value={trainRatio}
+              onChange={(e) => { const v = Number(e.target.value); setTrainRatio(v); if (v + valRatio > 1) setValRatio(1 - v); }}
+              className="flex-1 h-1 accent-blue-500" />
+            <span className="text-xs text-gray-600 w-8">{Math.round(trainRatio * 100)}%</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400 w-10 text-right">验证</span>
+            <input type="range" min={0} max={1 - trainRatio} step={0.05} value={valRatio}
+              onChange={(e) => setValRatio(Number(e.target.value))}
+              className="flex-1 h-1 accent-green-500" />
+            <span className="text-xs text-gray-600 w-8">{Math.round(valRatio * 100)}%</span>
           </div>
         </div>
         <div>
           <label className="text-xs text-gray-500">任务类型</label>
-          <select value={taskType} onChange={(e) => setTaskType(e.target.value)}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
-            <option value="detect">目标检测 (Detect)</option>
-            <option value="segment" disabled>实例分割 (Segment)</option>
-            <option value="classify" disabled>图像分类 (Classify)</option>
-            <option value="pose" disabled>姿态估计 (Pose)</option>
-            <option value="obb" disabled>旋转框 (OBB)</option>
-          </select>
+          <Select
+            value={taskType}
+            onChange={setTaskType}
+            options={[
+              { value: "detect", label: "目标检测 (Detect)" },
+              { value: "segment", label: "实例分割 (Segment)", disabled: true },
+              { value: "classify", label: "图像分类 (Classify)", disabled: true },
+              { value: "pose", label: "姿态估计 (Pose)", disabled: true },
+              { value: "obb", label: "旋转框 (OBB)", disabled: true },
+            ]}
+            className="w-full"
+            size="small"
+          />
         </div>
       </div>
 

@@ -31,7 +31,8 @@ export interface TrainingJob {
   epochs: number;
   imgsz: number;
   batch: number;
-  splitRatio: number;
+  trainRatio: number;
+  valRatio: number;
   taskType: string;
   detectionIds: string[];
   classMap: Record<string, string> | null;

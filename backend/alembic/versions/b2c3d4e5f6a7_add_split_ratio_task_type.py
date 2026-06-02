@@ -1,4 +1,4 @@
-"""add_split_ratio_task_type
+"""add_train_val_ratio_task_type
 
 Revision ID: b2c3d4e5f6a7
 Revises: a1b2c3d4e5f6
@@ -16,10 +16,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('training_jobs', sa.Column('split_ratio', sa.Float(), nullable=False, server_default='0.8'))
+    op.add_column('training_jobs', sa.Column('train_ratio', sa.Float(), nullable=False, server_default='0.7'))
+    op.add_column('training_jobs', sa.Column('val_ratio', sa.Float(), nullable=False, server_default='0.2'))
     op.add_column('training_jobs', sa.Column('task_type', sa.String(length=16), nullable=False, server_default='detect'))
 
 
 def downgrade() -> None:
     op.drop_column('training_jobs', 'task_type')
-    op.drop_column('training_jobs', 'split_ratio')
+    op.drop_column('training_jobs', 'val_ratio')
+    op.drop_column('training_jobs', 'train_ratio')

@@ -76,7 +76,8 @@ export async function startTraining(params: {
   epochs: number;
   imgsz: number;
   batch: number;
-  splitRatio: number;
+  trainRatio: number;
+  valRatio: number;
   taskType: string;
 }): Promise<TrainingJob> {
   const { data } = await client.post<{ data: TrainingJob }>("/train/jobs", params);

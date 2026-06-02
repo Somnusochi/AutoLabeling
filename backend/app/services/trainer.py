@@ -69,10 +69,13 @@ def _build_dataset(
     detection_ids: list[str],
     db: "Session",
     work_dir: Path,
-) -> tuple[int, dict[str, int]]:
-    """Copy images + write YOLO labels into train/val split.
+    train_ratio: float = 0.8,
+    val_ratio: float = 0.2,
+) -> tuple[int, dict[str, int], int, int, int]:
+    """Copy images + write YOLO labels into train/val(/test) split.
 
-    Returns (total_samples, class_map, train_count, val_count).
+    test = 1 - train_ratio - val_ratio. When test=0, only train/val are created.
+    Returns (total_samples, class_map, train_count, val_count, test_count).
     """
     import random
 
@@ -81,7 +84,13 @@ def _build_dataset(
 
     random.seed(42)
 
-    for sub in ("images/train", "images/val", "labels/train", "labels/val"):
+    test_ratio = max(0, 1.0 - train_ratio - val_ratio)
+    has_test = test_ratio > 0
+
+    subsets = ["images/train", "images/val", "labels/train", "labels/val"]
+    if has_test:
+        subsets += ["images/test", "labels/test"]
+    for sub in subsets:
         (work_dir / sub).mkdir(parents=True, exist_ok=True)
 
     class_map: dict[str, int] = {}
@@ -100,12 +109,15 @@ def _build_dataset(
         detections.append(det)
 
     if not detections:
-        return 0, class_map, 0, 0
+        return 0, class_map, 0, 0, 0
 
     random.shuffle(detections)
-    split_idx = max(1, int(len(detections) * split_ratio))
-    train_dets = detections[:split_idx]
-    val_dets = detections[split_idx:]
+    n = len(detections)
+    train_end = max(1, int(n * train_ratio))
+    val_end = max(train_end + 1, int(n * (train_ratio + val_ratio))) if has_test else n
+    train_dets = detections[:train_end]
+    val_dets = detections[train_end:val_end]
+    test_dets = detections[val_end:] if has_test else []
 
     def _write_set(dets: list["Detection"], subset: str) -> int:
         for det in dets:
@@ -116,9 +128,10 @@ def _build_dataset(
             dst_lbl.write_text(yolo_format.detection_to_yolo(det, class_map))
         return len(dets)
 
-    train_count = _write_set(train_dets, "train")
-    val_count = _write_set(val_dets, "val")
-    return train_count + val_count, class_map, train_count, val_count
+    train_n = _write_set(train_dets, "train")
+    val_n = _write_set(val_dets, "val")
+    test_n = _write_set(test_dets, "test") if has_test else 0
+    return train_n + val_n + test_n, class_map, train_n, val_n, test_n
 
 
 def _metrics_dict(metrics_obj: object | None) -> dict[str, float]:
@@ -180,7 +193,8 @@ def run_training(
     epochs: int = 100,
     imgsz: int = 640,
     batch: int = 16,
-    split_ratio: float = 0.8,
+    train_ratio: float = 0.8,
+    val_ratio: float = 0.2,
 ) -> str:
     """Run YOLO training synchronously. Returns the path to the trained model.
 
@@ -193,9 +207,9 @@ def run_training(
     models_dir = settings.project_root / "trained_models"
     models_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Build dataset with train/val split
-    sample_count, class_map, train_n, val_n = _build_dataset(
-        detection_ids, db, work_dir, split_ratio,
+    # 1. Build dataset with train/val(/test) split
+    sample_count, class_map, train_n, val_n, test_n = _build_dataset(
+        detection_ids, db, work_dir, train_ratio, val_ratio,
     )
     if sample_count == 0:
         raise ValueError("No valid training samples found")
@@ -203,9 +217,12 @@ def run_training(
         raise ValueError("No classes found in training data")
 
     _write_data_yaml(work_dir, class_map)
+    parts = [f"{train_n} train / {val_n} val"]
+    if test_n > 0:
+        parts.append(f"{test_n} test")
     logger.info(
-        "Training dataset built: %d samples (%d train / %d val), %d classes → %s",
-        sample_count, train_n, val_n, len(class_map), work_dir,
+        "Training dataset built: %d samples (%s), %d classes → %s",
+        sample_count, " / ".join(parts), len(class_map), work_dir,
     )
 
     # 2. Train — with progress tracking
@@ -218,7 +235,6 @@ def run_training(
             "totalEpochs": trainer.epochs,
             "loss": float(trainer.loss_items.mean()) if hasattr(trainer, "loss_items") else 0,
         }
-        # Extract metrics if available
         trainer_metrics = getattr(trainer, "metrics", None)
         if trainer_metrics:
             rd = _metrics_dict(trainer_metrics)
@@ -247,7 +263,7 @@ def run_training(
     output_path = models_dir / f"{job_id}.pt"
     shutil.copy2(Path(results.save_dir) / "weights" / "best.pt", output_path)
 
-    # 4. Collect metrics (handle old and new Ultralytics APIs)
+    # 4. Collect metrics
     metrics = _training_metrics(results, sample_count, class_map)
 
     # 5. Update DB
@@ -313,7 +329,8 @@ def run_training_safe(
     epochs: int,
     imgsz: int,
     batch: int,
-    split_ratio: float = 0.8,
+    train_ratio: float = 0.8,
+    val_ratio: float = 0.2,
 ) -> None:
     """Run training in background, updating DB status on completion/failure."""
     from ...core.database import SessionLocal
@@ -334,7 +351,8 @@ def run_training_safe(
             epochs=epochs,
             imgsz=imgsz,
             batch=batch,
-            split_ratio=split_ratio,
+            train_ratio=train_ratio,
+            val_ratio=val_ratio,
         )
     except Exception as exc:
         logger.exception("Training job %s failed", job_id)
