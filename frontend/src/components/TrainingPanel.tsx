@@ -7,6 +7,9 @@ import { deleteTrainingJob, fetchTrainingJobs, fetchYoloSeries, startTraining } 
 function downloadModelUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/download`;
 }
+function downloadDatasetUrl(jobId: string): string {
+  return `${API_BASE}/train/jobs/${jobId}/dataset`;
+}
 
 // ── Component ───────────────────────────────────────
 
@@ -373,7 +376,8 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
           <div className="mt-1.5 flex gap-3">
             {job.status === "completed" && (
               <>
-                <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">下载</a>
+                <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">模型</a>
+                <a href={downloadDatasetUrl(job.id)} download className="text-primary-600 hover:underline font-medium">数据集</a>
                 <button
                   onClick={() => {
                     window.dispatchEvent(new CustomEvent("yolo-validate", {

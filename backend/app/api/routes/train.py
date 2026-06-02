@@ -169,6 +169,39 @@ def delete_job(
     db.commit()
 
 
+@router.get("/jobs/{job_id}/dataset")
+def download_dataset(
+    job_id: str,
+    db: Session = Depends(get_db),
+):
+    """Download the training dataset (images + labels + data.yaml) as a zip."""
+    import shutil
+    import tempfile
+
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Training job not found")
+
+    work_dir = settings.project_root / "training_runs" / job_id
+    if not work_dir.exists():
+        raise HTTPException(404, "Dataset not found")
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+    tmp_path = Path(tmp.name)
+    tmp.close()
+
+    try:
+        base = shutil.make_archive(str(tmp_path.with_suffix("")), "zip", work_dir)
+        return FileResponse(
+            base,
+            media_type="application/zip",
+            filename=f"dataset_{job.model_variant}.zip",
+        )
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise HTTPException(500, "Failed to create dataset archive")
+
+
 @router.get("/jobs/{job_id}/download")
 def download_model(
     job_id: str,
