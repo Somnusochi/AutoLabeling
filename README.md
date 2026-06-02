@@ -25,9 +25,10 @@
 | 视觉定位 | NVIDIA LocateAnything-3B（Qwen2.5-3B + MoonViT） |
 | 目标检测 | YOLOv5 / v8 / v11 / v26（Ultralytics） |
 | 后端 | Python FastAPI + PostgreSQL + SSE |
-| 前端 | React + TypeScript + Vite + Tailwind CSS |
+| 前端 | React + TypeScript + Vite + Tailwind CSS + antd |
 | 状态管理 | TanStack Query + ahooks |
-| 工程化 | unplugin-auto-import、ESLint、Prettier |
+| 视频处理 | ffmpeg（场景检测 / 运动检测 / 间隔提取） |
+| 工程化 | pnpm、ESLint、Prettier |
 
 ## 快速开始
 
@@ -38,6 +39,7 @@
 | Python | 3.12+ |
 | Node.js | 22+ |
 | PostgreSQL | 16+ |
+| ffmpeg | 任意版本 |
 | macOS | Apple Silicon 24GB 统一内存 |
 | NVIDIA GPU | 10GB 显存 |
 | CPU 模式 | 16GB 系统内存 |
@@ -58,7 +60,7 @@ cd ..
 
 # 3. 前端
 cd frontend
-npm install
+pnpm install
 cd ..
 
 # 4. 数据库
@@ -112,14 +114,19 @@ AutoLabeling/
 │   │   │   └── routes/              # REST API
 │   │   │       ├── detection.py     # 检测 CRUD、手动标注
 │   │   │       ├── export.py        # YOLO 格式导出
-│   │   │       └── train.py         # 训练、SSE、验证
+│   │   │       ├── train.py         # 训练、SSE、验证
+│   │   │       └── video.py         # 视频上传、关键帧提取
 │   │   ├── core/                    # 配置、数据库、中间件、日志
 │   │   ├── models/                  # SQLAlchemy ORM
+│   │   │   ├── detection.py         # 检测 & 标注框
+│   │   │   ├── train.py             # 训练任务
+│   │   │   └── video.py             # 视频 & 关键帧
 │   │   ├── repositories/            # 数据访问层
-│   │   ├── schemas/                 # Pydantic 模型
+│   │   ├── schemas/                 # Pydantic 模型（驼峰命名）
 │   │   ├── services/
-│   │   │   ├── box_filter.py       # 标注框过滤、NMS 去重
+│   │   │   ├── box_filter.py        # 标注框过滤、NMS 去重
 │   │   │   ├── locate_anything.py   # VLM 推理引擎
+│   │   │   ├── video_service.py     # ffmpeg 关键帧提取 + SSIM 去重
 │   │   │   ├── trainer.py           # YOLO 训练 + 验证
 │   │   │   ├── export.py            # 标注导出
 │   │   │   └── yolo_format.py       # YOLO 格式转换
@@ -129,17 +136,18 @@ AutoLabeling/
 ├── frontend/
 │   └── src/
 │       ├── components/              # UI 组件
-│       ├── pages/Home.tsx           # 主页面
+│       │   ├── DetectionCanvas.tsx  # 图片标注画布
+│       │   ├── DetectionResult.tsx  # 检测结果展示
+│       │   ├── VideoPanel.tsx       # 视频上传与关键帧时间轴
+│       │   ├── VideoDetail.tsx      # 关键帧详情
+│       │   ├── KeyframeGrid.tsx     # 关键帧网格
+│       │   ├── TrainingPanel.tsx    # YOLO 训练面板
+│       │   └── ...
+│       ├── pages/Home.tsx           # 主页面（图片/视频双模式）
 │       ├── hooks/                   # 自定义 Hooks
-│       │   ├── useDetection.ts
-│       │   ├── useBatchDetection.ts
-│       │   └── useYoloValidation.ts
-│       ├── services/api.ts          # 统一 API 层
+│       ├── services/api.ts          # 统一 API 层（驼峰命名）
 │       ├── lib/                     # 常量、工具函数
-│       │   ├── filterBoxes.ts       # 前端标注框过滤
-│       │   ├── yoloExport.ts        # 浏览器端 YOLO txt 导出
-│       ├── types/                   # TypeScript 类型
-│       └── main.tsx                 # 入口
+│       └── types/                   # TypeScript 类型
 ├── docs/                            # 截图
 ├── docker-compose.yml
 ├── start.sh / start.bat             # 启动脚本
@@ -150,11 +158,22 @@ AutoLabeling/
 
 ### VLM 预标注
 
-上传图片，输入目标描述（如 `fire, smoke`、`Monster Energy drink`），LocateAnything-3B 自动检测并绘制边界框。
+上传图片或视频关键帧，输入目标描述（如 `fire, smoke`、`Monster Energy drink`），LocateAnything-3B 自动检测并绘制边界框。
 
 - 支持任意开放词汇描述，英文短语效果最佳
 - 图片自动压缩至安全分辨率，防止显存溢出
-- 支持文件夹批量上传，串行处理
+- 支持文件夹 / 视频关键帧批量上传，流式返回结果
+- 流式处理：第一张结果立即可见，后续结果实时追加
+
+### 视频标注
+
+上传视频，智能提取关键帧，挑选后批量标注。
+
+- **三种提取方式**：场景切换检测、运动检测（光流法）、固定间隔
+- **SSIM 去重**：自动去除相似帧，阈值可调
+- **时间轴预览**：水平时间轴浏览所有关键帧，点击可看大图
+- **多选机制**：勾选需要标注的帧，全选 / 取消全选，加载选中帧到标注队列
+- 关键帧加载后走标准 VLM 预标注流程，与图片标注体验一致
 
 ### 手动标注
 
@@ -163,9 +182,10 @@ Canvas 画框模式，自由绘制边界框。
 - 查看/标注双模式切换
 - 画框前选择类别，历史类别快速填充
 - VLM 预标注 → 删错框 → 补漏框，协同工作
-- 支持“全部 / 最优 / NMS 去重”过滤模式
+- 支持"全部 / 最优 / NMS 去重"过滤模式
 - 过滤设置可保存到检测记录，后端导出和训练会使用保存后的过滤结果
 - 支持临时隐藏单个标注框，便于检查密集检测结果
+- 单帧重新检测
 
 ### 历史管理
 
@@ -174,6 +194,7 @@ Canvas 画框模式，自由绘制边界框。
 - 点击查看详情，支持重新检测
 - 批量/单张导出 YOLO 格式标注文件
 - 单图支持浏览器端 `.txt` 快速导出；批量导出使用后端 zip
+- 保存过滤结果后历史列表实时更新
 
 ### YOLO 训练
 
@@ -189,37 +210,69 @@ Canvas 画框模式，自由绘制边界框。
 - 用训练好的 YOLO 模型推理新图片
 - Conf / IoU 可调节
 - 可预览标注框效果，置信度一目了然
-- 验证结果是临时结果，可直接导出单图 YOLO `.txt`，不会保存过滤设置或请求后端 zip 导出
+- 验证结果是临时结果，可直接导出单图 YOLO `.txt`
 
 ## API 概览
+
+所有响应字段使用驼峰命名（camelCase），错误响应携带正确的 HTTP 状态码。
 
 ### 检测与标注
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/api/v1/detect` | VLM 预标注（multipart） |
-| GET | `/api/v1/detections` | 历史列表（分页） |
+| GET | `/api/v1/detections` | 历史列表（分页，返回 `data` + `total` + `page` + `pageSize`） |
 | GET | `/api/v1/detections/{id}` | 检测详情 |
 | GET | `/api/v1/detections/{id}/image` | 检测原图 |
 | POST | `/api/v1/detections/{id}/boxes` | 手动添加标注框 |
 | PUT | `/api/v1/detections/{id}/boxes` | 替换检测记录的全部标注框 |
-| PUT | `/api/v1/detections/{id}/boxes/{box_id}` | 修改标注框坐标 |
-| POST | `/api/v1/detections/{id}/boxes/{box_id}/delete` | 删除标注框 |
+| PUT | `/api/v1/detections/{id}/boxes/{boxId}` | 修改标注框坐标 |
+| POST | `/api/v1/detections/{id}/boxes/{boxId}/delete` | 删除标注框 |
 | PUT | `/api/v1/detections/{id}/filter-settings` | 保存过滤模式与 NMS IoU |
 | POST | `/api/v1/detections/{id}/delete` | 删除检测记录 |
 | GET | `/api/v1/detections/{id}/export` | 导出单图 YOLO 标注 |
 | POST | `/api/v1/detections/export-batch` | 批量导出（zip） |
+
+### 视频
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/v1/videos/upload` | 上传视频（multipart） |
+| GET | `/api/v1/videos` | 视频列表（分页） |
+| GET | `/api/v1/videos/{id}` | 视频详情（含关键帧） |
+| POST | `/api/v1/videos/{id}/extract-keyframes` | 提取关键帧 |
+| GET | `/api/v1/videos/{id}/keyframes/{keyframeId}/image` | 关键帧图片 |
+| POST | `/api/v1/videos/{id}/delete` | 删除视频及关键帧 |
 
 ### 训练
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/api/v1/train/jobs` | 创建训练任务 |
-| GET | `/api/v1/train/jobs` | 训练任务列表 |
+| GET | `/api/v1/train/jobs` | 训练任务列表（分页） |
 | GET | `/api/v1/train/variants` | 可用 YOLO 系列 |
 | GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |
 | POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理验证 |
 | POST | `/api/v1/train/jobs/{id}/delete` | 删除训练任务 |
+
+### 响应格式
+
+**成功（单条）** → `200/201`：
+```json
+{ "data": { "id": "...", "fileName": "...", "createdAt": "..." } }
+```
+
+**成功（列表）** → `200`：
+```json
+{ "data": [...], "total": 100, "page": 1, "pageSize": 20 }
+```
+
+**成功（删除）** → `204`（空响应体）
+
+**错误** → `4xx/5xx`：
+```json
+{ "error": { "code": "NotFoundError", "message": "Video not found: xxx" } }
+```
 
 ## 跨平台
 
@@ -233,18 +286,14 @@ Canvas 画框模式，自由绘制边界框。
 
 ## 开发与校验
 
-前端依赖 Vite/Rolldown 原生 binding，Node 架构和 `node_modules` 架构必须一致。如果切换过 Node 架构或清理过本机 Node 安装，建议重新安装依赖：
-
 ```bash
+# 前端
 cd frontend
-npm install
-npm run lint
-npm run build
-```
+pnpm install
+pnpm run lint
+pnpm run build
 
-后端基础校验：
-
-```bash
+# 后端
 cd backend
 source .venv/bin/activate
 PYTHONPATH=. alembic upgrade head
