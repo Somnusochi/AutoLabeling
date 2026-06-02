@@ -1,7 +1,3 @@
-import { useCallback, useRef, useState } from "react";
-import { detectImage } from "@/services/api";
-import type { Detection } from "@/types";
-
 export function useBatchDetection() {
   const [batchResults, setBatchResults] = useState<Detection[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });

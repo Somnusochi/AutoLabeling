@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type DragEvent } from "react";
+import {type DragEvent} from "react";
 
 const MAX_LONG_SIDE = 1280;
 const JPEG_QUALITY = 0.75;

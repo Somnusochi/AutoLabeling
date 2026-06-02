@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Select } from "antd";
-import type { Detection, TrainingJob } from "@/types";
-import { API_BASE, BOX_COLORS, DEFAULT_BATCH, DEFAULT_EPOCHS, DEFAULT_IMGSZ } from "@/lib/constants";
-import { parseCategories } from "@/lib/parsers";
-import { deleteTrainingJob, fetchTrainingJobs, fetchYoloSeries, startTraining } from "@/services/api";
+import {Modal, Select} from "antd";
+
+
+
+
 
 function downloadModelUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/download`;

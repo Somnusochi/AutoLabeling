@@ -1,5 +1,3 @@
-import type { BBox } from "@/types";
-
 interface Props {
   boxes: BBox[];
   hiddenIndices: Set<string>;

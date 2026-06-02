@@ -1,5 +1,3 @@
-import type { BBox } from "@/types";
-
 type FilterMode = "best" | "all" | "nms";
 
 function iou(a: BBox, b: BBox): number {

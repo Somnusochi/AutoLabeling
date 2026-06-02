@@ -1,10 +1,3 @@
-import { DetectionCanvas } from "@/components/DetectionCanvas";
-import { ResultTable } from "@/components/ResultTable";
-import { exportBatch, downloadBlob } from "@/services/api";
-import { downloadYoloTxt } from "@/lib/yoloExport";
-import { API_BASE } from "@/lib/constants";
-import type { Detection } from "@/types";
-
 interface Props {
   result: Detection;
   previewUrl: string;

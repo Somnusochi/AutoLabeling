@@ -1,7 +1,3 @@
-import { useState } from "react";
-import type { KeyFrame } from "@/types";
-import { keyframeImageUrl } from "@/services/api";
-
 interface Props {
   videoId: string;
   keyframes: KeyFrame[];

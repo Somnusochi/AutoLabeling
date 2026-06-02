@@ -1,11 +1,3 @@
-import { useRef, useState, useEffect, useMemo } from "react";
-import { useDebounce } from "ahooks";
-import { useDeleteDetectionMutation } from "@/hooks/useDetection";
-import { exportSingleUrl } from "@/services/api";
-import { API_BASE } from "@/lib/constants";
-import { parseCategories } from "@/lib/parsers";
-import type { Detection } from "@/types";
-
 interface Props {
   data: { total: number; items: Detection[] } | undefined;
   onSelect: (det: Detection) => void;

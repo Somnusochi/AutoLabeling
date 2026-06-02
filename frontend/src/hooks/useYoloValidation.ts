@@ -1,8 +1,3 @@
-import { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { API_BASE, DEFAULT_CONF, DEFAULT_IOU } from "@/lib/constants";
-import type { Detection } from "@/types";
-
 interface ValidateMode {
   jobId: string;
   modelVariant: string;

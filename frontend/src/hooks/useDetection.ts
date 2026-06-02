@@ -1,9 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  deleteDetection, detectImage, exportBatch,
-  listDetections, downloadBlob,
-} from "@/services/api";
-
 export function useDetectionListQuery(page = 1) {
   return useQuery({
     queryKey: ["detections", page],

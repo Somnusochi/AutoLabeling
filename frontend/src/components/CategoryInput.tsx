@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import {type KeyboardEvent} from "react";
 
 interface Props {
   categories: string[];

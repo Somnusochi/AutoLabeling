@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { PlayCircleOutlined, ReloadOutlined } from "@ant-design/icons";
-import { API_BASE, uploadCache, tokenCache } from "@/lib/constants";
+import {PlayCircleOutlined, ReloadOutlined} from "@ant-design/icons";
+
 
 interface Props {
   videoId: string;

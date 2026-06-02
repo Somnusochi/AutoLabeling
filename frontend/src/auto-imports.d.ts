@@ -6,20 +6,77 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const API_BASE: typeof import('./lib/constants').API_BASE
   const Activity: typeof import('react').Activity
+  const BOX_COLORS: typeof import('./lib/constants').BOX_COLORS
+  const BatchProgress: typeof import('./components/BatchProgress').BatchProgress
+  const CANVAS_MAX_H: typeof import('./lib/constants').CANVAS_MAX_H
+  const CANVAS_MAX_W: typeof import('./lib/constants').CANVAS_MAX_W
+  const CANVAS_MIN_BOX_SIZE: typeof import('./lib/constants').CANVAS_MIN_BOX_SIZE
+  const CategoryInput: typeof import('./components/CategoryInput').CategoryInput
+  const DEFAULT_BATCH: typeof import('./lib/constants').DEFAULT_BATCH
+  const DEFAULT_CONF: typeof import('./lib/constants').DEFAULT_CONF
+  const DEFAULT_EPOCHS: typeof import('./lib/constants').DEFAULT_EPOCHS
+  const DEFAULT_IMGSZ: typeof import('./lib/constants').DEFAULT_IMGSZ
+  const DEFAULT_IOU: typeof import('./lib/constants').DEFAULT_IOU
+  const DetectionCanvas: typeof import('./components/DetectionCanvas').DetectionCanvas
+  const DetectionResult: typeof import('./components/DetectionResult').DetectionResult
+  const DetectionSkeleton: typeof import('./components/LoadingSkeleton').DetectionSkeleton
+  const ErrorBoundary: typeof import('./components/ErrorBoundary').ErrorBoundary
+  const FilterPanel: typeof import('./components/FilterPanel').FilterPanel
   const Fragment: typeof import('react').Fragment
+  const HistoryList: typeof import('./components/HistoryList').HistoryList
+  const HistorySkeleton: typeof import('./components/LoadingSkeleton').HistorySkeleton
+  const Home: typeof import('./pages/Home').Home
+  const ImageUploader: typeof import('./components/ImageUploader').ImageUploader
+  const KeyframeGrid: typeof import('./components/KeyframeGrid').KeyframeGrid
+  const Layout: typeof import('./components/Layout').Layout
+  const MAX_UPLOAD_SIZE_MB: typeof import('./lib/constants').MAX_UPLOAD_SIZE_MB
+  const ModelSelector: typeof import('./components/ModelSelector').ModelSelector
   const QueryClient: typeof import('@tanstack/react-query').QueryClient
   const QueryClientProvider: typeof import('@tanstack/react-query').QueryClientProvider
+  const ResultTable: typeof import('./components/ResultTable').ResultTable
   const Suspense: typeof import('react').Suspense
+  const TrainingPanel: typeof import('./components/TrainingPanel').TrainingPanel
+  const ValidationSettings: typeof import('./components/ValidationSettings').ValidationSettings
+  const VideoDetail: typeof import('./components/VideoDetail').VideoDetail
+  const VideoPanel: typeof import('./components/VideoPanel').VideoPanel
+  const VideoValidator: typeof import('./components/VideoValidator').VideoValidator
+  const addBox: typeof import('./services/api').addBox
+  const applyFilter: typeof import('./lib/filterBoxes').applyFilter
   const cache: typeof import('react').cache
   const cacheSignal: typeof import('react').cacheSignal
   const createContext: typeof import('react').createContext
   const createRef: typeof import('react').createRef
+  const deleteBox: typeof import('./services/api').deleteBox
+  const deleteDetection: typeof import('./services/api').deleteDetection
+  const deleteTrainingJob: typeof import('./services/api').deleteTrainingJob
+  const deleteVideo: typeof import('./services/api').deleteVideo
+  const detectImage: typeof import('./services/api').detectImage
+  const downloadBlob: typeof import('./services/api').downloadBlob
+  const downloadYoloTxt: typeof import('./lib/yoloExport').downloadYoloTxt
+  const exportBatch: typeof import('./services/api').exportBatch
+  const exportSingleUrl: typeof import('./services/api').exportSingleUrl
+  const extractKeyframes: typeof import('./services/api').extractKeyframes
+  const fetchTrainingJobs: typeof import('./services/api').fetchTrainingJobs
+  const fetchYoloSeries: typeof import('./services/api').fetchYoloSeries
   const forwardRef: typeof import('react').forwardRef
+  const generateYoloTxt: typeof import('./lib/yoloExport').generateYoloTxt
+  const getDetection: typeof import('./services/api').getDetection
+  const getVideo: typeof import('./services/api').getVideo
+  const keyframeImageUrl: typeof import('./services/api').keyframeImageUrl
   const lazy: typeof import('react').lazy
+  const listDetections: typeof import('./services/api').listDetections
+  const listVideos: typeof import('./services/api').listVideos
   const memo: typeof import('react').memo
+  const parseCategories: typeof import('./lib/parsers').parseCategories
+  const saveFilterSettings: typeof import('./services/api').saveFilterSettings
+  const startTraining: typeof import('./services/api').startTraining
   const startTransition: typeof import('react').startTransition
   const toast: typeof import('react-hot-toast').toast
+  const tokenCache: typeof import('./lib/constants').tokenCache
+  const uploadCache: typeof import('./lib/constants').uploadCache
+  const uploadVideo: typeof import('./services/api').uploadVideo
   const use: typeof import('react').use
   const useActionState: typeof import('react').useActionState
   const useAntdTable: typeof import('ahooks').useAntdTable
@@ -62,6 +119,7 @@ declare global {
   const useFusionTable: typeof import('ahooks').useFusionTable
   const useGetState: typeof import('ahooks').useGetState
   const useHistoryTravel: typeof import('ahooks').useHistoryTravel
+  const useHomeState: typeof import('./hooks/useHomeState').useHomeState
   const useHover: typeof import('ahooks').useHover
   const useId: typeof import('react').useId
   const useImperativeHandle: typeof import('react').useImperativeHandle
@@ -127,4 +185,19 @@ declare global {
   const useWebSocket: typeof import('ahooks').useWebSocket
   const useWhyDidYouUpdate: typeof import('ahooks').useWhyDidYouUpdate
   const useYoloValidation: typeof import('./hooks/useYoloValidation').useYoloValidation
+}
+// for type re-export
+declare global {
+  // @ts-ignore
+  export type { ErrorBoundary } from './components/ErrorBoundary'
+  import('./components/ErrorBoundary')
+  // @ts-ignore
+  export type { FilterMode } from './lib/filterBoxes'
+  import('./lib/filterBoxes')
+  // @ts-ignore
+  export type { YoloSeries } from './services/api'
+  import('./services/api')
+  // @ts-ignore
+  export type { BBox, Detection, DetectResponse, TrainingJob, KeyFrame, VideoInfo, VideoList, ListResponse } from './types/index'
+  import('./types/index')
 }

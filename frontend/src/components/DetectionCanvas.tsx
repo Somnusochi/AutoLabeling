@@ -1,7 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { BBox } from "@/types";
-import { BOX_COLORS, CANVAS_MAX_H, CANVAS_MAX_W, CANVAS_MIN_BOX_SIZE } from "@/lib/constants";
-
 type Mode = "view" | "draw";
 
 interface Props {

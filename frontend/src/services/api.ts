@@ -1,6 +1,6 @@
 import axios from "axios";
-import type { Detection, DetectResponse, TrainingJob, VideoInfo, ListResponse } from "@/types";
-import { API_BASE } from "@/lib/constants";
+
+
 
 const client = axios.create({
   baseURL: API_BASE,

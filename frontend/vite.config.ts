@@ -21,7 +21,14 @@ export default defineConfig({
         },
       ],
       dts: "./src/auto-imports.d.ts",
-      dirs: ["./src/hooks"],
+      dirs: [
+        "./src/hooks",
+        "./src/components",
+        "./src/lib",
+        "./src/services",
+        "./src/types",
+        "./src/pages",
+      ],
     }),
   ],
   resolve: {

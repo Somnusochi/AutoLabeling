@@ -1,5 +1,3 @@
-import type { BBox } from "@/types";
-
 export function generateYoloTxt(boxes: BBox[], categories: string[], imgW: number, imgH: number): string {
   const catId = new Map(categories.map((c, i) => [c, i]));
   const lines: string[] = [];
