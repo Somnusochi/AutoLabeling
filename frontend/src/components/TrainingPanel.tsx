@@ -406,6 +406,16 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
                 >
                   验证
                 </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const resp = await fetch(`${API_BASE}/train/jobs/${job.id}/retrain`, { method: "POST" });
+                      if (resp.ok) { toast.success("重训任务已创建"); qc.invalidateQueries({ queryKey: ["training-jobs"] }); }
+                      else { toast.error("重训失败"); }
+                    } catch { toast.error("重训失败"); }
+                  }}
+                  className="text-orange-500 hover:text-orange-600 font-medium"
+                >重训</button>
                 <button onClick={() => setChartOpen(true)} className="text-gray-500 hover:text-gray-700 font-medium">详情</button>
               </>
             )}

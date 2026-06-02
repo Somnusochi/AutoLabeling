@@ -287,6 +287,51 @@ def download_model(
     )
 
 
+@router.post("/jobs/{job_id}/retrain")
+def retrain_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+):
+    """Re-run training with the same detection_ids and settings."""
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Training job not found")
+
+    import uuid as _uuid
+    new_job = TrainingJob(
+        model_variant=job.model_variant,
+        epochs=job.epochs,
+        imgsz=job.imgsz,
+        batch=job.batch,
+        train_ratio=job.train_ratio,
+        val_ratio=job.val_ratio,
+        task_type=job.task_type,
+        status="pending",
+    )
+    db.add(new_job)
+    db.flush()
+
+    for link in job.detection_links:
+        db.add(TrainingDetection(
+            training_job_id=new_job.id,
+            detection_id=link.detection_id,
+        ))
+    db.commit()
+    db.refresh(new_job)
+
+    detection_ids = [str(link.detection_id) for link in new_job.detection_links]
+    thread = threading.Thread(
+        target=run_training_safe,
+        args=(str(new_job.id), detection_ids, new_job.model_variant,
+              new_job.epochs, new_job.imgsz, new_job.batch,
+              new_job.train_ratio, new_job.val_ratio),
+        daemon=True,
+    )
+    thread.start()
+
+    return APIResponse(data=TrainingJobOut.model_validate(new_job).model_dump(by_alias=True))
+
+
 @router.post("/jobs/{job_id}/predict")
 async def predict_with_model(
     job_id: str,
