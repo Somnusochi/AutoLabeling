@@ -115,6 +115,13 @@ def _build_dataset(
     n = len(detections)
     train_end = max(1, int(n * train_ratio))
     val_end = max(train_end + 1, int(n * (train_ratio + val_ratio))) if has_test else n
+    # Ensure val has at least 1 image
+    if val_end == train_end and n > 1:
+        train_end = max(1, train_end - 1)
+    if val_end == n and n > 1:
+        train_end = max(1, n - 1)
+        if not has_test:
+            val_end = n
     train_dets = detections[:train_end]
     val_dets = detections[train_end:val_end]
     test_dets = detections[val_end:] if has_test else []
