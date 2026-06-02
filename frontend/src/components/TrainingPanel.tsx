@@ -33,6 +33,28 @@ function downloadModelUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/download`;
 }
 
+function parseDetectionCategories(categories: string): string[] {
+  try {
+    const parsed = JSON.parse(categories);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+const PREVIEW_COLORS = [
+  { stroke: "#EF4444", chip: "bg-red-100 text-red-700 ring-red-200" },
+  { stroke: "#3B82F6", chip: "bg-blue-100 text-blue-700 ring-blue-200" },
+  { stroke: "#10B981", chip: "bg-emerald-100 text-emerald-700 ring-emerald-200" },
+  { stroke: "#F59E0B", chip: "bg-amber-100 text-amber-700 ring-amber-200" },
+] as const;
+
+function previewColorIndex(className: string, fallbackIndex = 0): number {
+  const chars = [...className];
+  const hash = chars.reduce((total, char) => total + char.charCodeAt(0), 0);
+  return (hash || fallbackIndex) % PREVIEW_COLORS.length;
+}
+
 // ── Component ───────────────────────────────────────
 
 interface Props {
@@ -60,14 +82,8 @@ export function TrainingPanel({ detections }: Props) {
 
   const seriesOptions = variantsQuery.data ?? {};
   const variantOptions = seriesOptions[series]?.variants ?? {};
-
-  // Reset variant when series changes
-  useEffect(() => {
-    const variants = Object.keys(variantOptions);
-    if (variants.length > 0 && !(variant in variantOptions)) {
-      setVariant(variants[0]);
-    }
-  }, [series]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const variantKeys = Object.keys(variantOptions);
+  const currentVariant = variant in variantOptions ? variant : variantKeys[0] ?? variant;
 
   const jobsQuery = useQuery({
     queryKey: ["training-jobs"],
@@ -87,7 +103,11 @@ export function TrainingPanel({ detections }: Props) {
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -108,7 +128,7 @@ export function TrainingPanel({ detections }: Props) {
     }
     trainMut.mutate({
       detection_ids: [...selected],
-      model_variant: variant,
+      model_variant: currentVariant,
       epochs,
       imgsz,
       batch,
@@ -119,17 +139,14 @@ export function TrainingPanel({ detections }: Props) {
   const trainCategories = useMemo(() => {
     const count = new Map<string, number>();
     detections.forEach((d) => {
-      try { (JSON.parse(d.categories) as string[]).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1)); } catch {}
+      parseDetectionCategories(d.categories).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1));
     });
     return [...count.entries()].sort((a, b) => b[1] - a[1]);
   }, [detections]);
   const [trainFilter, setTrainFilter] = useState<Set<string>>(new Set());
-  const filteredDetections = useMemo(() => {
-    if (trainFilter.size === 0) return detections;
-    return detections.filter((d) => {
-      try { return (JSON.parse(d.categories) as string[]).some((c) => trainFilter.has(c)); } catch { return false; }
-    });
-  }, [detections, trainFilter]);
+  const filteredDetections = trainFilter.size === 0
+    ? detections
+    : detections.filter((d) => parseDetectionCategories(d.categories).some((c) => trainFilter.has(c)));
 
   const selectedCount = selected.size;
 
@@ -142,7 +159,11 @@ export function TrainingPanel({ detections }: Props) {
             <button key={name} type="button"
               onClick={() => setTrainFilter((prev) => {
                 const next = new Set(prev);
-                next.has(name) ? next.delete(name) : next.add(name);
+                if (next.has(name)) {
+                  next.delete(name);
+                } else {
+                  next.add(name);
+                }
                 return next;
               })}
               className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
@@ -229,7 +250,7 @@ export function TrainingPanel({ detections }: Props) {
         </div>
         <div>
           <label className="text-xs text-gray-500">规格</label>
-          <select value={variant} onChange={(e) => setVariant(e.target.value)}
+          <select value={currentVariant} onChange={(e) => setVariant(e.target.value)}
             className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
             {Object.entries(variantOptions).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
@@ -307,7 +328,9 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
           es.close();
           qc.invalidateQueries({ queryKey: ["training-jobs"] });
         }
-      } catch {}
+      } catch {
+        setProgress(null);
+      }
     };
     es.onerror = () => { es.close(); };
     return () => es.close();
@@ -390,6 +413,18 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
 
 function TrainingPreview({ detection }: { detection: Detection }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const categories = useMemo(() => {
+    const names = new Set(parseDetectionCategories(detection.categories));
+    detection.boxes.forEach((box) => names.add(box.class_name));
+    return [...names];
+  }, [detection]);
+  const categoryColors = useMemo(() => {
+    const colors = new Map<string, (typeof PREVIEW_COLORS)[number]>();
+    categories.forEach((name, index) => {
+      colors.set(name, PREVIEW_COLORS[previewColorIndex(name, index)]);
+    });
+    return colors;
+  }, [categories]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -397,8 +432,8 @@ function TrainingPreview({ detection }: { detection: Detection }) {
     const img = new Image();
     img.src = `${API_BASE}/detections/${detection.id}/image`;
     img.onload = () => {
-      const maxW = 420;
-      const scale = Math.min(maxW / img.naturalWidth, 320 / img.naturalHeight, 1);
+      const maxW = 460;
+      const scale = Math.min(maxW / img.naturalWidth, 330 / img.naturalHeight, 1);
       canvas.width = Math.round(img.naturalWidth * scale);
       canvas.height = Math.round(img.naturalHeight * scale);
       const ctx = canvas.getContext("2d")!;
@@ -406,7 +441,7 @@ function TrainingPreview({ detection }: { detection: Detection }) {
       detection.boxes.forEach((box, i) => {
         const x = box.x1 * scale, y = box.y1 * scale;
         const w = (box.x2 - box.x1) * scale, h = (box.y2 - box.y1) * scale;
-        const color = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B"][i % 4];
+        const color = categoryColors.get(box.class_name)?.stroke ?? PREVIEW_COLORS[i % PREVIEW_COLORS.length].stroke;
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(x, y, w, h);
@@ -418,13 +453,35 @@ function TrainingPreview({ detection }: { detection: Detection }) {
         ctx.fillText(box.class_name, x + 2, y - 4);
       });
     };
-  }, [detection]);
+  }, [categoryColors, detection]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="rounded shadow-lg border border-gray-200 bg-white"
-    />
+    <div className="w-[min(520px,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-3 shadow-xl">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold text-gray-700">{detection.image_name}</p>
+          <p className="mt-0.5 text-[11px] text-gray-400">{detection.boxes.length} 个目标</p>
+        </div>
+        {categories.length > 0 && (
+          <div className="flex max-w-56 flex-wrap justify-end gap-1">
+            {categories.map((name) => (
+              <span
+                key={name}
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${
+                  categoryColors.get(name)?.chip ?? "bg-gray-100 text-gray-600 ring-gray-200"
+                }`}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <canvas
+        ref={canvasRef}
+        className="block max-w-full rounded-md border border-gray-100 bg-gray-50"
+      />
+    </div>
   );
 }
 

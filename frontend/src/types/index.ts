@@ -25,7 +25,7 @@ export interface DetectionList {
   items: Detection[];
 }
 
-export interface DetectResponse extends Detection {}
+export type DetectResponse = Detection;
 
 export interface TrainingJob {
   id: string;

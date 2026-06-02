@@ -11,14 +11,14 @@ interface Props {
 
 export function HistoryList({ data, onSelect }: Props) {
   const deleteMut = useDeleteDetectionMutation();
-  const list = data?.items ?? [];
+  const list = useMemo(() => data?.items ?? [], [data?.items]);
 
   const allCategories = useMemo(() => {
     const count = new Map<string, number>();
     list.forEach((d) => {
       try {
         (JSON.parse(d.categories) as string[]).forEach((c) => count.set(c, (count.get(c) ?? 0) + 1));
-      } catch {}
+      } catch { /* ignore parse errors */ }
     });
     return [...count.entries()].sort((a, b) => b[1] - a[1]);
   }, [list]);
@@ -42,7 +42,7 @@ export function HistoryList({ data, onSelect }: Props) {
   const toggle = (cat: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(cat) ? next.delete(cat) : next.add(cat);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
       return next;
     });
   };
