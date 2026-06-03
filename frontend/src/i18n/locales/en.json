@@ -77,7 +77,7 @@
     "validateVideo": "Validate Video",
     "selectAll": "Select All",
     "deselectAll": "Cancel",
-    "loadSelected": "Load Selected ({count} frames)",
+    "loadSelected": "Load Selected ({{count}} frames)",
     "uploadSuccess": "Video uploaded successfully",
     "uploadFailed": "Upload failed",
     "extractSuccess": "Extracted {{count}} keyframes",

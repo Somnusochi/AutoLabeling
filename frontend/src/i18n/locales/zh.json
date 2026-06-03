@@ -77,7 +77,7 @@
     "validateVideo": "验证视频",
     "selectAll": "全选",
     "deselectAll": "取消",
-    "loadSelected": "加载选中帧到标注队列 ({count} 张)",
+    "loadSelected": "加载选中帧到标注队列 ({{count}} 张)",
     "uploadSuccess": "视频上传成功",
     "uploadFailed": "上传失败",
     "extractSuccess": "提取了 {{count}} 个关键帧",
