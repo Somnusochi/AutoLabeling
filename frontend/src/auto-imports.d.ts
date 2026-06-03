@@ -200,6 +200,9 @@ declare global {
 // for type re-export
 declare global {
   // @ts-ignore
+  export type { ThemeMode } from './hooks/useTheme'
+  import('./hooks/useTheme')
+  // @ts-ignore
   export type { ErrorBoundary } from './components/ErrorBoundary'
   import('./components/ErrorBoundary')
   // @ts-ignore

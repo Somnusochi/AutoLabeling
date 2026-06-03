@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-type ThemeMode = "light" | "dark" | "system";
+export type ThemeMode = "light" | "dark" | "system";
 
 export function useTheme() {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -50,5 +50,5 @@ export function useTheme() {
     });
   };
 
-  return { themeMode, toggleTheme };
+  return { themeMode, setThemeMode, toggleTheme };
 }
