@@ -4,6 +4,7 @@ interface ValidateMode {
 }
 
 export function useYoloValidation() {
+  const { t } = useTranslation();
   const [validateMode, setValidateMode] = useState<ValidateMode | null>(null);
   const [validateConf, setValidateConf] = useState(DEFAULT_CONF);
   const [validateIou, setValidateIou] = useState(DEFAULT_IOU);
@@ -13,7 +14,7 @@ export function useYoloValidation() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setValidateMode({ jobId: detail.jobId, modelVariant: detail.modelVariant });
-      toast.success(`已切换至验证模式: ${detail.modelVariant}`);
+      toast.success(t("validationSettings.switchedToValidationMode", { model: detail.modelVariant }));
     };
     window.addEventListener("yolo-validate", handler);
     return () => window.removeEventListener("yolo-validate", handler);
@@ -29,7 +30,7 @@ export function useYoloValidation() {
       const activeJobId = jobId || validateMode?.jobId;
       const activeVariant = modelVariant || validateMode?.modelVariant;
       if (!activeJobId && !token) {
-        toast.error("请先选择已训练的模型或上传模型");
+        toast.error(t("validationSettings.selectOrUploadModelRequired"));
         return null;
       }
       setValidating(true);
@@ -46,7 +47,7 @@ export function useYoloValidation() {
         const res = await fetch(url, { method: "POST", body: form });
         const json = await res.json();
         if (!res.ok) {
-          toast.error(json.error?.message ?? "验证失败");
+          toast.error(json.error?.message ?? t("validationSettings.validationFailed"));
           return null;
         }
         const data = json.data;
@@ -54,7 +55,7 @@ export function useYoloValidation() {
           id: `validate-${Date.now()}`,
           imageName: file.name,
           categories: [],
-          modelName: token ? "上传模型" : (activeVariant || "YOLO"),
+          modelName: token ? t("validationSettings.uploadedModelLabel") : (activeVariant || "YOLO"),
           imageWidth: data.imageWidth,
           imageHeight: data.imageHeight,
           status: "completed",
@@ -73,7 +74,7 @@ export function useYoloValidation() {
           })),
         };
       } catch {
-        toast.error("验证失败");
+        toast.error(t("validationSettings.validationFailed"));
         return null;
       } finally {
         setValidating(false);

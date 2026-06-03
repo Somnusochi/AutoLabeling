@@ -1,4 +1,5 @@
 export function useHomeState() {
+  const { t } = useTranslation();
   // ── Mode ────────────────────────────────────────
   const [appMode, setAppMode] = useState<"annotate" | "validate">("annotate");
   const [validateModelSource, setValidateModelSource] = useState<"trained" | "upload">("trained");
@@ -52,11 +53,11 @@ export function useHomeState() {
       await saveFilterSettings(result.id, filterMode, filterMode === "nms" ? nmsIou : null);
       setResult({ ...result, filterMode: filterMode, filterNmsIou: filterMode === "nms" ? nmsIou : null });
       queryClient.invalidateQueries({ queryKey: ["detections"] });
-      toast.success("过滤设置已保存");
+      toast.success(t("home.saveFilterSuccess"));
     } catch {
-      toast.error("保存失败");
+      toast.error(t("home.saveFilterFailed"));
     }
-  }, [result, filterMode, nmsIou, queryClient]);
+  }, [result, filterMode, nmsIou, queryClient, t]);
 
   const toggleBoxVisibility = useCallback((boxId: string) => {
     setHiddenIndices((prev) => {
@@ -109,11 +110,11 @@ export function useHomeState() {
 
         if (validateModelSource === "upload") {
           if (!externalModelFile) {
-            toast.error("请先上传模型文件");
+            toast.error(t("home.modelUploadRequired"));
             return;
           }
-          let t = tokenCache.get(externalModelFile);
-          if (!t) {
+          let cachedToken = tokenCache.get(externalModelFile);
+          if (!cachedToken) {
             let promise = uploadCache.get(externalModelFile);
             if (!promise) {
               const form = new FormData();
@@ -130,18 +131,18 @@ export function useHomeState() {
               uploadCache.set(externalModelFile, promise);
             }
             try {
-              t = await promise;
+              cachedToken = await promise;
             } catch {
               tokenCache.delete(externalModelFile);
               uploadCache.delete(externalModelFile);
-              toast.error("上传模型失败");
+              toast.error(t("home.uploadModelFailed"));
               return;
             }
           }
-          token = t;
+          token = cachedToken;
         } else {
           if (!selectedTrainedJobId) {
-            toast.error("请先选择已训练的模型");
+            toast.error(t("home.modelSelectionRequired"));
             return;
           }
         }
@@ -213,7 +214,7 @@ export function useHomeState() {
   }, [result, categories, detectMut, startTimer, stopTimer, setBatchResults]);
 
   const handleDrawBox = useCallback(async (raw: { x1: number; y1: number; x2: number; y2: number }) => {
-    if (!result || !drawCategory.trim()) { toast.error("请先输入标注类别"); return; }
+    if (!result || !drawCategory.trim()) { toast.error(t("home.drawCategoryRequired")); return; }
     try {
       await addBox(result.id, { ...raw, className: drawCategory.trim() });
       const newBox: BBox = { id: `manual-${Date.now()}`, className: drawCategory.trim(), ...raw, confidence: null };
