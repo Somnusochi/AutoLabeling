@@ -189,9 +189,20 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
     return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h}
 
 
+def is_model_loaded() -> bool:
+    return _worker is not None
+
+
 def unload_model() -> None:
     global _worker
-    _worker = None
+    if _worker is not None:
+        # Explicitly delete tensors before clearing cache
+        del _worker.model
+        del _worker.tokenizer
+        del _worker.processor
+        _worker = None
+    import gc
+    gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     elif torch.backends.mps.is_available():

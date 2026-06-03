@@ -15,7 +15,7 @@ from ...core.database import get_db
 from ...core.exceptions import AppError, NotFoundError
 from ...schemas.common import APIResponse, BaseSchema
 from ...schemas.detection import DetectionOut
-from ...services.locate_anything import detect
+from ...services.locate_anything import detect, is_model_loaded, unload_model
 from ..deps import get_repo, get_request_id
 from ...repositories.detection import DetectionRepository
 
@@ -246,3 +246,14 @@ def get_detection_image(
     if not path.exists():
         raise HTTPException(404, "Image file not found")
     return FileResponse(str(path))
+
+
+@router.get("/model/status")
+def model_status() -> APIResponse:
+    return APIResponse(data={"loaded": is_model_loaded()})
+
+
+@router.post("/model/unload", status_code=204)
+def model_unload() -> None:
+    if is_model_loaded():
+        unload_model()
