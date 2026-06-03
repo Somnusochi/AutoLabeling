@@ -247,5 +247,13 @@
     "title": "批处理进度",
     "status": "{{completed}} / {{total}} 完成",
     "cancel": "取消批处理"
+  },
+  "modelStatus": {
+    "loaded": "VLM 模型已加载",
+    "unloaded": "VLM 模型未加载",
+    "unload": "卸载",
+    "unloading": "卸载中...",
+    "unloadSuccess": "VLM 模型已卸载",
+    "unloadFailed": "卸载失败"
   }
 }

@@ -163,3 +163,14 @@ export function downloadOnnxUrl(jobId: string): string {
 export function downloadDatasetUrl(jobId: string): string {
   return `${API_BASE}/train/jobs/${jobId}/dataset`;
 }
+
+// ── Model ────────────────────────────────────────
+
+export async function getModelStatus(): Promise<{ loaded: boolean }> {
+  const { data } = await request.get<{ data: { loaded: boolean } }>("/model/status");
+  return data.data;
+}
+
+export async function unloadModel(): Promise<void> {
+  await request.post("/model/unload");
+}

@@ -247,5 +247,13 @@
     "title": "Batch Progress",
     "status": "{{completed}} / {{total}} completed",
     "cancel": "Cancel Batch"
+  },
+  "modelStatus": {
+    "loaded": "VLM Model Loaded",
+    "unloaded": "VLM Model Unloaded",
+    "unload": "Unload",
+    "unloading": "Unloading...",
+    "unloadSuccess": "VLM model unloaded",
+    "unloadFailed": "Failed to unload model"
   }
 }

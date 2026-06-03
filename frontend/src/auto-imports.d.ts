@@ -69,6 +69,7 @@ declare global {
   const forwardRef: typeof import('react').forwardRef
   const generateYoloTxt: typeof import('./lib/yoloExport').generateYoloTxt
   const getDetection: typeof import('./services/api').getDetection
+  const getModelStatus: typeof import('./services/api').getModelStatus
   const getVideo: typeof import('./services/api').getVideo
   const keyframeImageUrl: typeof import('./services/api').keyframeImageUrl
   const lazy: typeof import('react').lazy
@@ -82,6 +83,7 @@ declare global {
   const startTransition: typeof import('react').startTransition
   const toast: typeof import('react-hot-toast').toast
   const tokenCache: typeof import('./lib/constants').tokenCache
+  const unloadModel: typeof import('./services/api').unloadModel
   const uploadCache: typeof import('./lib/constants').uploadCache
   const uploadVideo: typeof import('./services/api').uploadVideo
   const use: typeof import('react').use
