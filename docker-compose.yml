@@ -1,18 +1,16 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: somnusochi
-      POSTGRES_PASSWORD: somnusochi
-      POSTGRES_DB: autolabeling
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: locate_anything
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U somnusochi -d autolabeling"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d locate_anything"]
       interval: 5s
       retries: 5
 
@@ -23,7 +21,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg2://somnusochi:somnusochi@db:5432/autolabeling
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/locate_anything
       DEVICE: cpu
     volumes:
       - ./backend:/app

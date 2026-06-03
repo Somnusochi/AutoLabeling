@@ -430,8 +430,6 @@ async def validate_mjpeg_external(
             raise
         finally:
             proc.terminate()
-            # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
-            yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
 
     return StreamingResponse(mjpeg_stream(), media_type="multipart/x-mixed-replace; boundary=frame",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -496,8 +494,6 @@ async def validate_mjpeg(
             raise
         finally:
             proc.terminate()
-            # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
-            yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
 
     return StreamingResponse(
         mjpeg_stream(),

@@ -35,3 +35,9 @@ class APIResponse(BaseSchema):
         "populate_by_name": True,
         "exclude_none": True,
     }
+
+
+import uuid
+
+def _coerce_uuid(v: Any) -> str:
+    return str(v) if isinstance(v, uuid.UUID) else v

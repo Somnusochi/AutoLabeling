@@ -19,6 +19,6 @@ export const DEFAULT_EPOCHS = 100;
 export const DEFAULT_IMGSZ = 640;
 export const DEFAULT_BATCH = 16;
 
-export const uploadCache = new Map<File, Promise<string>>();
-export const tokenCache = new Map<File, string>();
+export const uploadCache = new WeakMap<File, Promise<string>>();
+export const tokenCache = new WeakMap<File, string>();
 

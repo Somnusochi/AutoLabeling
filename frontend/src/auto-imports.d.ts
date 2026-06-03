@@ -36,6 +36,7 @@ declare global {
   const QueryClient: typeof import('@tanstack/react-query').QueryClient
   const QueryClientProvider: typeof import('@tanstack/react-query').QueryClientProvider
   const ResultTable: typeof import('./components/ResultTable').ResultTable
+  const Sidebar: typeof import('./components/Sidebar').Sidebar
   const Suspense: typeof import('react').Suspense
   const TrainingPanel: typeof import('./components/TrainingPanel').TrainingPanel
   const ValidationSettings: typeof import('./components/ValidationSettings').ValidationSettings
@@ -198,6 +199,9 @@ declare global {
   // @ts-ignore
   export type { ErrorBoundary } from './components/ErrorBoundary'
   import('./components/ErrorBoundary')
+  // @ts-ignore
+  export type { SidebarProps } from './components/Sidebar'
+  import('./components/Sidebar')
   // @ts-ignore
   export type { FilterMode } from './lib/filterBoxes'
   import('./lib/filterBoxes')

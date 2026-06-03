@@ -6,11 +6,7 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
-from .common import BaseSchema
-
-
-def _coerce_uuid(v: Any) -> str:
-    return str(v) if isinstance(v, uuid.UUID) else v
+from .common import BaseSchema, _coerce_uuid
 
 
 class TrainRequest(BaseSchema):
