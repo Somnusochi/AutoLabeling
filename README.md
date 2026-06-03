@@ -41,7 +41,7 @@ End-to-end **pre-annotation & training system** powered by NVIDIA LocateAnything
 | PostgreSQL | 16+ |
 | ffmpeg | Any version |
 | macOS | Apple Silicon 24GB unified memory |
-| NVIDIA GPU | 10GB VRAM |
+| NVIDIA GPU | 12GB VRAM |
 | CPU mode | 16GB system RAM |
 
 ### Setup

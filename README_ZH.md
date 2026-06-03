@@ -41,7 +41,7 @@
 | PostgreSQL | 16+ |
 | ffmpeg | 任意版本 |
 | macOS | Apple Silicon 24GB 统一内存 |
-| NVIDIA GPU | 10GB 显存 |
+| NVIDIA GPU | 12GB 显存 |
 | CPU 模式 | 16GB 系统内存 |
 
 ### 安装
