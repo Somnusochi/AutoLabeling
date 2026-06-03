@@ -4,6 +4,7 @@ interface Props {
 }
 
 export function HistoryList({ data, onSelect }: Props) {
+  const { t, i18n } = useTranslation();
   const deleteMut = useDeleteDetectionMutation();
   const list = useMemo(() => data?.items ?? [], [data?.items]);
 
@@ -52,7 +53,7 @@ export function HistoryList({ data, onSelect }: Props) {
   }, [list, selected]);
 
   if (list.length === 0) {
-    return <p className="py-4 text-xs text-gray-400 text-center">暂无历史记录</p>;
+    return <p className="py-4 text-xs text-gray-400 text-center">{t("historyList.emptyHistory")}</p>;
   }
 
   return (
@@ -65,8 +66,8 @@ export function HistoryList({ data, onSelect }: Props) {
         >
           <span>
             {selected.size > 0
-              ? `已选 ${selected.size} 个标签`
-              : "按标签筛选"}
+              ? t("historyList.selectedTags", { count: selected.size })
+              : t("historyList.filterByTag")}
           </span>
           <svg className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -79,7 +80,7 @@ export function HistoryList({ data, onSelect }: Props) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索标签..."
+              placeholder={t("historyList.filterPlaceholder")}
               className="w-full border-b border-gray-100 px-2 py-1.5 text-xs outline-none"
               autoFocus
             />
@@ -100,7 +101,7 @@ export function HistoryList({ data, onSelect }: Props) {
                 </label>
               ))}
               {filteredCategories.length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-2">无匹配</p>
+                <p className="text-xs text-gray-400 text-center py-2">{t("historyList.noMatch")}</p>
               )}
             </div>
             {selected.size > 0 && (
@@ -108,7 +109,7 @@ export function HistoryList({ data, onSelect }: Props) {
                 onClick={() => { setSelected(new Set()); setOpen(false); }}
                 className="w-full border-t border-gray-100 px-2 py-1.5 text-xs text-red-500 hover:bg-red-50"
               >
-                清除筛选
+                {t("historyList.clearFilter")}
               </button>
             )}
           </div>
@@ -116,13 +117,15 @@ export function HistoryList({ data, onSelect }: Props) {
       </div>
 
       <p className="text-xs text-gray-400">
-        {selected.size > 0 ? `${filtered.length} / ${data?.total ?? 0} 条` : `共 ${data?.total ?? 0} 条`}
+        {selected.size > 0
+          ? t("historyList.matchCount", { current: filtered.length, total: data?.total ?? 0 })
+          : t("historyList.totalCount", { count: data?.total ?? 0 })}
       </p>
 
       {filtered.length === 0 ? (
-        <p className="py-4 text-xs text-gray-400 text-center">无匹配记录</p>
+        <p className="py-4 text-xs text-gray-400 text-center">{t("historyList.noMatchRecords")}</p>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
           {filtered.map((det) => (
             <div
               key={det.id}
@@ -138,28 +141,30 @@ export function HistoryList({ data, onSelect }: Props) {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-gray-700 truncate">{det.imageName}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(det.createdAt).toLocaleString("zh-CN")}
+                    {new Date(det.createdAt).toLocaleString(i18n.language.startsWith("zh") ? "zh-CN" : "en-US")}
                   </p>
-              <div className="flex flex-wrap gap-1 mt-0.5">
-                {parseCategories(det.categories).map((c) => (
-                  <span key={c} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
-                    selected.has(c) ? "bg-primary-500 text-white" : "bg-primary-100 text-primary-700"
-                  }`}>{c}</span>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">{det.boxes.length} 个目标</p>
-              <div className="flex gap-2 mt-1.5">
-                <a href={exportSingleUrl(det.id)} download onClick={(e) => e.stopPropagation()} className="text-xs text-primary-600 hover:underline">
-                  导出
-                </a>
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteMut.mutate(det.id); }}
-                  disabled={deleteMut.isPending}
-                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
-                >
-                  删除
-                </button>
-              </div>
+                  <div className="flex flex-wrap gap-1 mt-0.5">
+                    {parseCategories(det.categories).map((c) => (
+                      <span key={c} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                        selected.has(c) ? "bg-primary-500 text-white" : "bg-primary-100 text-primary-700"
+                      }`}>{c}</span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {t("trainingPanel.targetsCount", { count: det.boxes.length })}
+                  </p>
+                  <div className="flex gap-2 mt-1.5">
+                    <a href={exportSingleUrl(det.id)} download onClick={(e) => e.stopPropagation()} className="text-xs text-primary-600 hover:underline">
+                      {t("common.export")}
+                    </a>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteMut.mutate(det.id); }}
+                      disabled={deleteMut.isPending}
+                      className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                    >
+                      {t("common.delete")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

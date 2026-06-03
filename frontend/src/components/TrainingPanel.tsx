@@ -4,20 +4,6 @@ import {Modal, Select} from "antd";
 
 
 
-function downloadModelUrl(jobId: string): string {
-  return `${API_BASE}/train/jobs/${jobId}/download`;
-}
-function chartUrl(jobId: string): string {
-  return `${API_BASE}/train/jobs/${jobId}/charts/results.png`;
-}
-
-function downloadOnnxUrl(jobId: string): string {
-  return `${API_BASE}/train/jobs/${jobId}/export-onnx`;
-}
-function downloadDatasetUrl(jobId: string): string {
-  return `${API_BASE}/train/jobs/${jobId}/dataset`;
-}
-
 // ── Component ───────────────────────────────────────
 
 interface Props {
@@ -25,6 +11,7 @@ interface Props {
 }
 
 export function TrainingPanel({ detections }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [series, setSeries] = useState("yolo26");
   const [variant, setVariant] = useState("yolo26n");
@@ -62,7 +49,7 @@ export function TrainingPanel({ detections }: Props) {
   const trainMut = useMutation({
     mutationFn: startTraining,
     onSuccess: () => {
-      toast.success("训练任务已启动");
+      toast.success(t("trainingPanel.trainStarted"));
       qc.invalidateQueries({ queryKey: ["training-jobs"] });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -91,7 +78,7 @@ export function TrainingPanel({ detections }: Props) {
 
   const handleTrain = () => {
     if (selected.size === 0) {
-      toast.error("请至少选择一条检测记录");
+      toast.error(t("trainingPanel.selectRecordRequired"));
       return;
     }
     const p = splitPresets[splitPreset] ?? { train: 0.7, val: 0.2 };
@@ -122,6 +109,10 @@ export function TrainingPanel({ detections }: Props) {
 
   const selectedCount = selected.size;
 
+  const [hoveredDetId, setHoveredDetId] = useState<string | null>(null);
+  const [hoveredRect, setHoveredRect] = useState<{ right: number; top: number } | null>(null);
+  const leaveTimerRef = useRef<number | null>(null);
+
   return (
     <div className="space-y-3">
       {/* Tag filter */}
@@ -151,42 +142,42 @@ export function TrainingPanel({ detections }: Props) {
       {/* Selection summary */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          已选 {selectedCount}{trainFilter.size > 0 ? ` / ${filteredDetections.length}` : ""} / {detections.length} 条
+          {t("trainingPanel.selectedCountTotal", {
+            current: selectedCount,
+            filtered: trainFilter.size > 0 ? ` / ${filteredDetections.length}` : "",
+            total: detections.length,
+          })}
         </span>
         <button type="button" onClick={selectAll}
           className="text-xs text-primary-600 hover:underline">
           {(() => {
             const targets = trainFilter.size > 0 ? filteredDetections : detections;
             return selectedCount === targets.length && targets.every((d) => selected.has(d.id))
-              ? "取消全选" : "全选";
+              ? t("trainingPanel.deselectAll") : t("trainingPanel.selectAll");
           })()}
         </button>
       </div>
 
       {/* Detection checklist with thumbnails */}
-      <div className="max-h-44 overflow-y-auto space-y-0.5 rounded border border-gray-100 p-2">
+      <div className="max-h-44 overflow-y-auto rounded border border-gray-100 p-2 space-y-1">
         {filteredDetections.map((det) => (
           <label
             key={det.id}
-            className="flex items-center gap-2 text-xs py-0.5 cursor-pointer hover:bg-gray-50 rounded px-1 group relative"
+            className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-gray-50 rounded px-1 group"
             onMouseEnter={(e) => {
-              clearTimeout((e.currentTarget as HTMLElement).dataset._tid ? Number((e.currentTarget as HTMLElement).dataset._tid) : undefined);
-              const pop = e.currentTarget.querySelector(".preview-pop") as HTMLElement;
-              if (!pop) return;
+              if (leaveTimerRef.current) {
+                clearTimeout(leaveTimerRef.current);
+                leaveTimerRef.current = null;
+              }
               const rect = e.currentTarget.getBoundingClientRect();
-              pop.style.position = "fixed";
-              pop.style.left = `${rect.right + 8}px`;
-              pop.style.top = `${Math.max(60, rect.top - 40)}px`;
-              pop.style.zIndex = "50";
-              pop.classList.remove("hidden");
+              setHoveredDetId(det.id);
+              setHoveredRect({ right: rect.right, top: rect.top });
             }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              const tid = window.setTimeout(() => {
-                const pop = el.querySelector(".preview-pop") as HTMLElement;
-                if (pop) pop.classList.add("hidden");
-              }, 200);
-              el.dataset._tid = String(tid);
+            onMouseLeave={() => {
+              leaveTimerRef.current = window.setTimeout(() => {
+                setHoveredDetId(null);
+                setHoveredRect(null);
+              }, 150);
             }}
           >
             <input
@@ -195,24 +186,53 @@ export function TrainingPanel({ detections }: Props) {
               onChange={() => toggleSelect(det.id)}
               className="h-3.5 w-3.5 rounded border-gray-300 flex-shrink-0"
             />
-            <img src={`${API_BASE}/detections/${det.id}/image`} alt=""
-              className="h-8 w-8 rounded object-cover flex-shrink-0" />
+            <img
+              src={`${API_BASE}/detections/${det.id}/image`}
+              alt=""
+              loading="lazy"
+              className="h-8 w-8 rounded object-cover flex-shrink-0"
+            />
             <span className="truncate flex-1">{det.imageName}</span>
-            <span className="text-gray-400 flex-shrink-0">{det.boxes.length} 目标</span>
-            <div className="preview-pop hidden"
-              onMouseEnter={(e) => (e.currentTarget as HTMLElement).classList.remove("hidden")}
-              onMouseLeave={(e) => (e.currentTarget as HTMLElement).classList.add("hidden")}
-            >
-              <TrainingPreview detection={det} />
-            </div>
+            <span className="text-gray-400 flex-shrink-0">
+              {t("trainingPanel.targetsCount", { count: det.boxes.length })}
+            </span>
           </label>
         ))}
       </div>
 
+      {/* Global single-instance hover preview popup */}
+      {hoveredDetId && hoveredRect && (() => {
+        const det = filteredDetections.find((d) => d.id === hoveredDetId);
+        if (!det) return null;
+        return (
+          <div
+            className="fixed z-50"
+            style={{
+              left: `${hoveredRect.right + 8}px`,
+              top: `${Math.max(60, hoveredRect.top - 40)}px`,
+            }}
+            onMouseEnter={() => {
+              if (leaveTimerRef.current) {
+                clearTimeout(leaveTimerRef.current);
+                leaveTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={() => {
+              leaveTimerRef.current = window.setTimeout(() => {
+                setHoveredDetId(null);
+                setHoveredRect(null);
+              }, 150);
+            }}
+          >
+            <TrainingPreview detection={det} />
+          </div>
+        );
+      })()}
+
       {/* Training params */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-xs text-gray-500">系列</label>
+          <label className="text-xs text-gray-500">{t("trainingPanel.series")}</label>
           <select value={series} onChange={(e) => setSeries(e.target.value)}
             className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
             {Object.entries(seriesOptions).map(([key, s]) => (
@@ -221,7 +241,7 @@ export function TrainingPanel({ detections }: Props) {
           </select>
         </div>
         <div>
-          <label className="text-xs text-gray-500">规格</label>
+          <label className="text-xs text-gray-500">{t("trainingPanel.specification")}</label>
           <select value={currentVariant} onChange={(e) => setVariant(e.target.value)}
             className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
             {Object.entries(variantOptions).map(([key, label]) => (
@@ -230,7 +250,7 @@ export function TrainingPanel({ detections }: Props) {
           </select>
         </div>
         <div>
-          <label className="text-xs text-gray-500">Epochs</label>
+          <label className="text-xs text-gray-500">{t("trainingPanel.epochs")}</label>
           <input
             type="number"
             value={epochs}
@@ -239,7 +259,7 @@ export function TrainingPanel({ detections }: Props) {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500">Image Size</label>
+          <label className="text-xs text-gray-500">{t("trainingPanel.imgsz")}</label>
           <input
             type="number"
             value={imgsz}
@@ -248,7 +268,7 @@ export function TrainingPanel({ detections }: Props) {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500">Batch</label>
+          <label className="text-xs text-gray-500">{t("trainingPanel.batch")}</label>
           <input
             type="number"
             value={batch}
@@ -258,7 +278,9 @@ export function TrainingPanel({ detections }: Props) {
         </div>
         <div>
           <label className="text-xs text-gray-500">
-            数据拆分（训练 / 验证{splitPreset.split("/").length >= 3 ? " / 测试" : ""}）
+            {t("trainingPanel.splitRatio", {
+              test: splitPreset.split("/").length >= 3 ? t("trainingPanel.splitRatioTest") : "",
+            })}
           </label>
           <Select
             value={splitPreset}
@@ -267,17 +289,17 @@ export function TrainingPanel({ detections }: Props) {
             className="w-full"
           />
         </div>
-        <div>
-          <label className="text-xs text-gray-500">任务类型</label>
+        <div className="col-span-2">
+          <label className="text-xs text-gray-500">{t("trainingPanel.taskType")}</label>
           <Select
             value={taskType}
             onChange={setTaskType}
             options={[
-              { value: "detect", label: "目标检测 (Detect)" },
-              { value: "segment", label: "实例分割 (Segment)", disabled: true },
-              { value: "classify", label: "图像分类 (Classify)", disabled: true },
-              { value: "pose", label: "姿态估计 (Pose)", disabled: true },
-              { value: "obb", label: "旋转框 (OBB)", disabled: true },
+              { value: "detect", label: t("trainingPanel.taskDetect") },
+              { value: "segment", label: t("trainingPanel.taskSegment"), disabled: true },
+              { value: "classify", label: t("trainingPanel.taskClassify"), disabled: true },
+              { value: "pose", label: t("trainingPanel.taskPose"), disabled: true },
+              { value: "obb", label: t("trainingPanel.taskObb"), disabled: true },
             ]}
             className="w-full"
           />
@@ -291,13 +313,13 @@ export function TrainingPanel({ detections }: Props) {
         onClick={handleTrain}
         className="w-full rounded bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
       >
-        {trainMut.isPending ? "启动中..." : `开始训练 YOLO (${selectedCount} 张)`}
+        {trainMut.isPending ? t("trainingPanel.starting") : t("trainingPanel.startTrainCount", { count: selectedCount })}
       </button>
 
       {/* Job history */}
       {jobsQuery.data && jobsQuery.data.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-1">训练任务</p>
+          <p className="text-xs font-medium text-gray-500 mb-1">{t("trainingPanel.trainJobs")}</p>
           <div className="space-y-1">
             {jobsQuery.data.map((job) => (
               <TrainingJobItem key={job.id} job={job} />
@@ -310,6 +332,7 @@ export function TrainingPanel({ detections }: Props) {
 }
 
 function TrainingJobItem({ job }: { job: TrainingJob }) {
+  const { t, i18n } = useTranslation();
   const qc = useQueryClient();
   const [chartOpen, setChartOpen] = useState(false);
   const [progress, setProgress] = useState<{
@@ -342,7 +365,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
           <span className="font-medium">{job.modelVariant}</span>
           {job.completedAt && (
             <span className="text-gray-400 ml-2">
-              {new Date(job.completedAt).toLocaleString("zh-CN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              {new Date(job.completedAt).toLocaleString(i18n.language.startsWith("zh") ? "zh-CN" : "en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
         </div>
@@ -373,7 +396,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            等待训练开始...
+            {t("trainingPanel.waitingToStart")}
           </div>
         )
       )}
@@ -389,8 +412,8 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               <span className="font-medium">{(job.metrics["mAP50-95"] as number)?.toFixed(3) ?? "-"}</span>
               <span className="font-medium">{(job.metrics.precision as number)?.toFixed(3) ?? "-"}</span>
               <span className="text-gray-400">Recall</span>
-              <span className="text-gray-400">样本</span>
-              <span className="text-gray-400">类别</span>
+              <span className="text-gray-400">{t("trainingPanel.samples")}</span>
+              <span className="text-gray-400">{t("trainingPanel.classes")}</span>
               <span className="font-medium">{(job.metrics.recall as number)?.toFixed(3) ?? "-"}</span>
               <span className="font-medium">{String(job.metrics.num_samples ?? "-")}</span>
               <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
@@ -399,8 +422,8 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
           <div className="mt-1.5 flex gap-3">
             {job.status === "completed" && (
               <>
-                <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">模型</a>
-                <a href={downloadDatasetUrl(job.id)} download className="text-primary-600 hover:underline font-medium">数据集</a>
+                <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">{t("trainingPanel.model")}</a>
+                <a href={downloadDatasetUrl(job.id)} download className="text-primary-600 hover:underline font-medium">{t("trainingPanel.dataset")}</a>
                 <a href={downloadOnnxUrl(job.id)} className="text-primary-600 hover:underline font-medium">ONNX</a>
                 <button
                   onClick={() => {
@@ -410,36 +433,36 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
                   }}
                   className="text-green-600 hover:underline font-medium"
                 >
-                  验证
+                  {t("common.validate")}
                 </button>
                 <button
                   onClick={async () => {
                     try {
                       const resp = await fetch(`${API_BASE}/train/jobs/${job.id}/retrain`, { method: "POST" });
-                      if (resp.ok) { toast.success("重训任务已创建"); qc.invalidateQueries({ queryKey: ["training-jobs"] }); }
-                      else { toast.error("重训失败"); }
-                    } catch { toast.error("重训失败"); }
+                      if (resp.ok) { toast.success(t("trainingPanel.retrainCreated")); qc.invalidateQueries({ queryKey: ["training-jobs"] }); }
+                      else { toast.error(t("trainingPanel.retrainFailed")); }
+                    } catch { toast.error(t("trainingPanel.retrainFailed")); }
                   }}
                   className="text-orange-500 hover:text-orange-600 font-medium"
-                >重训</button>
-                <button onClick={() => setChartOpen(true)} className="text-gray-500 hover:text-gray-700 font-medium">详情</button>
+                >{t("trainingPanel.retrain")}</button>
+                <button onClick={() => setChartOpen(true)} className="text-gray-500 hover:text-gray-700 font-medium">{t("trainingPanel.details")}</button>
               </>
             )}
             <button
               onClick={() => {
-                if (confirm("确定删除该训练任务吗？此操作不可撤销。")) {
+                if (confirm(t("trainingPanel.deleteJobConfirm"))) {
                   deleteTrainingJob(job.id)
                     .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
-                    .catch(() => toast.error("删除失败"));
+                    .catch(() => toast.error(t("trainingPanel.deleteFailed")));
                 }
               }}
               className="text-red-400 hover:text-red-600 font-medium"
             >
-              删除
+              {t("common.delete")}
             </button>
           </div>
-          <Modal open={chartOpen} onCancel={() => setChartOpen(false)} footer={null} width={800} title="训练曲线">
-            <img src={chartUrl(job.id)} alt="训练曲线" className="w-full" />
+          <Modal open={chartOpen} onCancel={() => setChartOpen(false)} footer={null} width={800} title={t("trainingPanel.chartModalTitle")}>
+            <img src={chartUrl(job.id)} alt={t("trainingPanel.chartModalTitle")} className="w-full" />
           </Modal>
         </>
       )}
@@ -452,6 +475,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
 }
 
 function TrainingPreview({ detection }: { detection: Detection }) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Build className → color map at component level (used by both canvas and chips)
   const colorMap = useMemo(() => {
@@ -498,7 +522,7 @@ function TrainingPreview({ detection }: { detection: Detection }) {
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-semibold text-gray-700">{detection.imageName}</p>
-          <p className="mt-0.5 text-[11px] text-gray-400">{detection.boxes.length} 个目标</p>
+          <p className="mt-0.5 text-[11px] text-gray-400">{t("trainingPanel.targetsCount", { count: detection.boxes.length })}</p>
         </div>
         {(() => {
           const cats = new Set<string>();
@@ -528,6 +552,7 @@ function TrainingPreview({ detection }: { detection: Detection }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   const map: Record<string, string> = {
     pending: "text-gray-400",
     running: "text-blue-500",
@@ -535,10 +560,10 @@ function StatusBadge({ status }: { status: string }) {
     failed: "text-red-500",
   };
   const labels: Record<string, string> = {
-    pending: "等待中",
-    running: "训练中",
-    completed: "已完成",
-    failed: "失败",
+    pending: t("trainingPanel.statusPending"),
+    running: t("trainingPanel.statusRunning"),
+    completed: t("trainingPanel.statusCompleted"),
+    failed: t("trainingPanel.statusFailed"),
   };
   return <span className={map[status] ?? "text-gray-400"}>{labels[status] ?? status}</span>;
 }
