@@ -1,4 +1,4 @@
-import {Modal, Select} from "antd";
+import {Modal, Select, InputNumber} from "antd";
 
 
 
@@ -129,8 +129,10 @@ export function TrainingPanel({ detections }: Props) {
                 }
                 return next;
               })}
-              className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
-                trainFilter.has(name) ? "bg-primary-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              className={`rounded px-1 py-[2px] text-[11px] font-medium border transition-colors ${
+                trainFilter.has(name)
+                  ? "border-green-600 bg-green-600/20 text-green-500"
+                  : "border-gray-200 bg-transparent text-gray-400 hover:border-gray-300 hover:text-gray-600"
               }`}
             >
               {name} ({count})
@@ -230,54 +232,39 @@ export function TrainingPanel({ detections }: Props) {
       })()}
 
       {/* Training params */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3 training-params">
         <div>
-          <label className="text-xs text-gray-500">{t("trainingPanel.series")}</label>
-          <select value={series} onChange={(e) => setSeries(e.target.value)}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
-            {Object.entries(seriesOptions).map(([key, s]) => (
-              <option key={key} value={key}>{s.label}</option>
-            ))}
-          </select>
+          <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.series")}</label>
+          <Select value={series} onChange={setSeries}
+            options={Object.entries(seriesOptions).map(([key, s]) => ({value: key, label: s.label}))}
+            className="w-full" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
         </div>
         <div>
-          <label className="text-xs text-gray-500">{t("trainingPanel.specification")}</label>
-          <select value={currentVariant} onChange={(e) => setVariant(e.target.value)}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs">
-            {Object.entries(variantOptions).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
+          <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.specification")}</label>
+          <Select value={currentVariant} onChange={setVariant}
+            options={Object.entries(variantOptions).map(([key, label]) => ({value: key, label}))}
+            className="w-full" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
         </div>
         <div>
-          <label className="text-xs text-gray-500">{t("trainingPanel.epochs")}</label>
-          <input
-            type="number"
-            value={epochs}
-            onChange={(e) => setEpochs(Number(e.target.value))}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs"
-          />
+          <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.epochs")}</label>
+          <InputNumber min={1} max={9999} value={epochs}
+            onChange={(v) => setEpochs(v ?? DEFAULT_EPOCHS)}
+            className="w-full" />
         </div>
         <div>
-          <label className="text-xs text-gray-500">{t("trainingPanel.imgsz")}</label>
-          <input
-            type="number"
-            value={imgsz}
-            onChange={(e) => setImgsz(Number(e.target.value))}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs"
-          />
+          <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.imgsz")}</label>
+          <InputNumber min={128} max={4096} step={64} value={imgsz}
+            onChange={(v) => setImgsz(v ?? DEFAULT_IMGSZ)}
+            className="w-full" />
         </div>
         <div>
-          <label className="text-xs text-gray-500">{t("trainingPanel.batch")}</label>
-          <input
-            type="number"
-            value={batch}
-            onChange={(e) => setBatch(Number(e.target.value))}
-            className="w-full rounded border border-gray-300 px-2 py-1.5 text-xs"
-          />
+          <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.batch")}</label>
+          <InputNumber min={1} max={256} value={batch}
+            onChange={(v) => setBatch(v ?? DEFAULT_BATCH)}
+            className="w-full" />
         </div>
         <div>
-          <label className="text-xs text-gray-500">
+          <label className="text-xs text-gray-500 mb-1 block">
             {t("trainingPanel.splitRatio", {
               test: splitPreset.split("/").length >= 3 ? t("trainingPanel.splitRatioTest") : "",
             })}
@@ -290,7 +277,7 @@ export function TrainingPanel({ detections }: Props) {
           />
         </div>
         <div className="col-span-2">
-          <label className="text-xs text-gray-500">{t("trainingPanel.taskType")}</label>
+          <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.taskType")}</label>
           <Select
             value={taskType}
             onChange={setTaskType}

@@ -1,4 +1,4 @@
-import {Select} from "antd";
+import {Select, Radio} from "antd";
 
 
 interface Props {
@@ -21,18 +21,10 @@ export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourc
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <label className="flex items-center gap-1 cursor-pointer">
-          <input type="radio" checked={modelSource === "trained"}
-            onChange={() => onSourceChange("trained")} className="h-3 w-3" />
-          <span className="text-gray-600">{t("validationSettings.trainedModel")}</span>
-        </label>
-        <label className="flex items-center gap-1 cursor-pointer">
-          <input type="radio" checked={modelSource === "upload"}
-            onChange={() => onSourceChange("upload")} className="h-3 w-3" />
-          <span className="text-gray-600">{t("validationSettings.uploadModel")}</span>
-        </label>
-      </div>
+      <Radio.Group value={modelSource} onChange={(e) => onSourceChange(e.target.value)} style={{ display: "flex", gap: "12px", marginBottom: "8px" }}>
+        <Radio value="trained">{t("validationSettings.trainedModel")}</Radio>
+        <Radio value="upload">{t("validationSettings.uploadModel")}</Radio>
+      </Radio.Group>
 
       {modelSource === "trained" && (
         <Select

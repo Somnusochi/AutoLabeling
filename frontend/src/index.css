@@ -20,15 +20,22 @@
   --color-border: #e5e7eb;
 }
 
-/* Dark theme */
+/* Dark theme (NVIDIA LocateAnything style) */
 :root.dark {
-  --color-bg-primary: #111827;
-  --color-bg-secondary: #1f2937;
-  --color-bg-tertiary: #374151;
-  --color-text-primary: #f9fafb;
-  --color-text-secondary: #d1d5db;
-  --color-text-tertiary: #9ca3af;
-  --color-border: #374151;
+  --color-bg-primary: #050505;
+  --color-bg-secondary: #0f0f0f;
+  --color-bg-tertiary: #171717;
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #CBD5E1;
+  --color-text-tertiary: #94A3B8;
+  --color-border: rgba(255, 255, 255, 0.06);
+  /* NVIDIA green accent for dark mode */
+  --color-primary-50: #eeefe8;
+  --color-primary-100: #d4e0a0;
+  --color-primary-200: #aacb62;
+  --color-primary-500: #8bc400;
+  --color-primary-600: #76b900;
+  --color-primary-700: #5fa500;
 }
 
 /* Apply theme to body */
@@ -140,22 +147,22 @@ body {
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: #0f0f0f;
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   transition: background 0.2s ease;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .dark ::-webkit-scrollbar-corner {
-  background: #1f2937;
+  background: #0f0f0f;
 }
 
 /* Firefox scrollbar */
@@ -165,5 +172,80 @@ body {
 }
 
 .dark * {
-  scrollbar-color: #4b5563 #1f2937;
+  scrollbar-color: rgba(255, 255, 255, 0.15) #0f0f0f;
+}
+
+/* ── antd dark theme overrides ──────────────────────────── */
+
+/* Select inline input */
+.dark .ant-select-selector {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+.dark .ant-select-selection-item {
+  color: var(--color-text-primary) !important;
+  background-color: transparent !important;
+}
+.dark .ant-select-selection-placeholder {
+  color: var(--color-text-tertiary) !important;
+}
+
+/* Select dropdown popup */
+.dark .ant-select-dropdown {
+  background-color: var(--color-bg-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+.dark .ant-select-item {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+.dark .ant-select-item-option {
+  background-color: var(--color-bg-secondary) !important;
+}
+.dark .ant-select-item-option-active {
+  background-color: var(--color-bg-tertiary) !important;
+}
+.dark .ant-select-item-option-selected {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-primary-600) !important;
+  font-weight: 600 !important;
+}
+.dark .ant-select-item-option-selected::after {
+  background-color: transparent !important;
+}
+
+/* Select focused state */
+.dark .ant-select-focused .ant-select-selector {
+  border-color: var(--color-primary-500) !important;
+  box-shadow: 0 0 0 2px rgba(118, 185, 0, 0.2) !important;
+}
+
+/* ── antd Modal dark theme ── */
+.dark .ant-modal-content {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+.dark .ant-modal-header {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+.dark .ant-modal-title {
+  color: var(--color-text-primary) !important;
+}
+.dark .ant-modal-close-icon {
+  color: var(--color-text-secondary) !important;
+}
+.dark .ant-modal-close-icon:hover {
+  color: var(--color-text-primary) !important;
+}
+
+/* ── TrainingPanel input width alignment ─────────────────── */
+
+.training-params .ant-select,
+.training-params .ant-input-number {
+  width: 100% !important;
+}
+.training-params .ant-input-number {
+  display: block !important;
 }

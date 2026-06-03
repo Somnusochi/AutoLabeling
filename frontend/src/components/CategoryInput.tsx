@@ -38,18 +38,15 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5 mb-2 min-h-[28px]">
+      <div className="flex flex-wrap gap-1 mb-2">
         {categories.map((cat) => (
-          <span
-            key={cat}
-            className="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-700"
-          >
+          <span key={cat} className="flex items-center bg-green-600 text-xs text-white rounded-sm px-1.5 leading-5 h-5">
             {cat}
             <button
               type="button"
               disabled={disabled}
               onClick={() => remove(cat)}
-              className="text-primary-500 hover:text-primary-700"
+              className="ml-1 text-white/70 hover:text-white flex-shrink-0 cursor-pointer"
             >
               &times;
             </button>
@@ -69,7 +66,7 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
               type="button"
               disabled={disabled}
               onClick={() => add(cat)}
-              className="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:border-primary-300 hover:text-primary-600 transition-colors"
+              className="rounded-sm border border-gray-200 px-1.5 text-xs text-gray-500 hover:border-primary-300 hover:text-primary-600 transition-colors cursor-pointer inline-flex items-center leading-5 h-5"
             >
               + {cat}
             </button>

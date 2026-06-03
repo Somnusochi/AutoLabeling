@@ -38,6 +38,7 @@ declare global {
   const ResultTable: typeof import('./components/ResultTable').ResultTable
   const Sidebar: typeof import('./components/Sidebar').Sidebar
   const Suspense: typeof import('react').Suspense
+  const ThemeProvider: typeof import('./hooks/useTheme').ThemeProvider
   const TrainingPanel: typeof import('./components/TrainingPanel').TrainingPanel
   const ValidationSettings: typeof import('./components/ValidationSettings').ValidationSettings
   const VideoDetail: typeof import('./components/VideoDetail').VideoDetail
@@ -200,7 +201,7 @@ declare global {
 // for type re-export
 declare global {
   // @ts-ignore
-  export type { ThemeMode } from './hooks/useTheme'
+  export type { ThemeMode, ThemeContextValue } from './hooks/useTheme'
   import('./hooks/useTheme')
   // @ts-ignore
   export type { ErrorBoundary } from './components/ErrorBoundary'
