@@ -17,6 +17,7 @@ from ...schemas.common import APIResponse, BaseSchema
 from ...schemas.detection import DetectionOut
 from ...services.locate_anything import detect
 from ..deps import get_repo, get_request_id
+from ...repositories.detection import DetectionRepository
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["detection"])
@@ -34,7 +35,7 @@ def _save_upload(file: UploadFile) -> tuple[str, str]:
 async def create_detection(
     file: UploadFile = File(...),
     categories: str = Form(...),
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
     request_id: str = Depends(get_request_id),
 ) -> APIResponse:
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -93,7 +94,7 @@ async def create_detection(
 def list_detections(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100, validation_alias="pageSize"),
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
     request_id: str = Depends(get_request_id),
 ) -> APIResponse:
     items, total = repo.list(page=page, page_size=page_size)
@@ -108,7 +109,7 @@ def list_detections(
 @router.get("/detections/{detection_id}")
 def get_detection(
     detection_id: str,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
     request_id: str = Depends(get_request_id),
 ) -> APIResponse:
     det = repo.get_by_id(detection_id)
@@ -122,7 +123,7 @@ def get_detection(
 @router.post("/detections/{detection_id}/delete", status_code=204)
 def delete_detection(
     detection_id: str,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
 ) -> None:
     det = repo.get_by_id(detection_id)
     if not det:
@@ -139,7 +140,7 @@ def delete_detection(
 def delete_box(
     detection_id: str,
     box_id: str,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
 ) -> None:
     box = repo.get_box(detection_id, box_id)
     if not box:
@@ -167,7 +168,7 @@ class UpdateBoxBody(BaseSchema):
 def add_box(
     detection_id: str,
     body: AddBoxBody,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
 ) -> APIResponse:
     det = repo.get_by_id(detection_id)
     if not det:
@@ -188,7 +189,7 @@ class ReplaceBoxesBody(BaseSchema):
 def replace_boxes(
     detection_id: str,
     body: ReplaceBoxesBody,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
 ) -> APIResponse:
     det = repo.get_by_id(detection_id)
     if not det:
@@ -207,7 +208,7 @@ class FilterSettingsBody(BaseSchema):
 def save_filter_settings(
     detection_id: str,
     body: FilterSettingsBody,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
 ) -> APIResponse:
     det = repo.get_by_id(detection_id)
     if not det:
@@ -223,7 +224,7 @@ def update_box(
     detection_id: str,
     box_id: str,
     body: UpdateBoxBody,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
 ) -> APIResponse:
     box = repo.get_box(detection_id, box_id)
     if not box:
@@ -236,7 +237,7 @@ def update_box(
 @router.get("/detections/{detection_id}/image")
 def get_detection_image(
     detection_id: str,
-    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
+    repo: DetectionRepository = Depends(get_repo),
 ):
     det = repo.get_by_id(detection_id)
     if not det:
