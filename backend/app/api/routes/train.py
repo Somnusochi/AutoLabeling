@@ -85,11 +85,6 @@ def create_training_job(
 @router.get("/jobs/{job_id}/progress")
 def get_progress(job_id: str) -> APIResponse:
     """Read training progress from the work directory."""
-    import json
-    from pathlib import Path
-
-    from ...core.config import settings
-
     progress_file = settings.project_root / "training_runs" / job_id / "progress.json"
     if not progress_file.exists():
         return APIResponse(data={"epoch": 0, "totalEpochs": 0, "loss": 0})
@@ -104,14 +99,6 @@ def get_progress(job_id: str) -> APIResponse:
 @router.get("/jobs/{job_id}/progress/stream")
 async def stream_progress(job_id: str):
     """SSE endpoint: pushes training progress in real time."""
-    import asyncio
-    import json
-    from pathlib import Path
-
-    from starlette.responses import StreamingResponse
-
-    from ...core.config import settings
-
     progress_file = settings.project_root / "training_runs" / job_id / "progress.json"
 
     async def event_stream():
@@ -176,8 +163,6 @@ def delete_job(
     job_id: UUID,
     db: Session = Depends(get_db),
 ) -> None:
-    from pathlib import Path
-
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job:
         raise HTTPException(404, f"Training job {job_id} not found")
@@ -193,12 +178,6 @@ def download_dataset(
     db: Session = Depends(get_db),
 ):
     """Download the training dataset (images + labels + data.yaml) as a zip."""
-    import shutil
-    import tempfile
-    from pathlib import Path
-
-    from ...core.config import settings
-
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job:
         raise HTTPException(404, "Training job not found")
@@ -230,16 +209,15 @@ def get_chart(
     db: Session = Depends(get_db),
 ):
     """Serve training chart images (results.png, confusion_matrix.png, etc.)."""
-    from pathlib import Path
-
-    from ...core.config import settings
-
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job:
         raise HTTPException(404, "Training job not found")
 
-    work_dir = settings.project_root / "training_runs" / str(job_id)
-    chart_path = work_dir / chart_name
+    work_dir = (settings.project_root / "training_runs" / str(job_id)).resolve()
+    chart_path = (work_dir / chart_name).resolve()
+    if not chart_path.is_relative_to(work_dir):
+        raise HTTPException(400, "Invalid chart name")
+
     if not chart_path.exists():
         raise HTTPException(404, f"Chart not found: {chart_name}")
 
@@ -252,9 +230,6 @@ def export_onnx(
     db: Session = Depends(get_db),
 ):
     """Download pre-converted ONNX model, or convert on demand."""
-    from pathlib import Path
-
-    from ...core.config import settings
     from ultralytics import YOLO
 
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
@@ -318,8 +293,6 @@ def _token_path(token: str) -> Path:
 @router.post("/upload-model")
 async def upload_external_model(file: UploadFile = File(...)):
     """Upload an external YOLO .pt model, return a token for MJPEG validation."""
-    import uuid
-
     if not file.filename or not file.filename.endswith(".pt"):
         raise HTTPException(400, "Only .pt files are accepted")
 
@@ -339,28 +312,16 @@ async def predict_external_model(
     iou: float = Form(0.45),
 ):
     """Run inference with an uploaded external YOLO model (via token) on an image."""
-    import io
-    import tempfile
-    from pathlib import Path
-    from PIL import Image
-
-    from ...core.config import settings
-    from ...services.trainer import predict_trained_model
-
     model_path = _token_path(token)
     if not model_path.exists():
         raise HTTPException(404, "Model token not found or expired")
 
     img_bytes = await file.read()
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-        Image.open(io.BytesIO(img_bytes)).save(tmp.name)
-
     try:
-        result = predict_trained_model(str(model_path), tmp.name, device=settings.resolved_device, conf=conf, iou=iou)
+        img = Image.open(io.BytesIO(img_bytes))
+        result = predict_trained_model(str(model_path), img, device=settings.resolved_device, conf=conf, iou=iou)
     except Exception as exc:
         raise HTTPException(500, f"Inference failed: {exc}") from exc
-    finally:
-        Path(tmp.name).unlink(missing_ok=True)
 
     boxes_camel = [
         {
@@ -638,17 +599,6 @@ def predict_video(
     max_frames: int = Form(100),
 ):
     """Validate model on a video: extract frames, run inference, return results."""
-    import io
-    import tempfile
-    import uuid as _uuid
-    from pathlib import Path
-
-    from PIL import Image
-
-    from ...core.config import settings
-    from ...services.trainer import predict_trained_model
-    from ...services.video_service import _ffprobe
-
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
         raise HTTPException(404, "Trained model not found")
@@ -668,7 +618,6 @@ def predict_video(
         frame_step = max(1, int(interval * fps))
 
         # Extract frames via ffmpeg pipe
-        import subprocess
         proc = subprocess.Popen(
             ["ffmpeg", "-y", "-i", tmp_video.name,
              "-vf", f"select='not(mod(n,{frame_step}))'",
@@ -693,10 +642,7 @@ def predict_video(
             buf = buf[end + 2:]
 
             img = Image.open(io.BytesIO(jpg_data))
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
-                img.save(tf.name)
-                r = predict_trained_model(job.model_path, tf.name, device=settings.resolved_device, conf=conf, iou=iou)
-                Path(tf.name).unlink()
+            r = predict_trained_model(job.model_path, img, device=settings.resolved_device, conf=conf, iou=iou)
 
             boxes_camel = [{
                 "className": b["class_name"],
@@ -773,20 +719,10 @@ async def predict_with_model(
     job_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    conf: float = Form(0.25),
-    iou: float = Form(0.45),
+    conf: Form(0.25) = Form(0.25),  # type: ignore[assignment]
+    iou: Form(0.45) = Form(0.45),  # type: ignore[assignment]
 ):
     """Run inference with a trained YOLO model on an uploaded image."""
-    import io
-    import json
-    import tempfile
-    from pathlib import Path
-
-    from PIL import Image
-
-    from ...core.config import settings
-    from ...services.trainer import predict_trained_model
-
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
         raise HTTPException(404, "Trained model not found")
@@ -796,15 +732,11 @@ async def predict_with_model(
         raise HTTPException(404, "Model file not found on disk")
 
     img_bytes = await file.read()
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-        Image.open(io.BytesIO(img_bytes)).save(tmp.name)
-
     try:
-        result = predict_trained_model(job.model_path, tmp.name, device=settings.resolved_device, conf=conf, iou=iou)
+        img = Image.open(io.BytesIO(img_bytes))
+        result = predict_trained_model(job.model_path, img, device=settings.resolved_device, conf=conf, iou=iou)
     except Exception as exc:
         raise HTTPException(500, f"Inference failed: {exc}") from exc
-    finally:
-        Path(tmp.name).unlink(missing_ok=True)
 
     class_map = {}
     if job.metrics and isinstance(job.metrics, dict):
