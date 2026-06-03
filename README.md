@@ -16,6 +16,16 @@
 - ✅ **Model validation**: Batch image testing and real-time video inference
 - 🔄 **Export & deploy**: YOLO format export, ONNX conversion, dataset packaging
 
+## Documentation
+
+📚 **[User Guide (English)](docs/guide/en/README.md)** | 📚 **[用户指南 (中文)](docs/guide/README.md)**
+
+Comprehensive guides covering:
+- Quick start tutorial
+- Annotation best practices
+- Training parameter tuning
+- Model optimization and deployment
+
 ## Screenshots
 
 | VLM Pre-annotation & Refinement | YOLO Training |
