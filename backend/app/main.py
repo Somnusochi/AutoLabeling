@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 from .api.routes.detection import router as detection_router
 from .api.routes.export import router as export_router
+from .api.routes.predict import router as predict_router
 from .api.routes.train import router as train_router
 from .api.routes.video import router as video_router
 from .core.config import settings
@@ -108,6 +109,7 @@ async def general_exception_handler(_request: Request, exc: Exception) -> JSONRe
 
 app.include_router(detection_router)
 app.include_router(export_router)
+app.include_router(predict_router)
 app.include_router(train_router)
 app.include_router(video_router)
 
