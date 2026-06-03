@@ -1,4 +1,4 @@
-# VLMAutoYOLO
+# VLM-AutoYOLO
 
 [简体中文](README_ZH.md) | English
 
@@ -55,8 +55,8 @@
 ### Setup
 
 ```bash
-git clone https://github.com/Somnusochi/VLMAutoYOLO.git
-cd VLMAutoYOLO
+git clone https://github.com/Somnusochi/VLM-AutoYOLO.git
+cd VLM-AutoYOLO
 
 # Backend
 cd backend
@@ -113,7 +113,7 @@ docker compose up -d
 ## Project Structure
 
 ```
-VLMAutoYOLO/
+VLM-AutoYOLO/
 ├── backend/
 │   ├── app/
 │   │   ├── api/

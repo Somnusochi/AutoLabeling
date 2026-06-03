@@ -1,4 +1,4 @@
-# VLMAutoYOLO
+# VLM-AutoYOLO
 
 [English](README.md) | 简体中文
 
@@ -56,8 +56,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/Somnusochi/VLMAutoYOLO.git
-cd VLMAutoYOLO
+git clone https://github.com/Somnusochi/VLM-AutoYOLO.git
+cd VLM-AutoYOLO
 
 # 2. 后端
 cd backend
@@ -114,7 +114,7 @@ docker compose up -d
 ## 项目结构
 
 ```
-VLMAutoYOLO/
+VLM-AutoYOLO/
 ├── backend/
 │   ├── app/
 │   │   ├── api/

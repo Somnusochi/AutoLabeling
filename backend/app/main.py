@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="VLMAutoYOLO API",
+    title="VLM-AutoYOLO API",
     version="0.1.0",
     lifespan=lifespan,
     default_response_class=JSONResponse,

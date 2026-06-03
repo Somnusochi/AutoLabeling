@@ -105,7 +105,7 @@ export function Sidebar({
     >
       {/* Language & App Title */}
       <div className="flex justify-between items-center mb-1">
-        <span className="text-xs font-bold text-gray-400 tracking-wider">VLMAutoYOLO</span>
+        <span className="text-xs font-bold text-gray-400 tracking-wider">VLM-AutoYOLO</span>
         <button
           onClick={() => i18n.changeLanguage(i18n.language.startsWith("zh") ? "en" : "zh")}
           className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-primary-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded px-2 py-0.5 transition-colors cursor-pointer"
