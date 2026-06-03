@@ -89,3 +89,18 @@ class DetectionRepository:
     def delete(self, detection: Detection) -> None:
         self.db.delete(detection)
         self.db.flush()
+
+    def get_box(self, detection_id: str, box_id: str) -> DetectionBox | None:
+        return (
+            self.db.query(DetectionBox)
+            .filter(
+                DetectionBox.id == box_id,
+                DetectionBox.detection_id == detection_id,
+            )
+            .first()
+        )
+
+    def delete_box(self, box: DetectionBox) -> None:
+        self.db.delete(box)
+        self.db.flush()
+

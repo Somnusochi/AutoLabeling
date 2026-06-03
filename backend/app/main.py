@@ -15,18 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 logger = logging.getLogger(__name__)
 
 
-def _strip_none(obj: Any) -> Any:
-    """Recursively strip None values from dicts to keep responses clean."""
-    if isinstance(obj, dict):
-        return {k: _strip_none(v) for k, v in obj.items() if v is not None}
-    if isinstance(obj, list):
-        return [_strip_none(v) for v in obj]
-    return obj
-
-
-class CleanJSONResponse(JSONResponse):
-    def render(self, content: Any) -> bytes:
-        return super().render(_strip_none(content))
+# CleanJSONResponse removed to prevent high-cost recursive none cleaning (replaced with Pydantic exclude_none)
 
 from .api.routes.detection import router as detection_router
 from .api.routes.export import router as export_router
@@ -68,7 +57,7 @@ app = FastAPI(
     title="LocateAnything 预标注训练系统 API",
     version="0.1.0",
     lifespan=lifespan,
-    default_response_class=CleanJSONResponse,
+    default_response_class=JSONResponse,
 )
 
 # ── Middleware (order matters: last-added runs first for request) ──
@@ -84,34 +73,34 @@ app.add_middleware(
 
 @app.exception_handler(AppError)
 async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
-    return CleanJSONResponse(
+    return JSONResponse(
         status_code=exc.status_code,
         content={"error": {"code": type(exc).__name__, "message": exc.detail}},
     )
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(_request: Request, exc: StarletteHTTPException) -> CleanJSONResponse:
-    return CleanJSONResponse(
+async def http_exception_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    return JSONResponse(
         status_code=exc.status_code,
         content={"error": {"code": "HTTP_ERROR", "message": str(exc.detail)}},
     )
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(_request: Request, exc: RequestValidationError) -> CleanJSONResponse:
+async def validation_exception_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
     errors = exc.errors()
     messages = [f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in errors]
-    return CleanJSONResponse(
+    return JSONResponse(
         status_code=422,
         content={"error": {"code": "VALIDATION_ERROR", "message": "; ".join(messages)}},
     )
 
 
 @app.exception_handler(Exception)
-async def general_exception_handler(_request: Request, exc: Exception) -> CleanJSONResponse:
+async def general_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled exception")
-    return CleanJSONResponse(
+    return JSONResponse(
         status_code=500,
         content={"error": {"code": "INTERNAL_ERROR", "message": "Internal server error"}},
     )

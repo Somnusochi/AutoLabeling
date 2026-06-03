@@ -22,11 +22,29 @@ class Base(DeclarativeBase):
 
 
 def init_db() -> None:
-    """Create all tables. Called at application startup."""
+    """Run database migrations via Alembic at startup, falling back to create_all."""
+    import os
+    from alembic.config import Config
+    from alembic import command
     import app.models  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables created successfully")
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ini_path = os.path.join(base_dir, "alembic.ini")
+
+    if os.path.exists(ini_path):
+        try:
+            logger.info("Running database migrations via Alembic...")
+            alembic_cfg = Config(ini_path)
+            alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+            command.upgrade(alembic_cfg, "head")
+            logger.info("Database migrations applied successfully")
+        except Exception as e:
+            logger.error("Failed to run database migrations: %s. Falling back to create_all()", e)
+            Base.metadata.create_all(bind=engine)
+    else:
+        logger.warning("alembic.ini not found at %s. Falling back to create_all()", ini_path)
+        Base.metadata.create_all(bind=engine)
+
 
 
 def get_db():

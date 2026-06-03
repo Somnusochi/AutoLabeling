@@ -139,18 +139,13 @@ def delete_detection(
 def delete_box(
     detection_id: str,
     box_id: str,
-    db: "Session" = Depends(get_db),  # noqa: F821
+    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
 ) -> None:
-    from ...models.detection import DetectionBox
-
-    box = db.query(DetectionBox).filter(
-        DetectionBox.id == box_id,
-        DetectionBox.detection_id == detection_id,
-    ).first()
+    box = repo.get_box(detection_id, box_id)
     if not box:
         raise NotFoundError("DetectionBox", box_id)
-    db.delete(box)
-    db.commit()
+    repo.delete_box(box)
+    repo.db.commit()
 
 
 class AddBoxBody(BaseSchema):
@@ -228,18 +223,13 @@ def update_box(
     detection_id: str,
     box_id: str,
     body: UpdateBoxBody,
-    db: "Session" = Depends(get_db),  # noqa: F821
+    repo: "DetectionRepository" = Depends(get_repo),  # noqa: F821
 ) -> APIResponse:
-    from ...models.detection import DetectionBox
-
-    box = db.query(DetectionBox).filter(
-        DetectionBox.id == box_id,
-        DetectionBox.detection_id == detection_id,
-    ).first()
+    box = repo.get_box(detection_id, box_id)
     if not box:
         raise NotFoundError("DetectionBox", box_id)
     box.x1, box.y1, box.x2, box.y2 = body.x1, body.y1, body.x2, body.y2
-    db.commit()
+    repo.db.commit()
     return APIResponse(data={"ok": True})
 
 
