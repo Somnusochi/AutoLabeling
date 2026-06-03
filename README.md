@@ -55,8 +55,8 @@
 ### Setup
 
 ```bash
-git clone https://github.com/Somnusochi/AutoLabeling.git
-cd AutoLabeling
+git clone https://github.com/Somnusochi/LocateAnything.git
+cd LocateAnything
 
 # Backend
 cd backend
@@ -113,7 +113,7 @@ docker compose up -d
 ## Project Structure
 
 ```
-AutoLabeling/
+LocateAnything/
 ├── backend/
 │   ├── app/
 │   │   ├── api/

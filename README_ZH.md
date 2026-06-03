@@ -56,8 +56,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/Somnusochi/AutoLabeling.git
-cd AutoLabeling
+git clone https://github.com/Somnusochi/LocateAnything.git
+cd LocateAnything
 
 # 2. 后端
 cd backend
@@ -114,7 +114,7 @@ docker compose up -d
 ## 项目结构
 
 ```
-AutoLabeling/
+LocateAnything/
 ├── backend/
 │   ├── app/
 │   │   ├── api/
