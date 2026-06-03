@@ -98,7 +98,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
                 method === m ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {t(`videoPanel.method${m.charAt(0).toUpperCase() + m.slice(1)}`)}
+              {t(`videoPanel.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
             </button>
           ))}
         </div>

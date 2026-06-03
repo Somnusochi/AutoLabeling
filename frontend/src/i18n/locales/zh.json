@@ -52,7 +52,11 @@
     "selectTrainedModel": "选择已训练的模型",
     "selectPtModel": "选择 .pt 模型文件",
     "selected": "已选择",
-    "browse": "浏览"
+    "browse": "浏览",
+    "switchedToValidationMode": "已切换至验证模式: {{model}}",
+    "selectOrUploadModelRequired": "请先选择已训练的模型或上传模型",
+    "validationFailed": "验证失败",
+    "uploadedModelLabel": "上传的模型"
   },
   "categoryInput": {
     "enterCategory": "输入类别名，如 person, car...",
@@ -70,6 +74,7 @@
     "modeMotion": "运动检测",
     "modeInterval": "固定间隔",
     "sceneThreshold": "场景检测阈值",
+    "sensitivity": "灵敏度",
     "motionThreshold": "运动检测阈值",
     "timeInterval": "提取间隔 (秒)",
     "ssimThreshold": "SSIM 去重阈值",
@@ -237,5 +242,10 @@
     "title": "出了点问题",
     "unknownError": "未知错误",
     "retry": "重试"
+  },
+  "batchProgress": {
+    "title": "批处理进度",
+    "status": "{{completed}} / {{total}} 完成",
+    "cancel": "取消批处理"
   }
 }

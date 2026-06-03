@@ -52,7 +52,11 @@
     "selectTrainedModel": "Select trained model",
     "selectPtModel": "Select .pt model file",
     "selected": "Selected",
-    "browse": "Browse"
+    "browse": "Browse",
+    "switchedToValidationMode": "Switched to validation mode: {{model}}",
+    "selectOrUploadModelRequired": "Please select a trained model or upload a model first",
+    "validationFailed": "Validation failed",
+    "uploadedModelLabel": "Uploaded Model"
   },
   "categoryInput": {
     "enterCategory": "Enter category name, e.g., person, car...",
@@ -70,6 +74,7 @@
     "modeMotion": "Motion Flow",
     "modeInterval": "Fixed Interval",
     "sceneThreshold": "Scene Threshold",
+    "sensitivity": "Sensitivity",
     "motionThreshold": "Motion Threshold",
     "timeInterval": "Interval (s)",
     "ssimThreshold": "SSIM Threshold",
@@ -237,5 +242,10 @@
     "title": "Something went wrong",
     "unknownError": "Unknown Error",
     "retry": "Retry"
+  },
+  "batchProgress": {
+    "title": "Batch Progress",
+    "status": "{{completed}} / {{total}} completed",
+    "cancel": "Cancel Batch"
   }
 }
