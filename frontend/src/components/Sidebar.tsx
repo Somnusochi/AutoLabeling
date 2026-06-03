@@ -109,10 +109,10 @@ export function Sidebar({
         <span className="text-xs font-bold text-gray-400 tracking-wider">VLM-AutoYOLO</span>
         <div className="flex gap-1 items-center">
           {/* Theme Mode Selector - Three buttons side by side */}
-          <div className="flex rounded border border-gray-200 bg-gray-50 overflow-hidden">
+          <div className="flex rounded border border-gray-200 bg-gray-50 overflow-hidden h-7">
             <button
               onClick={() => setThemeMode("light")}
-              className={`flex items-center justify-center w-6 h-6 transition-colors cursor-pointer ${
+              className={`flex items-center justify-center w-7 transition-colors cursor-pointer ${
                 themeMode === "light"
                   ? "bg-primary-500 text-white"
                   : "text-gray-500 hover:text-primary-600 hover:bg-gray-100"
@@ -125,7 +125,7 @@ export function Sidebar({
             </button>
             <button
               onClick={() => setThemeMode("dark")}
-              className={`flex items-center justify-center w-6 h-6 transition-colors cursor-pointer ${
+              className={`flex items-center justify-center w-7 transition-colors cursor-pointer ${
                 themeMode === "dark"
                   ? "bg-primary-500 text-white"
                   : "text-gray-500 hover:text-primary-600 hover:bg-gray-100"
@@ -138,7 +138,7 @@ export function Sidebar({
             </button>
             <button
               onClick={() => setThemeMode("system")}
-              className={`flex items-center justify-center w-6 h-6 transition-colors cursor-pointer ${
+              className={`flex items-center justify-center w-7 transition-colors cursor-pointer ${
                 themeMode === "system"
                   ? "bg-primary-500 text-white"
                   : "text-gray-500 hover:text-primary-600 hover:bg-gray-100"
@@ -154,7 +154,7 @@ export function Sidebar({
           {/* Language Toggle */}
           <button
             onClick={() => i18n.changeLanguage(i18n.language.startsWith("zh") ? "en" : "zh")}
-            className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-primary-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded px-2 py-0.5 transition-colors cursor-pointer"
+            className="flex items-center gap-1 h-7 text-[11px] font-semibold text-gray-500 hover:text-primary-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded px-2 transition-colors cursor-pointer"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
