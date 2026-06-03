@@ -6,12 +6,14 @@ export interface ThemeContextValue {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   isDark: boolean;
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   themeMode: "system",
   setThemeMode: () => {},
   isDark: false,
+  toggleTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -60,7 +62,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ themeMode, setThemeMode, isDark }}>
+    <ThemeContext.Provider value={{ themeMode, setThemeMode, isDark, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
