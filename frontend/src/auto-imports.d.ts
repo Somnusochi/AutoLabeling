@@ -46,6 +46,7 @@ declare global {
   const applyFilter: typeof import('./lib/filterBoxes').applyFilter
   const cache: typeof import('react').cache
   const cacheSignal: typeof import('react').cacheSignal
+  const chartUrl: typeof import('./services/api').chartUrl
   const createContext: typeof import('react').createContext
   const createRef: typeof import('react').createRef
   const deleteBox: typeof import('./services/api').deleteBox
@@ -54,6 +55,9 @@ declare global {
   const deleteVideo: typeof import('./services/api').deleteVideo
   const detectImage: typeof import('./services/api').detectImage
   const downloadBlob: typeof import('./services/api').downloadBlob
+  const downloadDatasetUrl: typeof import('./services/api').downloadDatasetUrl
+  const downloadModelUrl: typeof import('./services/api').downloadModelUrl
+  const downloadOnnxUrl: typeof import('./services/api').downloadOnnxUrl
   const downloadYoloTxt: typeof import('./lib/yoloExport').downloadYoloTxt
   const exportBatch: typeof import('./services/api').exportBatch
   const exportSingleUrl: typeof import('./services/api').exportSingleUrl
@@ -70,6 +74,7 @@ declare global {
   const listVideos: typeof import('./services/api').listVideos
   const memo: typeof import('react').memo
   const parseCategories: typeof import('./lib/parsers').parseCategories
+  const request: typeof import('./services/request').request
   const saveFilterSettings: typeof import('./services/api').saveFilterSettings
   const startTraining: typeof import('./services/api').startTraining
   const startTransition: typeof import('react').startTransition
@@ -176,12 +181,14 @@ declare global {
   const useToggle: typeof import('ahooks').useToggle
   const useTrackedEffect: typeof import('ahooks').useTrackedEffect
   const useTransition: typeof import('react').useTransition
+  const useTranslation: typeof import('react-i18next').useTranslation
   const useUnmount: typeof import('ahooks').useUnmount
   const useUnmountedRef: typeof import('ahooks').useUnmountedRef
   const useUpdate: typeof import('ahooks').useUpdate
   const useUpdateEffect: typeof import('ahooks').useUpdateEffect
   const useUpdateLayoutEffect: typeof import('ahooks').useUpdateLayoutEffect
   const useVirtualList: typeof import('ahooks').useVirtualList
+  const useVirtualizer: typeof import('@tanstack/react-virtual').useVirtualizer
   const useWebSocket: typeof import('ahooks').useWebSocket
   const useWhyDidYouUpdate: typeof import('ahooks').useWhyDidYouUpdate
   const useYoloValidation: typeof import('./hooks/useYoloValidation').useYoloValidation

@@ -14,10 +14,12 @@ export default defineConfig({
         "ahooks",
         {
           "react-hot-toast": ["toast"],
+          "react-i18next": ["useTranslation"],
           "@tanstack/react-query": [
             "useQuery", "useMutation", "useQueryClient",
             "useInfiniteQuery", "QueryClient", "QueryClientProvider",
           ],
+          "@tanstack/react-virtual": ["useVirtualizer"],
         },
       ],
       dts: "./src/auto-imports.d.ts",
@@ -35,6 +37,30 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("react") ||
+              id.includes("scheduler")
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("antd") || id.includes("@ant-design")) {
+              return "vendor-antd";
+            }
+            if (id.includes("@tanstack")) {
+              return "vendor-tanstack";
+            }
+            return "vendor-libs";
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     port: 5173,
