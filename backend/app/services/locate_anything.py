@@ -149,7 +149,7 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
                 current_class = m.group(1).strip()
         elif token.startswith("<box>"):
             m = _BOX_PATTERN.match(token)
-            if m:
+            if m and current_class:
                 x1, y1, x2, y2 = map(int, m.groups())
                 boxes.append({
                     "class_name": current_class,

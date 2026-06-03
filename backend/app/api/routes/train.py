@@ -59,11 +59,10 @@ def create_training_job(
     db.add(job)
     db.flush()
 
-    import uuid as _uuid
     for det_id in body.detection_ids:
         db.add(TrainingDetection(
             training_job_id=job.id,
-            detection_id=_uuid.UUID(det_id),
+            detection_id=UUID(det_id),
         ))
     db.commit()
     db.refresh(job)
@@ -283,7 +282,7 @@ def download_model(
 
 
 # Persistent storage for uploaded external models
-import shutil as _shutil
+
 _external_models_dir = Path(__file__).resolve().parent.parent.parent.parent / "external_models"
 _external_models_dir.mkdir(exist_ok=True)
 
@@ -719,8 +718,8 @@ async def predict_with_model(
     job_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    conf: Form(0.25) = Form(0.25),  # type: ignore[assignment]
-    iou: Form(0.45) = Form(0.45),  # type: ignore[assignment]
+    conf: float = Form(0.25),
+    iou: float = Form(0.45),
 ):
     """Run inference with a trained YOLO model on an uploaded image."""
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
