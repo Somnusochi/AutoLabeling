@@ -13,8 +13,10 @@
 - 🎥 **视频标注**：智能关键帧提取（场景/运动/间隔检测）
 - ✏️ **人工修正**：Canvas 画布标注，支持 NMS 过滤
 - 🚀 **一键训练**：YOLOv5/v8/v11/v26，实时进度追踪
-- ✅ **模型验证**：批量图片测试与实时视频推理
+- ✅ **模型验证**：批量图片/视频测试，实时 MJPEG 与 SSE 视频推理
 - 🔄 **导出部署**：YOLO 格式导出、ONNX 转换、数据集打包
+- 🌐 **国际化**：中英文双语界面
+- 🎨 **主题**：亮色 / 暗色模式，跟随系统偏好
 
 ## 文档
 
@@ -45,6 +47,7 @@
 | 后端 | Python FastAPI + PostgreSQL + SSE |
 | 前端 | React + TypeScript + Vite + Tailwind CSS + antd |
 | 状态管理 | TanStack Query + ahooks |
+| 国际化 | i18next（中文 / 英文） |
 | 视频处理 | ffmpeg（场景检测 / 运动检测 / 间隔提取） |
 | 工程化 | pnpm、ESLint、Prettier |
 
@@ -206,11 +209,12 @@ VLM-AutoYOLO/
 │   │   ├── api/
 │   │   │   ├── deps.py              # 依赖注入
 │   │   │   └── routes/              # REST API
-│   │   │       ├── detection.py     # 检测 CRUD、手动标注
+│   │   │       ├── detection.py     # 检测 CRUD、手动标注、模型管理
 │   │   │       ├── export.py        # YOLO 格式导出
-│   │   │       ├── train.py         # 训练、SSE、验证
+│   │   │       ├── predict.py       # 模型验证、视频推理（MJPEG/SSE）
+│   │   │       ├── train.py         # 训练、SSE、重新训练
 │   │   │       └── video.py         # 视频上传、关键帧提取
-│   │   ├── core/                    # 配置、数据库、中间件、日志
+│   │   ├── core/                    # 配置、数据库、中间件、日志、异常
 │   │   ├── models/                  # SQLAlchemy ORM
 │   │   │   ├── detection.py         # 检测 & 标注框
 │   │   │   ├── train.py             # 训练任务
@@ -219,6 +223,7 @@ VLM-AutoYOLO/
 │   │   ├── schemas/                 # Pydantic 模型（驼峰命名）
 │   │   ├── services/
 │   │   │   ├── box_filter.py        # 标注框过滤、NMS 去重
+│   │   │   ├── frame_utils.py       # 帧预测与标注绘制
 │   │   │   ├── locate_anything.py   # VLM 推理引擎
 │   │   │   ├── video_service.py     # ffmpeg 关键帧提取 + SSIM 去重
 │   │   │   ├── trainer.py           # YOLO 训练 + 验证
@@ -234,15 +239,48 @@ VLM-AutoYOLO/
 │       │   ├── DetectionResult.tsx  # 检测结果展示
 │       │   ├── VideoPanel.tsx       # 视频上传与关键帧时间轴
 │       │   ├── VideoDetail.tsx      # 关键帧详情
+│       │   ├── VideoValidator.tsx   # 视频验证（训练模型）
 │       │   ├── KeyframeGrid.tsx     # 关键帧网格
 │       │   ├── TrainingPanel.tsx    # YOLO 训练面板
+│       │   ├── HistoryList.tsx      # 检测历史列表
+│       │   ├── FilterPanel.tsx      # 类别与标签筛选面板
+│       │   ├── ImageUploader.tsx    # 图片拖拽上传
+│       │   ├── ModelSelector.tsx    # YOLO 模型系列选择器
+│       │   ├── BatchProgress.tsx    # 批量标注进度
+│       │   ├── CategoryInput.tsx    # 类别快速填充输入框
+│       │   ├── ResultTable.tsx      # 检测结果表格
+│       │   ├── ValidationSettings.tsx # Conf/IoU 阈值控制
+│       │   ├── Layout.tsx           # 应用布局容器
+│       │   ├── Sidebar.tsx          # 导航侧边栏
+│       │   ├── ThemeProvider.tsx     # 亮色/暗色主题提供者
+│       │   ├── ErrorBoundary.tsx    # React 错误边界
+│       │   ├── LoadingSkeleton.tsx  # 加载骨架屏
 │       │   └── ...
-│       ├── pages/Home.tsx           # 主页面（图片/视频双模式）
+│       ├── pages/
+│       │   └── Home.tsx             # 主页面（图片/视频双模式）
 │       ├── hooks/                   # 自定义 Hooks
-│       ├── services/api.ts          # 统一 API 层（驼峰命名）
-│       ├── lib/                     # 常量、工具函数
+│       │   ├── useDetection.ts      # 检测状态与操作
+│       │   ├── useBatchDetection.ts # 批量检测编排
+│       │   ├── useHomeState.ts      # 主页状态管理
+│       │   ├── useTheme.tsx         # 主题切换 Hook
+│       │   └── useYoloValidation.ts # 验证状态与流式推理
+│       ├── i18n/                    # 国际化
+│       │   ├── config.ts            # i18next 配置
+│       │   └── locales/             # en.json、zh.json
+│       ├── services/
+│       │   ├── api.ts               # 统一 API 层（驼峰命名）
+│       │   └── request.ts           # HTTP 客户端封装
+│       ├── lib/                     # 工具函数
+│       │   ├── constants.ts         # 应用常量
+│       │   ├── filterBoxes.ts       # 客户端标注框过滤
+│       │   ├── formatTime.ts        # 时间格式化
+│       │   ├── parsers.ts           # 响应解析器
+│       │   └── yoloExport.ts        # 浏览器端 YOLO 标注导出
 │       └── types/                   # TypeScript 类型
-├── docs/                            # 截图
+│           └── index.ts
+├── docs/                            # 截图与用户指南
+│   ├── guide/                       # 中文用户指南
+│   └── guide/en/                    # 英文用户指南
 ├── docker-compose.yml
 ├── start.sh / start.bat             # 启动脚本
 └── README.md
@@ -306,13 +344,25 @@ Canvas 画框模式，自由绘制边界框。
 - **双模型源支持**：支持使用训练出的 YOLO 模型，或手动上传本地外部 YOLO 模型（`.pt` 文件）进行推理验证
 - **Conf / IoU 调节**：支持置信度阈值 (Conf) 与重叠阈值 (IoU) 滑块实时微调框过滤效果
 - **图片多图批量验证**：支持对选中的多张测试图片进行批处理验证，置信度及边界框一目了然
-- **视频实时流推理验证**：
-  - 基于 MJPEG 的帧级 YOLO 实时推理流（逐帧自动检测并渲染覆盖层）
-  - 支持点击视频画面暂停/恢复播放，暂停时通过 Canvas 保持当前帧的毛玻璃效果状态，无闪烁
-  - 视频播放完毕自动呈现“播放完成，点击重播”毛玻璃覆盖层
-  - 底栏右侧提供“重新播放”按钮，防浏览器缓存一键重新拉流推理验证
-  - 容器固定 16:9 比例自适应（aspect-video），消除所有加载和切换时的画面尺寸收缩与抖动
+- **视频验证**（三种模式）：
+  - **MJPEG 实时流**（`validate-mjpeg`）：逐帧标注的视频流，支持训练模型或外部模型，带交互式暂停/恢复覆盖层和冻结帧捕获
+  - **SSE 预测流**（`predict-video-stream`）：实时 JSON 事件流，逐帧返回检测结果、进度追踪和元数据
+  - **同步批量预测**（`predict-video`）：按可配置间隔提取帧，运行推理，一次性返回全部结果
+- **视频播放完毕自动呈现**”播放完成，点击重播”毛玻璃覆盖层
+- **底栏”重新播放”按钮**，防浏览器缓存一键重新拉流推理验证
+- **容器固定 16:9 比例自适应**（aspect-video），消除所有加载和切换时的画面尺寸收缩与抖动
 - 验证结果是临时结果，可直接导出单图 YOLO `.txt` 标注文件
+
+### VLM 模型管理
+
+- **状态查询**：查询 VLM 模型是否已加载到内存（`GET /api/v1/model/status`）
+- **卸载释放**：按需卸载 VLM 模型，释放 GPU/CPU 内存（`POST /api/v1/model/unload`）
+- 模型在首次检测请求时懒加载，常驻内存直至显式卸载
+
+### 重新训练
+
+- **一键重训**：使用与上次训练完全相同的检测数据集和超参数重新训练（`POST /api/v1/train/jobs/{id}/retrain`）
+- 适用于 A/B 对比或训练失败后快速重试，无需重新选择数据
 
 ## API 概览
 
@@ -334,6 +384,8 @@ Canvas 画框模式，自由绘制边界框。
 | POST | `/api/v1/detections/{id}/delete` | 删除检测记录 |
 | GET | `/api/v1/detections/{id}/export` | 导出单图 YOLO 标注 |
 | POST | `/api/v1/detections/export-batch` | 批量导出（zip） |
+| GET | `/api/v1/model/status` | VLM 模型加载/卸载状态 |
+| POST | `/api/v1/model/unload` | 从内存中卸载 VLM 模型 |
 
 ### 视频
 
@@ -342,6 +394,7 @@ Canvas 画框模式，自由绘制边界框。
 | POST | `/api/v1/videos/upload` | 上传视频（multipart） |
 | GET | `/api/v1/videos` | 视频列表（分页） |
 | GET | `/api/v1/videos/{id}` | 视频详情（含关键帧） |
+| GET | `/api/v1/videos/{id}/file` | 视频文件下载 |
 | POST | `/api/v1/videos/{id}/extract-keyframes` | 提取关键帧 |
 | GET | `/api/v1/videos/{id}/keyframes/{keyframeId}/image` | 关键帧图片 |
 | POST | `/api/v1/videos/{id}/delete` | 删除视频及关键帧 |
@@ -358,7 +411,11 @@ Canvas 画框模式，自由绘制边界框。
 | GET | `/api/v1/train/jobs/{id}/dataset` | 下载数据集 zip（images + labels + data.yaml） |
 | GET | `/api/v1/train/jobs/{id}/charts/{name}` | 训练曲线图（results.png 等） |
 | POST | `/api/v1/train/jobs/{id}/export-onnx` | 导出 / 下载 ONNX 模型 |
-| POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理验证 |
+| POST | `/api/v1/train/jobs/{id}/predict` | YOLO 模型推理验证（图片） |
+| POST | `/api/v1/train/jobs/{id}/retrain` | 使用相同设置重新训练 |
+| GET | `/api/v1/train/jobs/{id}/validate-mjpeg/{video_id}` | 使用训练模型验证视频（MJPEG 实时流） |
+| POST | `/api/v1/train/jobs/{id}/predict-video-stream` | 使用训练模型验证视频（SSE 流） |
+| POST | `/api/v1/train/jobs/{id}/predict-video` | 使用训练模型验证视频（同步批量） |
 | POST | `/api/v1/train/jobs/{id}/delete` | 删除训练任务 |
 | POST | `/api/v1/train/upload-model` | 上传外部本地 YOLO 模型 (.pt) 并获取 Token |
 | POST | `/api/v1/train/validate-image/{token}` | 使用外部模型验证图片 |

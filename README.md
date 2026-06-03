@@ -13,8 +13,10 @@
 - 🎥 **Video annotation**: Intelligent keyframe extraction (scene/motion/interval detection)
 - ✏️ **Manual refinement**: Canvas-based annotation with NMS filtering
 - 🚀 **One-click training**: YOLOv5/v8/v11/v26 with real-time progress tracking
-- ✅ **Model validation**: Batch image testing and real-time video inference
+- ✅ **Model validation**: Batch image/video testing, real-time MJPEG and SSE video inference
 - 🔄 **Export & deploy**: YOLO format export, ONNX conversion, dataset packaging
+- 🌐 **i18n**: English / 简体中文 interface
+- 🎨 **Theme**: Light / dark mode with system preference detection
 
 ## Documentation
 
@@ -45,6 +47,7 @@ Comprehensive guides covering:
 | Backend | Python FastAPI + PostgreSQL + SSE |
 | Frontend | React + TypeScript + Vite + Tailwind CSS + antd |
 | State Management | TanStack Query + ahooks |
+| i18n | i18next (English / 简体中文) |
 | Video Processing | ffmpeg (scene detection / motion detection / interval extraction) |
 | Tooling | pnpm, ESLint, Prettier |
 
@@ -205,11 +208,12 @@ VLM-AutoYOLO/
 │   │   ├── api/
 │   │   │   ├── deps.py              # Dependency injection
 │   │   │   └── routes/              # REST API
-│   │   │       ├── detection.py     # Detection CRUD, manual annotation
+│   │   │       ├── detection.py     # Detection CRUD, manual annotation, model management
 │   │   │       ├── export.py        # YOLO format export
-│   │   │       ├── train.py         # Training, SSE, validation
+│   │   │       ├── predict.py       # Model validation, video inference (MJPEG/SSE)
+│   │   │       ├── train.py         # Training, SSE, retrain
 │   │   │       └── video.py         # Video upload, keyframe extraction
-│   │   ├── core/                    # Config, database, middleware, logging
+│   │   ├── core/                    # Config, database, middleware, logging, exceptions
 │   │   ├── models/                  # SQLAlchemy ORM
 │   │   │   ├── detection.py         # Detection & bounding boxes
 │   │   │   ├── train.py             # Training jobs
@@ -218,6 +222,7 @@ VLM-AutoYOLO/
 │   │   ├── schemas/                 # Pydantic models (camelCase)
 │   │   ├── services/
 │   │   │   ├── box_filter.py        # Box filtering, NMS dedup
+│   │   │   ├── frame_utils.py       # Frame prediction & annotation drawing
 │   │   │   ├── locate_anything.py   # VLM inference engine
 │   │   │   ├── video_service.py     # ffmpeg keyframe extraction + SSIM dedup
 │   │   │   ├── trainer.py           # YOLO training + validation
@@ -233,15 +238,48 @@ VLM-AutoYOLO/
 │       │   ├── DetectionResult.tsx  # Detection result display
 │       │   ├── VideoPanel.tsx       # Video upload & keyframe timeline
 │       │   ├── VideoDetail.tsx      # Keyframe detail view
+│       │   ├── VideoValidator.tsx   # Video validation with trained model
 │       │   ├── KeyframeGrid.tsx     # Keyframe grid
 │       │   ├── TrainingPanel.tsx    # YOLO training panel
+│       │   ├── HistoryList.tsx      # Detection history list
+│       │   ├── FilterPanel.tsx      # Category & tag filter panel
+│       │   ├── ImageUploader.tsx    # Image upload with drag-and-drop
+│       │   ├── ModelSelector.tsx    # YOLO model variant selector
+│       │   ├── BatchProgress.tsx    # Batch annotation progress
+│       │   ├── CategoryInput.tsx    # Category quick-fill input
+│       │   ├── ResultTable.tsx      # Detection result table
+│       │   ├── ValidationSettings.tsx # Conf/IoU threshold controls
+│       │   ├── Layout.tsx           # App layout wrapper
+│       │   ├── Sidebar.tsx          # Navigation sidebar
+│       │   ├── ThemeProvider.tsx     # Light/dark theme provider
+│       │   ├── ErrorBoundary.tsx    # React error boundary
+│       │   ├── LoadingSkeleton.tsx  # Loading skeleton placeholders
 │       │   └── ...
-│       ├── pages/Home.tsx           # Main page (image/video dual mode)
+│       ├── pages/
+│       │   └── Home.tsx             # Main page (image/video dual mode)
 │       ├── hooks/                   # Custom hooks
-│       ├── services/api.ts          # Unified API layer (camelCase)
-│       ├── lib/                     # Constants, utilities
+│       │   ├── useDetection.ts      # Detection state & actions
+│       │   ├── useBatchDetection.ts # Batch detection orchestration
+│       │   ├── useHomeState.ts      # Home page state management
+│       │   ├── useTheme.tsx         # Theme toggle hook
+│       │   └── useYoloValidation.ts # Validation state & streaming
+│       ├── i18n/                    # Internationalization
+│       │   ├── config.ts            # i18next configuration
+│       │   └── locales/             # en.json, zh.json
+│       ├── services/
+│       │   ├── api.ts               # Unified API layer (camelCase)
+│       │   └── request.ts           # HTTP client wrapper
+│       ├── lib/                     # Utilities
+│       │   ├── constants.ts         # App constants
+│       │   ├── filterBoxes.ts       # Client-side box filtering
+│       │   ├── formatTime.ts        # Time formatting
+│       │   ├── parsers.ts           # Response parsers
+│       │   └── yoloExport.ts        # Browser-side YOLO label export
 │       └── types/                   # TypeScript types
-├── docs/                            # Screenshots
+│           └── index.ts
+├── docs/                            # Screenshots & user guides
+│   ├── guide/                       # 中文用户指南
+│   └── guide/en/                    # English user guide
 ├── docker-compose.yml
 ├── start.sh / start.bat             # Launch scripts
 └── README.md
@@ -304,13 +342,25 @@ Canvas drawing mode for precise box annotation.
 - **Dual Model Source Support**: Run inference using trained YOLO models or manually upload custom external YOLO models (`.pt` files).
 - **Threshold Adjustment**: Fine-tune detection results in real time with adjustable Conf and IoU range sliders.
 - **Batch Image Validation**: Run inference and visualize predictions (with bounding boxes and confidence scores) across multiple uploaded test images.
-- **Real-time Video Validation Stream**:
-  - Frame-by-frame live YOLO inference stream using MJPEG.
-  - Interactive play/pause overlay controls with canvas-based freeze-frame capturing, ensuring smooth visual states without black screen flashes.
-  - Automatic end-of-stream detection with a "Playback Completed, click to replay" blurred overlay.
-  - Dedicated "Replay" footer button to bypass browser caching and restart stream validation.
-  - Smooth fixed 16:9 aspect ratio container (`aspect-video`), completely eliminating container resizing or layout jumps.
+- **Video Validation** (three modes):
+  - **MJPEG live stream** (`validate-mjpeg`): frame-by-frame annotated video stream using trained or external models, with interactive play/pause overlay and freeze-frame capturing.
+  - **SSE prediction stream** (`predict-video-stream`): real-time JSON event stream with per-frame detection results, progress tracking, and metadata.
+  - **Sync batch prediction** (`predict-video`): extract frames at configurable intervals, run inference, return all results at once.
+- **Automatic end-of-stream detection** with a "Playback Completed, click to replay" blurred overlay.
+- **Dedicated "Replay" footer button** to bypass browser caching and restart stream validation.
+- **Smooth fixed 16:9 aspect ratio container** (`aspect-video`), completely eliminating container resizing or layout jumps.
 - Validation results are temporary; supports exporting predictions as single-image YOLO `.txt` files.
+
+### VLM Model Management
+
+- **Status check**: query whether the VLM model is currently loaded in memory (`GET /api/v1/model/status`).
+- **Unload**: free GPU/CPU memory by unloading the VLM model on demand (`POST /api/v1/model/unload`).
+- Model is lazily loaded on first detection request and stays resident until explicitly unloaded.
+
+### Retrain
+
+- **One-click retrain**: re-run training with the exact same detection set and hyperparameters from a previous job (`POST /api/v1/train/jobs/{id}/retrain`).
+- Useful for A/B comparison or recovering from a failed run without re-selecting data.
 
 ## API Reference
 
@@ -332,6 +382,8 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 | POST | `/api/v1/detections/{id}/delete` | Delete detection |
 | GET | `/api/v1/detections/{id}/export` | Export single YOLO label |
 | POST | `/api/v1/detections/export-batch` | Batch export (zip) |
+| GET | `/api/v1/model/status` | VLM model loaded/unloaded status |
+| POST | `/api/v1/model/unload` | Unload VLM model from memory |
 
 ### Video
 
@@ -340,6 +392,7 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 | POST | `/api/v1/videos/upload` | Upload video (multipart) |
 | GET | `/api/v1/videos` | List videos (paginated) |
 | GET | `/api/v1/videos/{id}` | Video detail (includes keyframes) |
+| GET | `/api/v1/videos/{id}/file` | Video file download |
 | POST | `/api/v1/videos/{id}/extract-keyframes` | Extract keyframes |
 | GET | `/api/v1/videos/{id}/keyframes/{keyframeId}/image` | Keyframe image |
 | POST | `/api/v1/videos/{id}/delete` | Delete video and keyframes |
@@ -356,7 +409,11 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 | GET | `/api/v1/train/jobs/{id}/dataset` | Download dataset zip (images + labels + data.yaml) |
 | GET | `/api/v1/train/jobs/{id}/charts/{name}` | Training charts (results.png, etc.) |
 | POST | `/api/v1/train/jobs/{id}/export-onnx` | Export / download ONNX model |
-| POST | `/api/v1/train/jobs/{id}/predict` | YOLO model inference |
+| POST | `/api/v1/train/jobs/{id}/predict` | YOLO model inference (image) |
+| POST | `/api/v1/train/jobs/{id}/retrain` | Re-run training with same settings |
+| GET | `/api/v1/train/jobs/{id}/validate-mjpeg/{video_id}` | Validate video using trained model (MJPEG live stream) |
+| POST | `/api/v1/train/jobs/{id}/predict-video-stream` | Validate video using trained model (SSE stream) |
+| POST | `/api/v1/train/jobs/{id}/predict-video` | Validate video using trained model (sync batch) |
 | POST | `/api/v1/train/jobs/{id}/delete` | Delete training job |
 | POST | `/api/v1/train/upload-model` | Upload external YOLO model (.pt) to get a Token |
 | POST | `/api/v1/train/validate-image/{token}` | Validate image using external model |
