@@ -43,6 +43,24 @@ from .core.middleware import RequestTracingMiddleware
 async def lifespan(app: FastAPI):
     setup_logging()
     init_db()
+
+    # 清理上次意外中断的训练任务
+    from .core.database import SessionLocal
+    from .models.train import TrainingJob
+    db = SessionLocal()
+    try:
+        stale = db.query(TrainingJob).filter(TrainingJob.status == "running").all()
+        if stale:
+            logger.info("Cleaning up %d zombie training jobs", len(stale))
+            for job in stale:
+                job.status = "failed"
+                job.error_message = "服务重启，训练中断"
+            db.commit()
+    except Exception as e:
+        logger.exception("Failed to clean up zombie training jobs: %s", str(e))
+    finally:
+        db.close()
+
     yield
 
 

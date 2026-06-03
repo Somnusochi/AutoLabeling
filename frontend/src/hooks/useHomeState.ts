@@ -9,6 +9,14 @@ export function useHomeState() {
   const [inputMode, setInputMode] = useState<"image" | "video">("image");
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const setPreview = useCallback((url: string | null) => {
+    setPreviewUrl((prev) => {
+      if (prev?.startsWith("blob:")) {
+        URL.revokeObjectURL(prev);
+      }
+      return url;
+    });
+  }, []);
   const [categories, setCategories] = useState<string[]>([]);
   const [validateVideoId, setValidateVideoId] = useState<string | null>(null);
   const [validateRunKey, setValidateRunKey] = useState(0);
@@ -92,8 +100,8 @@ export function useHomeState() {
     setFiles(fs);
     setBatchResults([]);
     setResult(null);
-    setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
-  }, [setBatchResults]);
+    setPreview(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
+  }, [setBatchResults, setPreview]);
 
   // Maps detection_id → File for batch results that can be re-detected
   const batchFileMap = useRef<Map<string, File>>(new Map());
@@ -157,7 +165,7 @@ export function useHomeState() {
             setBatchResults([...results]);
             if (i === 0) {
               setResult(data);
-              setPreviewUrl(URL.createObjectURL(files[i]));
+              setPreview(URL.createObjectURL(files[i]));
             }
           }
           setBatchProgress({ current: i + 1, total: files.length });
@@ -171,19 +179,19 @@ export function useHomeState() {
         batchFileMap.current.set(data.id, file);
         if (i === 0) {
           setResult(data);
-          setPreviewUrl(URL.createObjectURL(file));
+          setPreview(URL.createObjectURL(file));
         }
       });
       queryClient.invalidateQueries({ queryKey: ["detections"] });
     } finally {
       stopTimer();
     }
-  }, [files, categories, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress]);
+  }, [files, categories, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress, setPreview]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
     batchFileMap.current.clear();
-    setPreviewUrl(`${API_BASE}/detections/${det.id}/image`);
+    setPreview(`${API_BASE}/detections/${det.id}/image`);
     setResult(det);
     setBatchResults([]);
     setCategories(parseCategories(det.categories));
@@ -191,7 +199,7 @@ export function useHomeState() {
     else setFilterMode("all");
     if (det.filterNmsIou != null) setNmsIou(det.filterNmsIou);
     setHiddenIndices(new Set());
-  }, [setBatchResults]);
+  }, [setBatchResults, setPreview]);
 
   const handleReDetect = useCallback(async () => {
     if (!result) return;
@@ -238,15 +246,15 @@ export function useHomeState() {
 
   const handleSelectKeyframe = useCallback((files: File[]) => {
     setFiles(files);
-    setPreviewUrl(files.length === 1 ? URL.createObjectURL(files[0]) : null);
+    setPreview(files.length === 1 ? URL.createObjectURL(files[0]) : null);
     setBatchResults([]);
     setResult(null);
-  }, [setBatchResults]);
+  }, [setBatchResults, setPreview]);
 
   const handleBatchSelect = useCallback((det: Detection, file?: File) => {
     setResult(det);
-    if (file) setPreviewUrl(URL.createObjectURL(file));
-  }, []);
+    if (file) setPreview(URL.createObjectURL(file));
+  }, [setPreview]);
 
   const loading = detectMut.isPending || batchProgress.total > 0 || validating;
 
@@ -261,7 +269,7 @@ export function useHomeState() {
     selectedTrainedJobId, setSelectedTrainedJobId,
     inputMode, setInputMode,
     files, setFiles,
-    previewUrl, setPreviewUrl,
+    previewUrl, setPreviewUrl: setPreview,
     categories, setCategories,
     validateVideoId, setValidateVideoId,
     validateRunKey, setValidateRunKey,

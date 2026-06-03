@@ -10,7 +10,7 @@ import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from . import yolo_format
 from ..core.config import settings
@@ -311,10 +311,18 @@ def run_training(
 _model_cache: dict[str, object] = {}
 
 def _get_model(model_path: str, device: str) -> object:
-    if model_path not in _model_cache:
+    # 限制最多缓存3个模型，采用简易LRU算法
+    if model_path in _model_cache:
+        # 移到末尾表示最近使用过
+        val = _model_cache.pop(model_path)
+        _model_cache[model_path] = val
+    else:
+        if len(_model_cache) >= 3:
+            oldest = next(iter(_model_cache))
+            logger.info("Evicting YOLO model from cache (limit reached): %s", oldest)
+            _model_cache.pop(oldest)
+        
         from ultralytics import YOLO
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info("Loading YOLO model: %s", model_path)
         _model_cache[model_path] = YOLO(model_path)
     return _model_cache[model_path]
@@ -322,7 +330,7 @@ def _get_model(model_path: str, device: str) -> object:
 
 def predict_trained_model(
     model_path: str,
-    image_path: str,
+    image_source: Any,
     *,
     device: str = "cpu",
     conf: float = 0.25,
@@ -333,7 +341,7 @@ def predict_trained_model(
     Returns: {"image_width", "image_height", "boxes": [{"class_name","confidence","x1","y1","x2","y2"}]}
     """
     model = _get_model(model_path, device)
-    results = model.predict(image_path, device=device, imgsz=640, conf=conf, iou=iou, verbose=False)
+    results = model.predict(image_source, device=device, imgsz=640, conf=conf, iou=iou, verbose=False)
 
     boxes_out: list[dict] = []
     if results and results[0].boxes is not None:

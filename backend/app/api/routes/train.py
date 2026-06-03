@@ -1,19 +1,34 @@
 from __future__ import annotations
 
+import asyncio
+import io
 import json
+import logging
+import os
+import shutil
+import subprocess
+import tempfile
+import uuid
 import threading
 from pathlib import Path
 from uuid import UUID
 
+import cv2
+import numpy as np
+from PIL import Image
+from starlette.responses import StreamingResponse
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from ...core.database import get_db
+from ...core.config import settings
+from ...core.database import SessionLocal, get_db
 from ...models.train import TrainingDetection, TrainingJob
+from ...models.video import Video
 from ...schemas.common import APIResponse
 from ...schemas.train import TrainingJobOut, TrainRequest
-from ...services.trainer import YOLO_SERIES, run_training_safe
+from ...services.trainer import YOLO_SERIES, run_training_safe, predict_trained_model
+from ...services.video_service import _ffprobe
 from ..deps import get_request_id
 
 router = APIRouter(prefix="/api/v1/train", tags=["train"])
@@ -372,17 +387,6 @@ async def validate_mjpeg_external(
     iou: float = Query(0.45),
 ):
     """MJPEG validation with an external model (token from upload-model)."""
-    import asyncio
-    import subprocess
-    from pathlib import Path
-
-    from starlette.responses import StreamingResponse
-
-    from ...core.config import settings
-    from ...core.database import SessionLocal
-    from ...models.video import Video
-    from ...services.video_service import _ffprobe
-
     model_path = _token_path(token)
     if not model_path.exists():
         raise HTTPException(404, "Model token not found or expired")
@@ -408,21 +412,26 @@ async def validate_mjpeg_external(
         )
         assert proc.stdout is not None
         buf, frame_num = b"", 0
-        while True:
-            chunk = proc.stdout.read(4096)
-            if not chunk: break
-            buf += chunk
-            end = buf.find(b"\xff\xd9")
-            if end == -1: continue
-            jpg = buf[:end + 2]; buf = buf[end + 2:]
-            annotated = await asyncio.get_event_loop().run_in_executor(None, _draw_frame, model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps)
-            if annotated:
-                yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
-                await asyncio.sleep(0)
-            frame_num += 1
-        proc.terminate()
-        # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
-        yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
+        try:
+            while True:
+                chunk = await asyncio.to_thread(proc.stdout.read, 4096)
+                if not chunk: break
+                buf += chunk
+                end = buf.find(b"\xff\xd9")
+                if end == -1: continue
+                jpg = buf[:end + 2]; buf = buf[end + 2:]
+                annotated = await asyncio.to_thread(_draw_frame, model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps)
+                if annotated:
+                    yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
+                    await asyncio.sleep(0)
+                frame_num += 1
+        except BaseException:
+            proc.terminate()
+            raise
+        finally:
+            proc.terminate()
+            # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
+            yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
 
     return StreamingResponse(mjpeg_stream(), media_type="multipart/x-mixed-replace; boundary=frame",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -437,17 +446,6 @@ async def validate_mjpeg(
     iou: float = Query(0.45),
 ):
     """MJPEG endpoint: process every video frame, draw boxes, stream as MJPEG."""
-    import asyncio
-    import subprocess
-    from pathlib import Path
-
-    from starlette.responses import StreamingResponse
-
-    from ...core.config import settings
-    from ...services.trainer import predict_trained_model
-    from ...services.video_service import _ffprobe
-    from ...models.video import Video
-
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
         raise HTTPException(404, "Trained model not found")
@@ -476,27 +474,30 @@ async def validate_mjpeg(
         buf = b""
         frame_num = 0
 
-        while True:
-            chunk = proc.stdout.read(4096)
-            if not chunk: break
-            buf += chunk
-            end = buf.find(b"\xff\xd9")
-            if end == -1: continue
-            jpg = buf[:end + 2]
-            buf = buf[end + 2:]
+        try:
+            while True:
+                chunk = await asyncio.to_thread(proc.stdout.read, 4096)
+                if not chunk: break
+                buf += chunk
+                end = buf.find(b"\xff\xd9")
+                if end == -1: continue
+                jpg = buf[:end + 2]
+                buf = buf[end + 2:]
 
-            loop = asyncio.get_event_loop()
-            annotated = await loop.run_in_executor(
-                None, _draw_frame, job.model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps,
-            )
-            if annotated:
-                yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
-                await asyncio.sleep(0)
-            frame_num += 1
-
-        proc.terminate()
-        # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
-        yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
+                annotated = await asyncio.to_thread(
+                    _draw_frame, job.model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps
+                )
+                if annotated:
+                    yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
+                    await asyncio.sleep(0)
+                frame_num += 1
+        except BaseException:
+            proc.terminate()
+            raise
+        finally:
+            proc.terminate()
+            # Send a malformed image chunk to force browser image tag to fire onError for end-of-stream detection
+            yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nmalformed\r\n"
 
     return StreamingResponse(
         mjpeg_stream(),
@@ -507,21 +508,9 @@ async def validate_mjpeg(
 
 def _draw_frame(model_path: str, jpg: bytes, device: str, conf: float, iou: float, frame_num: int, fps: float) -> bytes | None:
     """Run YOLO, draw boxes on frame, return annotated JPEG bytes."""
-    import cv2
-    import numpy as np
-    import io
-    import tempfile
-    from pathlib import Path
-    from PIL import Image
-
-    from ...services.trainer import predict_trained_model
-
     try:
         img = Image.open(io.BytesIO(jpg))
-        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
-            img.save(tf.name)
-            r = predict_trained_model(model_path, tf.name, device=device, conf=conf, iou=iou)
-            Path(tf.name).unlink()
+        r = predict_trained_model(model_path, img, device=device, conf=conf, iou=iou)
 
         frame = cv2.cvtColor(np.array(img.convert("RGB")), cv2.COLOR_RGB2BGR)
         for b in r["boxes"]:
@@ -550,20 +539,6 @@ async def predict_video_stream(
     iou: float = Form(0.45),
 ):
     """SSE endpoint: process every video frame and stream YOLO results in real-time."""
-    import asyncio
-    import io
-    import json
-    import subprocess
-    import tempfile
-    from pathlib import Path
-
-    from PIL import Image
-    from starlette.responses import StreamingResponse
-
-    from ...core.config import settings
-    from ...services.trainer import predict_trained_model
-    from ...services.video_service import _ffprobe
-
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job or not job.model_path:
         raise HTTPException(404, "Trained model not found")
@@ -595,50 +570,52 @@ async def predict_video_stream(
         start_time = None
         processed = 0
 
-        while True:
-            chunk = proc.stdout.read(4096)
-            if not chunk:
-                break
-            buf += chunk
-            end = buf.find(b"\xff\xd9")
-            if end == -1:
-                continue
-            jpg_data = buf[:end + 2]
-            buf = buf[end + 2:]
+        try:
+            while True:
+                chunk = await asyncio.to_thread(proc.stdout.read, 4096)
+                if not chunk:
+                    break
+                buf += chunk
+                end = buf.find(b"\xff\xd9")
+                if end == -1:
+                    continue
+                jpg_data = buf[:end + 2]
+                buf = buf[end + 2:]
 
-            if start_time is None:
-                start_time = asyncio.get_event_loop().time()
+                if start_time is None:
+                    start_time = asyncio.get_running_loop().time()
 
-            # Run YOLO in thread pool (CPU-bound)
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None,
-                _predict_frame,
-                job.model_path,
-                jpg_data,
-                settings.resolved_device,
-                conf,
-                iou,
-            )
+                # Run YOLO in thread pool (CPU-bound)
+                result = await asyncio.to_thread(
+                    _predict_frame,
+                    job.model_path,
+                    jpg_data,
+                    settings.resolved_device,
+                    conf,
+                    iou,
+                )
 
-            timestamp = round(frame_num / fps, 3) if fps > 0 else frame_num
-            boxes_camel = [{
-                "className": b["class_name"],
-                "confidence": b["confidence"],
-                "x1": b["x1"], "y1": b["y1"],
-                "x2": b["x2"], "y2": b["y2"],
-            } for b in result["boxes"]]
+                timestamp = round(frame_num / fps, 3) if fps > 0 else frame_num
+                boxes_camel = [{
+                    "className": b["class_name"],
+                    "confidence": b["confidence"],
+                    "x1": b["x1"], "y1": b["y1"],
+                    "x2": b["x2"], "y2": b["y2"],
+                } for b in result["boxes"]]
 
-            yield f"data: {json.dumps({'frame': frame_num, 'fps': fps, 'totalFrames': total_frames, 'timestamp': timestamp, 'imageWidth': result['image_width'], 'imageHeight': result['image_height'], 'boxes': boxes_camel})}\n\n"
+                yield f"data: {json.dumps({'frame': frame_num, 'fps': fps, 'totalFrames': total_frames, 'timestamp': timestamp, 'imageWidth': result['image_width'], 'imageHeight': result['image_height'], 'boxes': boxes_camel})}\n\n"
 
-            frame_num += 1
-            processed += 1
-            await asyncio.sleep(0)  # yield to event loop
-
-        proc.terminate()
-        elapsed = asyncio.get_event_loop().time() - start_time if start_time else 0
-        yield f"data: {json.dumps({'done': True, 'frames': processed, 'elapsed': round(elapsed, 2)})}\n\n"
-        Path(tmp_video.name).unlink(missing_ok=True)
+                frame_num += 1
+                processed += 1
+                await asyncio.sleep(0)  # yield to event loop
+        except BaseException:
+            proc.terminate()
+            raise
+        finally:
+            proc.terminate()
+            elapsed = asyncio.get_running_loop().time() - start_time if start_time else 0
+            yield f"data: {json.dumps({'done': True, 'frames': processed, 'elapsed': round(elapsed, 2)})}\n\n"
+            Path(tmp_video.name).unlink(missing_ok=True)
 
     return StreamingResponse(
         event_stream(),
@@ -649,19 +626,8 @@ async def predict_video_stream(
 
 def _predict_frame(model_path: str, jpg_data: bytes, device: str, conf: float, iou: float) -> dict:
     """Run YOLO on a single JPEG frame. Called in thread pool."""
-    import io
-    import tempfile
-    from pathlib import Path
-
-    from PIL import Image
-
-    from ...services.trainer import predict_trained_model
-
     img = Image.open(io.BytesIO(jpg_data))
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
-        img.save(tf.name)
-        r = predict_trained_model(model_path, tf.name, device=device, conf=conf, iou=iou)
-        Path(tf.name).unlink()
+    r = predict_trained_model(model_path, img, device=device, conf=conf, iou=iou)
     return r
 
 
