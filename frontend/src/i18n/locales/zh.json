@@ -17,7 +17,10 @@
     "export": "导出",
     "collapse": "收起",
     "view": "查看",
-    "draw": "标注"
+    "draw": "标注",
+    "themeLight": "切换到亮色模式",
+    "themeDark": "切换到暗色模式",
+    "themeSystem": "跟随系统主题"
   },
   "home": {
     "detectBtnImage": "开始检测",

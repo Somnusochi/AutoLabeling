@@ -176,7 +176,7 @@ declare global {
   const useState: typeof import('react').useState
   const useSyncExternalStore: typeof import('react').useSyncExternalStore
   const useTextSelection: typeof import('ahooks').useTextSelection
-  const useTheme: typeof import('ahooks').useTheme
+  const useTheme: typeof import('./hooks/useTheme').useTheme
   const useThrottle: typeof import('ahooks').useThrottle
   const useThrottleEffect: typeof import('ahooks').useThrottleEffect
   const useThrottleFn: typeof import('ahooks').useThrottleFn

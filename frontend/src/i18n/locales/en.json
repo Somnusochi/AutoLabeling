@@ -17,7 +17,10 @@
     "export": "Export",
     "collapse": "Collapse",
     "view": "View",
-    "draw": "Draw"
+    "draw": "Draw",
+    "themeLight": "Switch to light mode",
+    "themeDark": "Switch to dark mode",
+    "themeSystem": "Follow system theme"
   },
   "home": {
     "detectBtnImage": "Start Detection",
