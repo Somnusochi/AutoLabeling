@@ -1,0 +1,134 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm run build
+
+      - name: Package frontend dist
+        run: |
+          cd frontend
+          tar -czf ../frontend-dist.tar.gz dist/
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-dist.tar.gz
+          retention-days: 1
+
+  create-release:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            # First release, get all commits
+            NOTES=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            # Get commits since last tag
+            NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Write to file
+          cat > release_notes.md <<EOF
+          ## What's Changed
+
+          $NOTES
+
+          ## Installation
+
+          ### Docker (Recommended)
+          \`\`\`bash
+          curl -O https://raw.githubusercontent.com/${{ github.repository }}/master/docker-compose.yml
+          docker compose up -d
+          \`\`\`
+
+          Access:
+          - Frontend: http://localhost
+          - API Docs: http://localhost:8000/docs
+
+          ### Docker Images
+          \`\`\`bash
+          docker pull ghcr.io/${{ github.repository }}-frontend:${{ github.ref_name }}
+          docker pull ghcr.io/${{ github.repository }}-backend:${{ github.ref_name }}
+          \`\`\`
+
+          ### Manual Setup
+          See [README](https://github.com/${{ github.repository }}#manual-setup) for detailed instructions.
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${{ github.ref_name }}
+          EOF
+
+          # Escape for GitHub Actions
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create source archive
+        run: |
+          git archive --format=tar.gz --prefix=VLM-AutoYOLO-${{ github.ref_name }}/ \
+            -o source-code.tar.gz HEAD
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: VLM-AutoYOLO ${{ github.ref_name }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          draft: false
+          prerelease: false
+          files: |
+            frontend-dist.tar.gz
+            source-code.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
