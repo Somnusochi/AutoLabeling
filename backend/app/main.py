@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AutoLabeling 预标注训练系统 API",
+    title="LocateAnything 预标注训练系统 API",
     version="0.1.0",
     lifespan=lifespan,
     default_response_class=CleanJSONResponse,
