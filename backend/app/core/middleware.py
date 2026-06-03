@@ -1,4 +1,5 @@
 """HTTP middleware: request ID, timing, access log."""
+
 from __future__ import annotations
 
 import logging
@@ -15,7 +16,9 @@ REQUEST_ID_HEADER = "X-Request-ID"
 
 class RequestTracingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint,
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
     ) -> Response:
         request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex[:12]
         request.state.request_id = request_id
@@ -27,7 +30,10 @@ class RequestTracingMiddleware(BaseHTTPMiddleware):
             elapsed = time.perf_counter() - start
             logger.error(
                 "%s %s [%s] 500 %.3fs",
-                request.method, request.url.path, request_id, elapsed,
+                request.method,
+                request.url.path,
+                request_id,
+                elapsed,
             )
             raise
 
@@ -35,7 +41,10 @@ class RequestTracingMiddleware(BaseHTTPMiddleware):
         response.headers[REQUEST_ID_HEADER] = request_id
         logger.info(
             "%s %s [%s] %d %.3fs",
-            request.method, request.url.path, request_id,
-            response.status_code, elapsed,
+            request.method,
+            request.url.path,
+            request_id,
+            response.status_code,
+            elapsed,
         )
         return response

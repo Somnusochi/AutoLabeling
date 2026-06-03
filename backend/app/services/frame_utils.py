@@ -2,6 +2,7 @@
 
 Shared by MJPEG streaming and SSE video prediction endpoints.
 """
+
 from __future__ import annotations
 
 import io
@@ -32,11 +33,21 @@ def draw_frame(
             cv2.rectangle(frame, (b["x1"], b["y1"]), (b["x2"], b["y2"]), (0, 255, 0), 2)
             label = f"{b['class_name']} {b['confidence']:.2f}"
             (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-            cv2.rectangle(frame, (b["x1"], b["y1"] - th - 4), (b["x1"] + tw + 4, b["y1"]), (0, 255, 0), -1)
-            cv2.putText(frame, label, (b["x1"] + 2, b["y1"] - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+            cv2.rectangle(
+                frame, (b["x1"], b["y1"] - th - 4), (b["x1"] + tw + 4, b["y1"]), (0, 255, 0), -1
+            )
+            cv2.putText(
+                frame,
+                label,
+                (b["x1"] + 2, b["y1"] - 4),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 0),
+                1,
+            )
 
         # Add info overlay
-        ts_str = f"Frame {frame_num} | {frame_num/fps:.1f}s" if fps > 0 else f"Frame {frame_num}"
+        ts_str = f"Frame {frame_num} | {frame_num / fps:.1f}s" if fps > 0 else f"Frame {frame_num}"
         cv2.putText(frame, ts_str, (8, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
         _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])

@@ -11,13 +11,12 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from fastapi.responses import FileResponse
 
 from ...core.config import settings
-from ...core.database import get_db
 from ...core.exceptions import AppError, NotFoundError
+from ...repositories.detection import DetectionRepository
 from ...schemas.common import APIResponse, BaseSchema
 from ...schemas.detection import DetectionOut
 from ...services.locate_anything import detect, is_model_loaded, unload_model
 from ..deps import get_repo, get_request_id
-from ...repositories.detection import DetectionRepository
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["detection"])
@@ -49,8 +48,8 @@ async def create_detection(
 
     try:
         cat_list: list[str] = json.loads(categories)
-    except json.JSONDecodeError:
-        raise HTTPException(400, detail="categories must be a JSON array")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(400, detail="categories must be a JSON array") from exc
     if not cat_list:
         raise HTTPException(400, detail="categories cannot be empty")
 
@@ -76,8 +75,10 @@ async def create_detection(
     box_dicts: list[dict] = [
         {
             "class_name": b.get("class_name") or cat_list[0] or "object",
-            "x1": b["x1"], "y1": b["y1"],
-            "x2": b["x2"], "y2": b["y2"],
+            "x1": b["x1"],
+            "y1": b["y1"],
+            "x2": b["x2"],
+            "y2": b["y2"],
         }
         for b in result["boxes"]
     ]
@@ -173,10 +174,18 @@ def add_box(
     det = repo.get_by_id(detection_id)
     if not det:
         raise NotFoundError("Detection", detection_id)
-    repo.add_boxes(detection_id, [{
-        "class_name": body.class_name,
-        "x1": body.x1, "y1": body.y1, "x2": body.x2, "y2": body.y2,
-    }])
+    repo.add_boxes(
+        detection_id,
+        [
+            {
+                "class_name": body.class_name,
+                "x1": body.x1,
+                "y1": body.y1,
+                "x2": body.x2,
+                "y2": body.y2,
+            }
+        ],
+    )
     repo.db.commit()
     return APIResponse(data={"ok": True})
 

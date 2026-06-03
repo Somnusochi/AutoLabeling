@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from datetime import datetime
 from typing import Any
 
@@ -48,12 +47,18 @@ class VideoOut(BaseSchema):
 class ExtractKeyframesIn(BaseSchema):
     method: str = Field("scene", description="scene | motion | interval")
     threshold: float = Field(
-        15.0, ge=0.5, le=50.0,
+        15.0,
+        ge=0.5,
+        le=50.0,
         description="scene: chi-sqr sensitivity (1-100); motion: min displacement px (0.5-50)",
     )
-    interval_seconds: float = Field(2.0, ge=0.5, le=60.0, description="interval seconds (interval method only)")
+    interval_seconds: float = Field(
+        2.0, ge=0.5, le=60.0, description="interval seconds (interval method only)"
+    )
     max_frames: int = Field(200, ge=1, le=1000, description="max raw candidate frames")
     ssim_threshold: float = Field(
-        0.95, ge=0.5, le=1.0,
+        0.95,
+        ge=0.5,
+        le=1.0,
         description="SSIM dedup threshold (0.5-1.0). 1.0 = no dedup. Default 0.95.",
     )

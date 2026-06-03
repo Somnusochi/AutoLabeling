@@ -1,4 +1,5 @@
 """Video processing — keyframe extraction via ffmpeg + SSIM dedup."""
+
 from __future__ import annotations
 
 import json
@@ -19,9 +20,19 @@ logger = logging.getLogger(__name__)
 def _ffprobe(filepath: str) -> dict:
     """Extract video metadata via ffprobe. Raises on failure."""
     result = subprocess.run(
-        ["ffprobe", "-v", "quiet", "-print_format", "json",
-         "-show_format", "-show_streams", filepath],
-        capture_output=True, text=True, timeout=30,
+        [
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
+            filepath,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     if result.returncode != 0:
         raise RuntimeError(f"ffprobe failed: {result.stderr}")
@@ -60,12 +71,22 @@ def _ffmpeg_scene(filepath: str, output_dir: Path, threshold: float, max_frames:
     scene_val = threshold / 100.0  # user 1-100 → ffmpeg 0.01-1.0
 
     result = subprocess.run(
-        ["ffmpeg", "-y", "-i", filepath,
-         "-vf", f"select='gt(scene,{scene_val:.4f})',showinfo",
-         "-vsync", "vfr",
-         "-frames:v", str(max_frames),
-         str(output_dir / "kf_%05d.jpg")],
-        capture_output=True, text=True, timeout=300,
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            filepath,
+            "-vf",
+            f"select='gt(scene,{scene_val:.4f})',showinfo",
+            "-vsync",
+            "vfr",
+            "-frames:v",
+            str(max_frames),
+            str(output_dir / "kf_%05d.jpg"),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
 
     # Parse pts_time from stderr
@@ -79,16 +100,20 @@ def _ffmpeg_scene(filepath: str, output_dir: Path, threshold: float, max_frames:
     frames: list[dict] = []
     for i, path in enumerate(jpg_files):
         t = pts_times[i] if i < len(pts_times) else i * 0.0
-        frames.append({
-            "frame_number": i,
-            "timestamp_seconds": round(t, 3),
-            "image_path": str(path),
-            "score": None,
-        })
+        frames.append(
+            {
+                "frame_number": i,
+                "timestamp_seconds": round(t, 3),
+                "image_path": str(path),
+                "score": None,
+            }
+        )
     return frames
 
 
-def _ffmpeg_motion(filepath: str, output_dir: Path, threshold: float, max_frames: int) -> list[dict]:
+def _ffmpeg_motion(
+    filepath: str, output_dir: Path, threshold: float, max_frames: int
+) -> list[dict]:
     """Motion-aware extraction via ffmpeg + OpenCV optical flow.
 
     Uses ffmpeg to decode frames (reliable codec support), then OpenCV
@@ -97,9 +122,17 @@ def _ffmpeg_motion(filepath: str, output_dir: Path, threshold: float, max_frames
     """
     # Use ffmpeg pipe to avoid OpenCV codec issues
     cmd = [
-        "ffmpeg", "-y", "-i", filepath,
-        "-vf", "format=yuv420p",
-        "-f", "rawvideo", "-pix_fmt", "bgr24", "-",
+        "ffmpeg",
+        "-y",
+        "-i",
+        filepath,
+        "-vf",
+        "format=yuv420p",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "bgr24",
+        "-",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     assert proc.stdout is not None
@@ -127,14 +160,18 @@ def _ffmpeg_motion(filepath: str, output_dir: Path, threshold: float, max_frames
         if prev_gray is None:
             path = str(output_dir / f"kf_{frame_num:05d}.jpg")
             cv2.imwrite(path, frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-            frames.append({
-                "frame_number": frame_num,
-                "timestamp_seconds": round(frame_num / fps, 3),
-                "image_path": path,
-                "score": 0.0,
-            })
+            frames.append(
+                {
+                    "frame_number": frame_num,
+                    "timestamp_seconds": round(frame_num / fps, 3),
+                    "image_path": path,
+                    "score": 0.0,
+                }
+            )
             prev_gray = curr_gray
-            prev_pts = cv2.goodFeaturesToTrack(prev_gray, maxCorners=200, qualityLevel=0.01, minDistance=10)
+            prev_pts = cv2.goodFeaturesToTrack(
+                prev_gray, maxCorners=200, qualityLevel=0.01, minDistance=10
+            )
             if prev_pts is None:
                 prev_pts = np.array([]).reshape(0, 1, 2).astype(np.float32)
             frame_num += 1
@@ -144,8 +181,12 @@ def _ffmpeg_motion(filepath: str, output_dir: Path, threshold: float, max_frames
         motion = 0.0
         if len(prev_pts) > 10:
             next_pts, status, _ = cv2.calcOpticalFlowPyrLK(
-                prev_gray, curr_gray, prev_pts.astype(np.float32), None,
-                winSize=(15, 15), maxLevel=2,
+                prev_gray,
+                curr_gray,
+                prev_pts.astype(np.float32),
+                None,
+                winSize=(15, 15),
+                maxLevel=2,
             )
             if next_pts is not None and status is not None:
                 good_new = next_pts[status.flatten() == 1]
@@ -158,15 +199,19 @@ def _ffmpeg_motion(filepath: str, output_dir: Path, threshold: float, max_frames
         if accumulated_motion >= threshold:
             path = str(output_dir / f"kf_{frame_num:05d}.jpg")
             cv2.imwrite(path, frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-            frames.append({
-                "frame_number": frame_num,
-                "timestamp_seconds": round(frame_num / fps, 3),
-                "image_path": path,
-                "score": round(accumulated_motion, 2),
-            })
+            frames.append(
+                {
+                    "frame_number": frame_num,
+                    "timestamp_seconds": round(frame_num / fps, 3),
+                    "image_path": path,
+                    "score": round(accumulated_motion, 2),
+                }
+            )
             accumulated_motion = 0.0
             prev_gray = curr_gray
-            prev_pts = cv2.goodFeaturesToTrack(prev_gray, maxCorners=200, qualityLevel=0.01, minDistance=10)
+            prev_pts = cv2.goodFeaturesToTrack(
+                prev_gray, maxCorners=200, qualityLevel=0.01, minDistance=10
+            )
             if prev_pts is None:
                 prev_pts = np.array([]).reshape(0, 1, 2).astype(np.float32)
 
@@ -174,7 +219,9 @@ def _ffmpeg_motion(filepath: str, output_dir: Path, threshold: float, max_frames
         if frame_num % 30 == 0:
             prev_gray = curr_gray if len(prev_pts) < 10 else prev_gray
             if len(prev_pts) < 10:
-                prev_pts = cv2.goodFeaturesToTrack(prev_gray, maxCorners=200, qualityLevel=0.01, minDistance=10)
+                prev_pts = cv2.goodFeaturesToTrack(
+                    prev_gray, maxCorners=200, qualityLevel=0.01, minDistance=10
+                )
                 if prev_pts is None:
                     prev_pts = np.array([]).reshape(0, 1, 2).astype(np.float32)
 
@@ -184,17 +231,29 @@ def _ffmpeg_motion(filepath: str, output_dir: Path, threshold: float, max_frames
     return frames
 
 
-def _ffmpeg_interval(filepath: str, output_dir: Path, interval: float, max_frames: int, fps: float) -> list[dict]:
+def _ffmpeg_interval(
+    filepath: str, output_dir: Path, interval: float, max_frames: int, fps: float
+) -> list[dict]:
     """Fixed-interval extraction via ffmpeg select filter."""
     frame_step = max(1, int(interval * fps))
 
     subprocess.run(
-        ["ffmpeg", "-y", "-i", filepath,
-         "-vf", f"select='not(mod(n,{frame_step}))'",
-         "-vsync", "vfr",
-         "-frames:v", str(max_frames),
-         str(output_dir / "kf_%05d.jpg")],
-        capture_output=True, text=True, timeout=300,
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            filepath,
+            "-vf",
+            f"select='not(mod(n,{frame_step}))'",
+            "-vsync",
+            "vfr",
+            "-frames:v",
+            str(max_frames),
+            str(output_dir / "kf_%05d.jpg"),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
 
     jpg_files = sorted(output_dir.glob("kf_*.jpg"))
@@ -203,12 +262,14 @@ def _ffmpeg_interval(filepath: str, output_dir: Path, interval: float, max_frame
         frame_num = i * frame_step  # select='not(mod(n,step))' picks frames 0, step, 2*step, ...
         new_path = output_dir / f"kf_{frame_num:05d}.jpg"
         path.rename(new_path)
-        frames.append({
-            "frame_number": frame_num,
-            "timestamp_seconds": round(frame_num / fps, 3),
-            "image_path": str(new_path),
-            "score": None,
-        })
+        frames.append(
+            {
+                "frame_number": frame_num,
+                "timestamp_seconds": round(frame_num / fps, 3),
+                "image_path": str(new_path),
+                "score": None,
+            }
+        )
 
     return frames
 
@@ -219,16 +280,16 @@ def _ffmpeg_interval(filepath: str, output_dir: Path, interval: float, max_frame
 def _ssim(a: np.ndarray, b: np.ndarray) -> float:
     a_f = a.astype(np.float32)
     b_f = b.astype(np.float32)
-    C1 = (0.01 * 255) ** 2
-    C2 = (0.03 * 255) ** 2
+    c1 = (0.01 * 255) ** 2
+    c2 = (0.03 * 255) ** 2
     mu_a = cv2.GaussianBlur(a_f, (11, 11), 1.5)
     mu_b = cv2.GaussianBlur(b_f, (11, 11), 1.5)
-    mu_a2, mu_b2, mu_ab = mu_a ** 2, mu_b ** 2, mu_a * mu_b
-    sigma_a2 = cv2.GaussianBlur(a_f ** 2, (11, 11), 1.5) - mu_a2
-    sigma_b2 = cv2.GaussianBlur(b_f ** 2, (11, 11), 1.5) - mu_b2
+    mu_a2, mu_b2, mu_ab = mu_a**2, mu_b**2, mu_a * mu_b
+    sigma_a2 = cv2.GaussianBlur(a_f**2, (11, 11), 1.5) - mu_a2
+    sigma_b2 = cv2.GaussianBlur(b_f**2, (11, 11), 1.5) - mu_b2
     sigma_ab = cv2.GaussianBlur(a_f * b_f, (11, 11), 1.5) - mu_ab
-    num = (2 * mu_ab + C1) * (2 * sigma_ab + C2)
-    den = (mu_a2 + mu_b2 + C1) * (sigma_a2 + sigma_b2 + C2)
+    num = (2 * mu_ab + c1) * (2 * sigma_ab + c2)
+    den = (mu_a2 + mu_b2 + c1) * (sigma_a2 + sigma_b2 + c2)
     return float(np.mean(num / (den + 1e-8)))
 
 
@@ -249,7 +310,11 @@ def _deduplicate(frames: list[dict], ssim_threshold: float) -> list[dict]:
             kept.append(fd)
             last_img = None
             continue
-        sim = _ssim(cv2.resize(last_img, target_size), cv2.resize(curr, target_size)) if last_img is not None else 0.0
+        sim = (
+            _ssim(cv2.resize(last_img, target_size), cv2.resize(curr, target_size))
+            if last_img is not None
+            else 0.0
+        )
         if sim < ssim_threshold:
             kept.append(fd)
         else:
@@ -258,7 +323,9 @@ def _deduplicate(frames: list[dict], ssim_threshold: float) -> list[dict]:
 
     removed = len(frames) - len(kept)
     if removed:
-        logger.info("SSIM dedup removed %d/%d frames (threshold=%.2f)", removed, len(frames), ssim_threshold)
+        logger.info(
+            "SSIM dedup removed %d/%d frames (threshold=%.2f)", removed, len(frames), ssim_threshold
+        )
     return kept
 
 
@@ -295,16 +362,18 @@ def extract_keyframes(
     if len(raw) == 0:
         logger.warning("No frames extracted, grabbing first frame as fallback")
         subprocess.run(
-            ["ffmpeg", "-y", "-i", filepath,
-             "-vframes", "1",
-             str(output_dir / "kf_00000.jpg")],
-            capture_output=True, text=True, timeout=30,
+            ["ffmpeg", "-y", "-i", filepath, "-vframes", "1", str(output_dir / "kf_00000.jpg")],
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
-        raw = [{
-            "frame_number": 0,
-            "timestamp_seconds": 0.0,
-            "image_path": str(output_dir / "kf_00000.jpg"),
-            "score": None,
-        }]
+        raw = [
+            {
+                "frame_number": 0,
+                "timestamp_seconds": 0.0,
+                "image_path": str(output_dir / "kf_00000.jpg"),
+                "score": None,
+            }
+        ]
 
     return _deduplicate(raw, ssim_threshold)

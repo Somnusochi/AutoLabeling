@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from datetime import datetime
 from typing import Any
 
@@ -16,7 +15,9 @@ class TrainRequest(BaseSchema):
     imgsz: int = Field(default=640, ge=320, le=1920)
     batch: int = Field(default=16, ge=1, le=128)
     train_ratio: float = Field(default=0.7, ge=0.1, le=1.0, description="training set ratio")
-    val_ratio: float = Field(default=0.2, ge=0.0, le=0.9, description="validation set ratio (test = 1 - train - val)")
+    val_ratio: float = Field(
+        default=0.2, ge=0.0, le=0.9, description="validation set ratio (test = 1 - train - val)"
+    )
     task_type: str = Field(default="detect", description="detect | segment | classify")
 
 

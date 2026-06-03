@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -14,7 +14,9 @@ class Video(Base):
     __tablename__ = "videos"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
     )
     file_path: Mapped[str] = mapped_column(Text, nullable=False)
     file_name: Mapped[str] = mapped_column(String(512), nullable=False)
@@ -24,14 +26,18 @@ class Video(Base):
     width: Mapped[int | None] = mapped_column(Integer, nullable=True)
     height: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(
-        String(32), default="uploaded",
+        String(32),
+        default="uploaded",
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
-    keyframes: Mapped[list["KeyFrame"]] = relationship(
-        "KeyFrame", back_populates="video", cascade="all, delete-orphan",
+    keyframes: Mapped[list[KeyFrame]] = relationship(
+        "KeyFrame",
+        back_populates="video",
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -44,7 +50,9 @@ class KeyFrame(Base):
     __tablename__ = "keyframes"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
     )
     video_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -56,10 +64,11 @@ class KeyFrame(Base):
     image_path: Mapped[str] = mapped_column(Text, nullable=False)
     scene_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
-    video: Mapped["Video"] = relationship("Video", back_populates="keyframes")
+    video: Mapped[Video] = relationship("Video", back_populates="keyframes")
 
     __table_args__ = (
         Index("ix_keyframes_video_id", "video_id"),

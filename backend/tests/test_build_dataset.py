@@ -1,4 +1,5 @@
 """Tests for _build_dataset train/val/test split logic."""
+
 from __future__ import annotations
 
 import uuid
@@ -20,7 +21,14 @@ class FakeBox:
 
 
 class FakeDetection:
-    def __init__(self, image_path: Path, boxes: list[FakeBox], det_id=None, filter_mode=None, filter_nms_iou=None):
+    def __init__(
+        self,
+        image_path: Path,
+        boxes: list[FakeBox],
+        det_id=None,
+        filter_mode=None,
+        filter_nms_iou=None,
+    ):
         self.id = det_id or uuid.uuid4()
         self.image_path = str(image_path)
         self.image_width = 100
@@ -59,12 +67,14 @@ def _make_mock_db(ids: list[str], det_map: dict) -> MagicMock:
 
     def query_side_effect(model):
         mock_q = MagicMock()
+
         def filter_side_effect(condition):
             mock_f = MagicMock()
             idx = call_count[0]
             mock_f.first.return_value = det_list[idx] if idx < len(det_list) else None
             call_count[0] += 1
             return mock_f
+
         mock_q.filter = filter_side_effect
         return mock_q
 
@@ -136,7 +146,7 @@ def test_build_dataset_class_map(tmp_path, work_dir):
 
     ids = []
     det_map = {}
-    for i, cls in enumerate(["cat", "dog", "bird"]):
+    for _i, cls in enumerate(["cat", "dog", "bird"]):
         img_path = tmp_path / f"img_{cls}.jpg"
         Image.new("RGB", (100, 100)).save(img_path)
         det_id = uuid.uuid4()

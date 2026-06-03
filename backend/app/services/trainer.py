@@ -2,18 +2,20 @@
 
 Takes a set of detection records → assembles YOLO dataset → trains → exports model.
 """
+
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
-import os
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from . import yolo_format
 from ..core.config import settings
+from . import yolo_format
+
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
@@ -67,7 +69,7 @@ YOLO_SERIES = {
 
 def _build_dataset(
     detection_ids: list[str],
-    db: "Session",
+    db: Session,
     work_dir: Path,
     train_ratio: float = 0.8,
     val_ratio: float = 0.2,
@@ -94,7 +96,7 @@ def _build_dataset(
         (work_dir / sub).mkdir(parents=True, exist_ok=True)
 
     class_map: dict[str, int] = {}
-    detections: list["Detection"] = []
+    detections: list[Detection] = []
 
     for det_id in detection_ids:
         det = db.query(Detection).filter(Detection.id == det_id).first()
@@ -126,7 +128,7 @@ def _build_dataset(
     val_dets = detections[train_end:val_end]
     test_dets = detections[val_end:] if has_test else []
 
-    def _write_set(dets: list["Detection"], subset: str) -> int:
+    def _write_set(dets: list[Detection], subset: str) -> int:
         for det in dets:
             src = Path(det.image_path)
             dst_img = work_dir / "images" / subset / f"{det.id}{src.suffix}"
@@ -164,7 +166,9 @@ def _metrics_dict(metrics_obj: object | None) -> dict[str, float]:
     return {}
 
 
-def _training_metrics(metrics_obj: object | None, sample_count: int, class_map: dict[str, int]) -> dict:
+def _training_metrics(
+    metrics_obj: object | None, sample_count: int, class_map: dict[str, int]
+) -> dict:
     rd = _metrics_dict(metrics_obj)
     return {
         "mAP50": float(rd.get("metrics/mAP50(B)", 0)),
@@ -195,7 +199,7 @@ def run_training(
     *,
     job_id: str,
     detection_ids: list[str],
-    db: "Session",
+    db: Session,
     model_variant: str = "yolo26n",
     epochs: int = 100,
     imgsz: int = 640,
@@ -216,7 +220,11 @@ def run_training(
 
     # 1. Build dataset with train/val(/test) split
     sample_count, class_map, train_n, val_n, test_n = _build_dataset(
-        detection_ids, db, work_dir, train_ratio, val_ratio,
+        detection_ids,
+        db,
+        work_dir,
+        train_ratio,
+        val_ratio,
     )
     if sample_count == 0:
         raise ValueError("No valid training samples found")
@@ -229,7 +237,10 @@ def run_training(
         parts.append(f"{test_n} test")
     logger.info(
         "Training dataset built: %d samples (%s), %d classes → %s",
-        sample_count, " / ".join(parts), len(class_map), work_dir,
+        sample_count,
+        " / ".join(parts),
+        len(class_map),
+        work_dir,
     )
 
     # 2. Train — with progress tracking
@@ -300,7 +311,7 @@ def run_training(
         job.class_map = class_map
         job.model_path = str(output_path)
         job.onnx_path = str(onnx_path) if onnx_path.exists() else None
-        job.completed_at = datetime.now(timezone.utc)
+        job.completed_at = datetime.now(UTC)
         db.commit()
 
     logger.info("Training completed: %s → %s", job_id, output_path)
@@ -309,6 +320,7 @@ def run_training(
 
 # Model cache — avoid reloading YOLO for every frame
 _model_cache: dict[str, object] = {}
+
 
 def _get_model(model_path: str, device: str) -> object:
     # 限制最多缓存3个模型，采用简易LRU算法
@@ -321,8 +333,9 @@ def _get_model(model_path: str, device: str) -> object:
             oldest = next(iter(_model_cache))
             logger.info("Evicting YOLO model from cache (limit reached): %s", oldest)
             _model_cache.pop(oldest)
-        
+
         from ultralytics import YOLO
+
         logger.info("Loading YOLO model: %s", model_path)
         _model_cache[model_path] = YOLO(model_path)
     return _model_cache[model_path]
@@ -338,10 +351,14 @@ def predict_trained_model(
 ) -> dict:
     """Run inference with a trained YOLO model.
 
-    Returns: {"image_width", "image_height", "boxes": [{"class_name","confidence","x1","y1","x2","y2"}]}
+    Returns:
+        dict with keys: image_width, image_height, boxes
+        boxes is a list of dicts with: class_name, confidence, x1, y1, x2, y2
     """
     model = _get_model(model_path, device)
-    results = model.predict(image_source, device=device, imgsz=640, conf=conf, iou=iou, verbose=False)
+    results = model.predict(
+        image_source, device=device, imgsz=640, conf=conf, iou=iou, verbose=False
+    )
 
     boxes_out: list[dict] = []
     if results and results[0].boxes is not None:
@@ -351,12 +368,16 @@ def predict_trained_model(
             conf_val = float(r.boxes.conf[i])
             cls_id = int(r.boxes.cls[i])
             cls_name = r.names.get(cls_id, str(cls_id)) if r.names else str(cls_id)
-            boxes_out.append({
-                "class_name": cls_name,
-                "confidence": round(conf_val, 4),
-                "x1": int(x1), "y1": int(y1),
-                "x2": int(x2), "y2": int(y2),
-            })
+            boxes_out.append(
+                {
+                    "class_name": cls_name,
+                    "confidence": round(conf_val, 4),
+                    "x1": int(x1),
+                    "y1": int(y1),
+                    "x2": int(x2),
+                    "y2": int(y2),
+                }
+            )
 
     w, h = 0, 0
     if results:
@@ -409,7 +430,5 @@ def run_training_safe(
         except Exception:
             logger.exception("Failed to update job status")
     finally:
-        try:
+        with contextlib.suppress(Exception):
             db.close()
-        except Exception:
-            pass

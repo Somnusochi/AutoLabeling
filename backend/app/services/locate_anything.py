@@ -1,4 +1,5 @@
 """VLM model service — wraps LocateAnything-3B for visual grounding."""
+
 from __future__ import annotations
 
 import logging
@@ -10,7 +11,7 @@ import torch
 from PIL import Image
 
 from ..core.config import settings
-from ..core.exceptions import InferenceError, ModelNotLoadedError
+from ..core.exceptions import InferenceError
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ class LocateAnythingWorker:
             pixel_values=inputs["pixel_values"].to(self.dtype),
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
-            image_grid_hws=inputs.get("image_grid_hws", None),
+            image_grid_hws=inputs.get("image_grid_hws"),
             tokenizer=self.tokenizer,
             max_new_tokens=max_new_tokens,
             use_cache=True,
@@ -148,13 +149,15 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
             m = _BOX_PATTERN.match(token)
             if m and current_class:
                 x1, y1, x2, y2 = map(int, m.groups())
-                boxes.append({
-                    "class_name": current_class,
-                    "x1": int(x1 / 1000 * img_w),
-                    "y1": int(y1 / 1000 * img_h),
-                    "x2": int(x2 / 1000 * img_w),
-                    "y2": int(y2 / 1000 * img_h),
-                })
+                boxes.append(
+                    {
+                        "class_name": current_class,
+                        "x1": int(x1 / 1000 * img_w),
+                        "y1": int(y1 / 1000 * img_h),
+                        "x2": int(x2 / 1000 * img_w),
+                        "y2": int(y2 / 1000 * img_h),
+                    }
+                )
 
     return boxes
 
@@ -199,6 +202,7 @@ def unload_model() -> None:
         del _worker.processor
         _worker = None
     import gc
+
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()

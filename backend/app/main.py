@@ -1,21 +1,13 @@
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
-import logging
-
-from typing import Any
-
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
-logger = logging.getLogger(__name__)
-
-
-# CleanJSONResponse removed to prevent high-cost recursive none cleaning (replaced with Pydantic exclude_none)
 
 from .api.routes.detection import router as detection_router
 from .api.routes.export import router as export_router
@@ -28,6 +20,12 @@ from .core.exceptions import AppError
 from .core.logging import setup_logging
 from .core.middleware import RequestTracingMiddleware
 
+logger = logging.getLogger(__name__)
+
+
+# CleanJSONResponse removed to prevent high-cost recursive none cleaning
+# (replaced with Pydantic exclude_none)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,6 +35,7 @@ async def lifespan(app: FastAPI):
     # 清理上次意外中断的训练任务
     from .core.database import SessionLocal
     from .models.train import TrainingJob
+
     db = SessionLocal()
     try:
         stale = db.query(TrainingJob).filter(TrainingJob.status == "running").all()
@@ -89,7 +88,10 @@ async def http_exception_handler(_request: Request, exc: StarletteHTTPException)
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(
+    _request: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
     errors = exc.errors()
     messages = [f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in errors]
     return JSONResponse(

@@ -29,6 +29,9 @@ dev = [
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+exclude = [
+    "alembic/versions",  # Auto-generated migrations
+]
 
 [tool.ruff.lint]
 select = [
@@ -36,6 +39,9 @@ select = [
     "UP",                          # pyupgrade
     "B",                           # flake8-bugbear
     "SIM",                         # flake8-simplify
+]
+ignore = [
+    "B008",                        # FastAPI Depends/File in argument defaults
 ]
 
 [tool.ruff.format]

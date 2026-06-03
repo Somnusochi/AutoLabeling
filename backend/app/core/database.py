@@ -17,6 +17,7 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -24,9 +25,11 @@ class Base(DeclarativeBase):
 def init_db() -> None:
     """Run database migrations via Alembic at startup, falling back to create_all."""
     import os
+
     from alembic.config import Config
-    from alembic import command
+
     import app.models  # noqa: F401
+    from alembic import command
 
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     ini_path = os.path.join(base_dir, "alembic.ini")
@@ -44,7 +47,6 @@ def init_db() -> None:
     else:
         logger.warning("alembic.ini not found at %s. Falling back to create_all()", ini_path)
         Base.metadata.create_all(bind=engine)
-
 
 
 def get_db():

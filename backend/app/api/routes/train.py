@@ -1,4 +1,5 @@
 """Training job management routes."""
+
 from __future__ import annotations
 
 import asyncio
@@ -7,7 +8,6 @@ import logging
 import shutil
 import tempfile
 import threading
-import uuid
 from pathlib import Path
 from uuid import UUID
 
@@ -54,18 +54,28 @@ def create_training_job(
     db.flush()
 
     for det_id in body.detection_ids:
-        db.add(TrainingDetection(
-            training_job_id=job.id,
-            detection_id=UUID(det_id),
-        ))
+        db.add(
+            TrainingDetection(
+                training_job_id=job.id,
+                detection_id=UUID(det_id),
+            )
+        )
     db.commit()
     db.refresh(job)
 
     # Run training in background thread
     thread = threading.Thread(
         target=run_training_safe,
-        args=(str(job.id), body.detection_ids, body.model_variant,
-              body.epochs, body.imgsz, body.batch, body.train_ratio, body.val_ratio),
+        args=(
+            str(job.id),
+            body.detection_ids,
+            body.model_variant,
+            body.epochs,
+            body.imgsz,
+            body.batch,
+            body.train_ratio,
+            body.val_ratio,
+        ),
         daemon=True,
     )
     thread.start()
@@ -107,7 +117,10 @@ async def stream_progress(job_id: str):
                     last = current
                     yield f"data: {current}\n\n"
                     data = json.loads(current)
-                    if data.get("epoch", 0) >= data.get("totalEpochs", 0) and data.get("totalEpochs", 0) > 0:
+                    if (
+                        data.get("epoch", 0) >= data.get("totalEpochs", 0)
+                        and data.get("totalEpochs", 0) > 0
+                    ):
                         yield f"data: {current}\n\n"
                         break
 
@@ -179,9 +192,8 @@ def download_dataset(
     if not work_dir.exists():
         raise HTTPException(404, "Dataset not found")
 
-    tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
-    tmp_path = Path(tmp.name)
-    tmp.close()
+    with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
 
     try:
         base = shutil.make_archive(str(tmp_path.with_suffix("")), "zip", work_dir)
@@ -190,9 +202,9 @@ def download_dataset(
             media_type="application/zip",
             filename=f"dataset_{job.model_variant}.zip",
         )
-    except Exception:
+    except Exception as exc:
         tmp_path.unlink(missing_ok=True)
-        raise HTTPException(500, "Failed to create dataset archive")
+        raise HTTPException(500, "Failed to create dataset archive") from exc
 
 
 @router.get("/jobs/{job_id}/charts/{chart_name}", response_class=FileResponse)
@@ -247,7 +259,9 @@ def export_onnx(
     try:
         model = YOLO(str(pt_path))
         export_path = model.export(format="onnx", imgsz=640, half=False)
-        onnx = str(export_path) if isinstance(export_path, str) else str(pt_path.with_suffix(".onnx"))
+        onnx = (
+            str(export_path) if isinstance(export_path, str) else str(pt_path.with_suffix(".onnx"))
+        )
         # Cache path for future requests
         job.onnx_path = onnx
         db.commit()
@@ -299,19 +313,28 @@ def retrain_job(
     db.flush()
 
     for link in job.detection_links:
-        db.add(TrainingDetection(
-            training_job_id=new_job.id,
-            detection_id=link.detection_id,
-        ))
+        db.add(
+            TrainingDetection(
+                training_job_id=new_job.id,
+                detection_id=link.detection_id,
+            )
+        )
     db.commit()
     db.refresh(new_job)
 
     detection_ids = [str(link.detection_id) for link in new_job.detection_links]
     thread = threading.Thread(
         target=run_training_safe,
-        args=(str(new_job.id), detection_ids, new_job.model_variant,
-              new_job.epochs, new_job.imgsz, new_job.batch,
-              new_job.train_ratio, new_job.val_ratio),
+        args=(
+            str(new_job.id),
+            detection_ids,
+            new_job.model_variant,
+            new_job.epochs,
+            new_job.imgsz,
+            new_job.batch,
+            new_job.train_ratio,
+            new_job.val_ratio,
+        ),
         daemon=True,
     )
     thread.start()

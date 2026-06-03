@@ -9,9 +9,7 @@ class Settings(BaseSettings):
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     # Database
-    database_url: str = (
-        "postgresql+psycopg2://somnusochi:somnusochi@localhost:5432/autolabeling"
-    )
+    database_url: str = "postgresql+psycopg2://somnusochi:somnusochi@localhost:5432/autolabeling"
 
     # Model (auto-detect: cuda → mps → cpu)
     model_dir: str = ""
@@ -23,6 +21,7 @@ class Settings(BaseSettings):
         if self.device:
             return self.device
         import torch
+
         if torch.cuda.is_available():
             return "cuda"
         if torch.backends.mps.is_available():

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ..models.detection import Detection
 
 
-def export_single(db: "Session", detection_id: str) -> tuple[str, str]:
+def export_single(db: Session, detection_id: str) -> tuple[str, str]:
     """Return (yolo_content, image_name) for a single detection."""
     from ..models.detection import Detection
 
@@ -27,7 +27,7 @@ def export_single(db: "Session", detection_id: str) -> tuple[str, str]:
     return detection_to_yolo(det, class_map), det.image_name
 
 
-def export_batch(db: "Session", detection_ids: list[str]) -> bytes:
+def export_batch(db: Session, detection_ids: list[str]) -> bytes:
     """Export multiple detections as a YOLO-format zip file with unified class map."""
     from ..models.detection import Detection
 
@@ -66,7 +66,7 @@ def export_batch(db: "Session", detection_ids: list[str]) -> bytes:
     return buf.getvalue()
 
 
-def _build_class_map(detections: list["Detection"]) -> dict[str, int]:
+def _build_class_map(detections: list[Detection]) -> dict[str, int]:
     """Build a unified class_name → class_id mapping across all given detections."""
     from .yolo_format import _get_filtered_boxes
 

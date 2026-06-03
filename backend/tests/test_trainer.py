@@ -41,6 +41,7 @@ def test_metrics_dict_results_dict():
 def test_metrics_dict_keys_and_mean():
     class MockMetrics:
         keys = ["map50", "map50-95"]
+
         def mean_results(self):
             return [0.90, 0.70]
 

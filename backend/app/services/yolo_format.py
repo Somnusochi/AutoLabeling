@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ..models.detection import Detection
 
 
-def _get_filtered_boxes(detection: "Detection") -> list[dict]:
+def _get_filtered_boxes(detection: Detection) -> list[dict]:
     """Return boxes after applying saved filter settings, if any."""
     boxes = [
         {"x1": b.x1, "y1": b.y1, "x2": b.x2, "y2": b.y2, "class_name": b.class_name}
@@ -19,7 +19,7 @@ def _get_filtered_boxes(detection: "Detection") -> list[dict]:
     return apply_filter(boxes, detection.filter_mode, detection.filter_nms_iou)
 
 
-def detection_to_yolo(detection: "Detection", class_map: dict[str, int]) -> str:
+def detection_to_yolo(detection: Detection, class_map: dict[str, int]) -> str:
     """Convert a detection record to YOLO label string.
 
     Format: class_id x_center y_center width height  (all normalized 0–1)

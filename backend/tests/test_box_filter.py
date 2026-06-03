@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.services.box_filter import nms, best_per_class, apply_filter
+from app.services.box_filter import apply_filter, best_per_class, nms
 
 
 def _box(x1: int, y1: int, x2: int, y2: int, class_name: str = "obj") -> dict:
@@ -8,6 +8,7 @@ def _box(x1: int, y1: int, x2: int, y2: int, class_name: str = "obj") -> dict:
 
 
 # ── NMS ───────────────────────────────────────────────
+
 
 def test_nms_no_overlap():
     boxes = [_box(0, 0, 10, 10), _box(20, 20, 30, 30)]
@@ -39,6 +40,7 @@ def test_nms_empty():
 
 # ── best_per_class ────────────────────────────────────
 
+
 def test_best_per_class_keeps_first_of_each():
     boxes = [
         _box(0, 0, 10, 10, "cat"),
@@ -63,6 +65,7 @@ def test_best_per_class_all_different():
 
 
 # ── apply_filter ──────────────────────────────────────
+
 
 def test_apply_filter_none_mode():
     boxes = [_box(0, 0, 10, 10), _box(0, 0, 10, 10)]

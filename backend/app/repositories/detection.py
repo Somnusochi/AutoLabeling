@@ -2,9 +2,10 @@
 
 All DB queries live here — routes and services never touch Session directly.
 """
+
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from sqlalchemy.orm import Session
 
@@ -24,7 +25,7 @@ class DetectionRepository:
         image_name: str,
         image_width: int,
         image_height: int,
-        categories: list,       # JSONB stores Python list directly
+        categories: list,  # JSONB stores Python list directly
         model_name: str = "LocateAnything-3B",
     ) -> Detection:
         det = Detection(
@@ -45,7 +46,10 @@ class DetectionRepository:
             DetectionBox(
                 detection_id=detection_id,
                 class_name=b["class_name"],
-                x1=b["x1"], y1=b["y1"], x2=b["x2"], y2=b["y2"],
+                x1=b["x1"],
+                y1=b["y1"],
+                x2=b["x2"],
+                y2=b["y2"],
                 confidence=b.get("confidence"),
             )
             for b in boxes
@@ -54,7 +58,7 @@ class DetectionRepository:
         self.db.flush()
         return entities
 
-    def replace_boxes(self, detection_id: str, boxes: list[dict]) -> list["DetectionBox"]:
+    def replace_boxes(self, detection_id: str, boxes: list[dict]) -> list[DetectionBox]:
         """Delete all existing boxes for a detection and insert new ones."""
         self.db.query(DetectionBox).filter(
             DetectionBox.detection_id == detection_id,
@@ -65,14 +69,13 @@ class DetectionRepository:
     # ── read ───────────────────────────────────────────
 
     def get_by_id(self, detection_id: str) -> Detection | None:
-        return (
-            self.db.query(Detection)
-            .filter(Detection.id == detection_id)
-            .first()
-        )
+        return self.db.query(Detection).filter(Detection.id == detection_id).first()
 
     def list(
-        self, *, page: int = 1, page_size: int = 20,
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 20,
     ) -> tuple[Sequence[Detection], int]:
         q = self.db.query(Detection)
         total = q.count()
@@ -103,4 +106,3 @@ class DetectionRepository:
     def delete_box(self, box: DetectionBox) -> None:
         self.db.delete(box)
         self.db.flush()
-

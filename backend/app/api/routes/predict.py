@@ -1,4 +1,5 @@
 """Image/video prediction and model validation routes."""
+
 from __future__ import annotations
 
 import asyncio
@@ -10,8 +11,9 @@ import uuid
 from pathlib import Path
 from uuid import UUID
 
-from PIL import Image
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from PIL import Image
+from sqlalchemy.orm import Session
 from starlette.responses import StreamingResponse
 
 from ...core.config import settings
@@ -19,10 +21,9 @@ from ...core.database import SessionLocal, get_db
 from ...models.train import TrainingJob
 from ...models.video import Video
 from ...schemas.common import APIResponse
+from ...services.frame_utils import draw_frame, predict_frame
 from ...services.trainer import predict_trained_model
 from ...services.video_service import _ffprobe
-from ...services.frame_utils import draw_frame, predict_frame
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/v1/train", tags=["predict"])
 
@@ -53,6 +54,7 @@ async def upload_external_model(file: UploadFile = File(...)):
 
 # ── Single image prediction ────────────────────────────
 
+
 @router.post("/jobs/{job_id}/predict")
 async def predict_with_model(
     job_id: UUID,
@@ -73,7 +75,13 @@ async def predict_with_model(
     img_bytes = await file.read()
     try:
         img = Image.open(io.BytesIO(img_bytes))
-        result = predict_trained_model(job.model_path, img, device=settings.resolved_device, conf=conf, iou=iou)
+        result = predict_trained_model(
+            job.model_path,
+            img,
+            device=settings.resolved_device,
+            conf=conf,
+            iou=iou,
+        )
     except Exception as exc:
         raise HTTPException(500, f"Inference failed: {exc}") from exc
 
@@ -85,18 +93,22 @@ async def predict_with_model(
         {
             "className": b["class_name"],
             "confidence": b["confidence"],
-            "x1": b["x1"], "y1": b["y1"],
-            "x2": b["x2"], "y2": b["y2"],
+            "x1": b["x1"],
+            "y1": b["y1"],
+            "x2": b["x2"],
+            "y2": b["y2"],
         }
         for b in result["boxes"]
     ]
-    return APIResponse(data={
-        "imageWidth": result["image_width"],
-        "imageHeight": result["image_height"],
-        "boxes": boxes_camel,
-        "modelVariant": job.model_variant,
-        "classMap": class_map,
-    })
+    return APIResponse(
+        data={
+            "imageWidth": result["image_width"],
+            "imageHeight": result["image_height"],
+            "boxes": boxes_camel,
+            "modelVariant": job.model_variant,
+            "classMap": class_map,
+        }
+    )
 
 
 @router.post("/validate-image/{token}")
@@ -114,7 +126,13 @@ async def predict_external_model(
     img_bytes = await file.read()
     try:
         img = Image.open(io.BytesIO(img_bytes))
-        result = predict_trained_model(str(model_path), img, device=settings.resolved_device, conf=conf, iou=iou)
+        result = predict_trained_model(
+            str(model_path),
+            img,
+            device=settings.resolved_device,
+            conf=conf,
+            iou=iou,
+        )
     except Exception as exc:
         raise HTTPException(500, f"Inference failed: {exc}") from exc
 
@@ -122,19 +140,24 @@ async def predict_external_model(
         {
             "className": b["class_name"],
             "confidence": b["confidence"],
-            "x1": b["x1"], "y1": b["y1"],
-            "x2": b["x2"], "y2": b["y2"],
+            "x1": b["x1"],
+            "y1": b["y1"],
+            "x2": b["x2"],
+            "y2": b["y2"],
         }
         for b in result["boxes"]
     ]
-    return APIResponse(data={
-        "imageWidth": result["image_width"],
-        "imageHeight": result["image_height"],
-        "boxes": boxes_camel,
-    })
+    return APIResponse(
+        data={
+            "imageWidth": result["image_width"],
+            "imageHeight": result["image_height"],
+            "boxes": boxes_camel,
+        }
+    )
 
 
 # ── MJPEG video validation ────────────────────────────
+
 
 @router.get("/validate-mjpeg/{token}/{video_id}")
 async def validate_mjpeg_external(
@@ -166,8 +189,21 @@ async def validate_mjpeg_external(
 
     async def mjpeg_stream():
         proc = subprocess.Popen(
-            ["ffmpeg", "-y", "-i", video_path, "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "5", "-"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                video_path,
+                "-f",
+                "image2pipe",
+                "-vcodec",
+                "mjpeg",
+                "-q:v",
+                "5",
+                "-",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
         assert proc.stdout is not None
         buf, frame_num = b"", 0
@@ -180,8 +216,18 @@ async def validate_mjpeg_external(
                 end = buf.find(b"\xff\xd9")
                 if end == -1:
                     continue
-                jpg = buf[:end + 2]; buf = buf[end + 2:]
-                annotated = await asyncio.to_thread(draw_frame, model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps)
+                jpg = buf[: end + 2]
+                buf = buf[end + 2 :]
+                annotated = await asyncio.to_thread(
+                    draw_frame,
+                    model_path,
+                    jpg,
+                    settings.resolved_device,
+                    conf,
+                    iou,
+                    frame_num,
+                    fps,
+                )
                 if annotated:
                     yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
                     await asyncio.sleep(0)
@@ -192,8 +238,11 @@ async def validate_mjpeg_external(
         finally:
             proc.terminate()
 
-    return StreamingResponse(mjpeg_stream(), media_type="multipart/x-mixed-replace; boundary=frame",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    return StreamingResponse(
+        mjpeg_stream(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/jobs/{job_id}/validate-mjpeg/{video_id}")
@@ -225,9 +274,21 @@ async def validate_mjpeg(
 
     async def mjpeg_stream():
         proc = subprocess.Popen(
-            ["ffmpeg", "-y", "-i", video_path,
-             "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "5", "-"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                video_path,
+                "-f",
+                "image2pipe",
+                "-vcodec",
+                "mjpeg",
+                "-q:v",
+                "5",
+                "-",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
         assert proc.stdout is not None
         buf = b""
@@ -242,11 +303,18 @@ async def validate_mjpeg(
                 end = buf.find(b"\xff\xd9")
                 if end == -1:
                     continue
-                jpg = buf[:end + 2]
-                buf = buf[end + 2:]
+                jpg = buf[: end + 2]
+                buf = buf[end + 2 :]
 
                 annotated = await asyncio.to_thread(
-                    draw_frame, job.model_path, jpg, settings.resolved_device, conf, iou, frame_num, fps
+                    draw_frame,
+                    job.model_path,
+                    jpg,
+                    settings.resolved_device,
+                    conf,
+                    iou,
+                    frame_num,
+                    fps,
                 )
                 if annotated:
                     yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + annotated + b"\r\n")
@@ -267,6 +335,7 @@ async def validate_mjpeg(
 
 # ── SSE video prediction ──────────────────────────────
 
+
 @router.post("/jobs/{job_id}/predict-video-stream")
 async def predict_video_stream(
     job_id: UUID,
@@ -284,11 +353,11 @@ async def predict_video_stream(
     if not Path(job.model_path).exists():
         raise HTTPException(404, "Model file not found on disk")
 
-    tmp_video = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
-    tmp_video.write(await file.read())
-    tmp_video.close()
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_video:
+        tmp_video.write(await file.read())
+        tmp_video_path = tmp_video.name
 
-    meta = _ffprobe(tmp_video.name)
+    meta = _ffprobe(tmp_video_path)
     fps = meta["fps"]
     total_frames = meta["total_frames"]
 
@@ -296,9 +365,21 @@ async def predict_video_stream(
         frame_num = 0
 
         proc = subprocess.Popen(
-            ["ffmpeg", "-y", "-i", tmp_video.name,
-             "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "5", "-"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                tmp_video_path,
+                "-f",
+                "image2pipe",
+                "-vcodec",
+                "mjpeg",
+                "-q:v",
+                "5",
+                "-",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
         assert proc.stdout is not None
 
@@ -315,8 +396,8 @@ async def predict_video_stream(
                 end = buf.find(b"\xff\xd9")
                 if end == -1:
                     continue
-                jpg_data = buf[:end + 2]
-                buf = buf[end + 2:]
+                jpg_data = buf[: end + 2]
+                buf = buf[end + 2 :]
 
                 if start_time is None:
                     start_time = asyncio.get_running_loop().time()
@@ -331,14 +412,28 @@ async def predict_video_stream(
                 )
 
                 timestamp = round(frame_num / fps, 3) if fps > 0 else frame_num
-                boxes_camel = [{
-                    "className": b["class_name"],
-                    "confidence": b["confidence"],
-                    "x1": b["x1"], "y1": b["y1"],
-                    "x2": b["x2"], "y2": b["y2"],
-                } for b in result["boxes"]]
+                boxes_camel = [
+                    {
+                        "className": b["class_name"],
+                        "confidence": b["confidence"],
+                        "x1": b["x1"],
+                        "y1": b["y1"],
+                        "x2": b["x2"],
+                        "y2": b["y2"],
+                    }
+                    for b in result["boxes"]
+                ]
 
-                yield f"data: {json.dumps({'frame': frame_num, 'fps': fps, 'totalFrames': total_frames, 'timestamp': timestamp, 'imageWidth': result['image_width'], 'imageHeight': result['image_height'], 'boxes': boxes_camel})}\n\n"
+                event_data = {
+                    "frame": frame_num,
+                    "fps": fps,
+                    "totalFrames": total_frames,
+                    "timestamp": timestamp,
+                    "imageWidth": result["image_width"],
+                    "imageHeight": result["image_height"],
+                    "boxes": boxes_camel,
+                }
+                yield f"data: {json.dumps(event_data)}\n\n"
 
                 frame_num += 1
                 processed += 1
@@ -349,8 +444,9 @@ async def predict_video_stream(
         finally:
             proc.terminate()
             elapsed = asyncio.get_running_loop().time() - start_time if start_time else 0
-            yield f"data: {json.dumps({'done': True, 'frames': processed, 'elapsed': round(elapsed, 2)})}\n\n"
-            Path(tmp_video.name).unlink(missing_ok=True)
+            done_data = {"done": True, "frames": processed, "elapsed": round(elapsed, 2)}
+            yield f"data: {json.dumps(done_data)}\n\n"
+            Path(tmp_video_path).unlink(missing_ok=True)
 
     return StreamingResponse(
         event_stream(),
@@ -360,6 +456,7 @@ async def predict_video_stream(
 
 
 # ── Sync video prediction ──────────────────────────────
+
 
 @router.post("/jobs/{job_id}/predict-video")
 def predict_video(
@@ -380,20 +477,33 @@ def predict_video(
     if not Path(job.model_path).exists():
         raise HTTPException(404, "Model file not found on disk")
 
-    tmp_video = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
-    tmp_video.write(file.file.read())
-    tmp_video.close()
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_video:
+        tmp_video.write(file.file.read())
+        tmp_video_path = tmp_video.name
 
     try:
-        meta = _ffprobe(tmp_video.name)
+        meta = _ffprobe(tmp_video_path)
         fps = meta["fps"]
         frame_step = max(1, int(interval * fps))
 
         proc = subprocess.Popen(
-            ["ffmpeg", "-y", "-i", tmp_video.name,
-             "-vf", f"select='not(mod(n,{frame_step}))'",
-             "-vsync", "vfr", "-f", "image2pipe", "-vcodec", "mjpeg", "-"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                tmp_video_path,
+                "-vf",
+                f"select='not(mod(n,{frame_step}))'",
+                "-vsync",
+                "vfr",
+                "-f",
+                "image2pipe",
+                "-vcodec",
+                "mjpeg",
+                "-",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
         results: list[dict] = []
         frame_num = 0
@@ -408,32 +518,47 @@ def predict_video(
             end = buf.find(b"\xff\xd9")
             if end == -1:
                 continue
-            jpg_data = buf[:end + 2]
-            buf = buf[end + 2:]
+            jpg_data = buf[: end + 2]
+            buf = buf[end + 2 :]
 
             img = Image.open(io.BytesIO(jpg_data))
-            r = predict_trained_model(job.model_path, img, device=settings.resolved_device, conf=conf, iou=iou)
+            r = predict_trained_model(
+                job.model_path,
+                img,
+                device=settings.resolved_device,
+                conf=conf,
+                iou=iou,
+            )
 
-            boxes_camel = [{
-                "className": b["class_name"],
-                "confidence": b["confidence"],
-                "x1": b["x1"], "y1": b["y1"],
-                "x2": b["x2"], "y2": b["y2"],
-            } for b in r["boxes"]]
-            results.append({
-                "frameNumber": frame_num,
-                "timestampSeconds": round(frame_num / fps * frame_step, 3),
-                "imageWidth": r["image_width"],
-                "imageHeight": r["image_height"],
-                "boxes": boxes_camel,
-            })
+            boxes_camel = [
+                {
+                    "className": b["class_name"],
+                    "confidence": b["confidence"],
+                    "x1": b["x1"],
+                    "y1": b["y1"],
+                    "x2": b["x2"],
+                    "y2": b["y2"],
+                }
+                for b in r["boxes"]
+            ]
+            results.append(
+                {
+                    "frameNumber": frame_num,
+                    "timestampSeconds": round(frame_num / fps * frame_step, 3),
+                    "imageWidth": r["image_width"],
+                    "imageHeight": r["image_height"],
+                    "boxes": boxes_camel,
+                }
+            )
             frame_num += 1
 
         proc.terminate()
-        return APIResponse(data={
-            "modelVariant": job.model_variant,
-            "frameCount": len(results),
-            "frames": results,
-        })
+        return APIResponse(
+            data={
+                "modelVariant": job.model_variant,
+                "frameCount": len(results),
+                "frames": results,
+            }
+        )
     finally:
-        Path(tmp_video.name).unlink(missing_ok=True)
+        Path(tmp_video_path).unlink(missing_ok=True)

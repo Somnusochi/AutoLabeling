@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -14,7 +14,9 @@ class TrainingJob(Base):
     __tablename__ = "training_jobs"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
     )
     model_variant: Mapped[str] = mapped_column(String(32), default="yolo11n")
     epochs: Mapped[int] = mapped_column(Integer, default=100)
@@ -25,27 +27,29 @@ class TrainingJob(Base):
     task_type: Mapped[str] = mapped_column(String(16), default="detect")
     class_map: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(
-        String(32), default="pending",
+        String(32),
+        default="pending",
     )
     metrics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     model_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     onnx_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
     completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
-    detection_links: Mapped[list["TrainingDetection"]] = relationship(
-        "TrainingDetection", back_populates="training_job",
+    detection_links: Mapped[list[TrainingDetection]] = relationship(
+        "TrainingDetection",
+        back_populates="training_job",
         cascade="all, delete-orphan",
     )
 
-    __table_args__ = (
-        Index("ix_training_jobs_status", "status"),
-    )
+    __table_args__ = (Index("ix_training_jobs_status", "status"),)
 
     @property
     def detection_ids(self) -> list[str]:
@@ -54,10 +58,13 @@ class TrainingJob(Base):
 
 class TrainingDetection(Base):
     """Many-to-many link between TrainingJob and Detection."""
+
     __tablename__ = "training_detections"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
     )
     training_job_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -70,8 +77,9 @@ class TrainingDetection(Base):
         nullable=False,
     )
 
-    training_job: Mapped["TrainingJob"] = relationship(
-        "TrainingJob", back_populates="detection_links",
+    training_job: Mapped[TrainingJob] = relationship(
+        "TrainingJob",
+        back_populates="detection_links",
     )
 
     __table_args__ = (

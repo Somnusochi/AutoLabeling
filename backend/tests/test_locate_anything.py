@@ -37,7 +37,10 @@ def test_parse_boxes_multiple_boxes_same_ref():
 
 
 def test_parse_boxes_switched_refs():
-    raw = "<ref>cat</ref><box><100><200><300><400></box><ref>bird</ref><box><500><600><700><800></box>"
+    raw = (
+        "<ref>cat</ref><box><100><200><300><400></box>"
+        "<ref>bird</ref><box><500><600><700><800></box>"
+    )
     boxes = parse_boxes(raw, 1000, 1000)
     assert len(boxes) == 2
     assert boxes[0]["class_name"] == "cat"

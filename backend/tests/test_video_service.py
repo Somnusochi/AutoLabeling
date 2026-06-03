@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import cv2
 import numpy as np
-from app.services.video_service import _ssim, _deduplicate
+
+from app.services.video_service import _deduplicate, _ssim
 
 
 def test_ssim_same():
@@ -21,7 +22,7 @@ def test_ssim_different():
 def test_deduplicate(tmp_path):
     img_a = np.ones((100, 100), dtype=np.uint8) * 128
     img_b = np.ones((100, 100), dtype=np.uint8) * 128  # same as a
-    img_c = np.zeros((100, 100), dtype=np.uint8)      # different from a
+    img_c = np.zeros((100, 100), dtype=np.uint8)  # different from a
 
     path_a = tmp_path / "a.jpg"
     path_b = tmp_path / "b.jpg"

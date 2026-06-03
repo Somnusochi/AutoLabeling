@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import json
+import contextlib
 import logging
 import shutil
 import uuid
 from pathlib import Path
-
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from ...core.config import settings
@@ -47,7 +46,9 @@ async def upload_video(
 ) -> APIResponse:
     ext = Path(file.filename).suffix.lower()  # type: ignore[arg-type]
     if ext not in ALLOWED_VIDEO_EXTS:
-        raise HTTPException(400, detail=f"Unsupported format: {ext}. Supported: {', '.join(ALLOWED_VIDEO_EXTS)}")
+        raise HTTPException(
+            400, detail=f"Unsupported format: {ext}. Supported: {', '.join(ALLOWED_VIDEO_EXTS)}"
+        )
 
     file.file.seek(0, 2)
     size_mb = file.file.tell() / (1024 * 1024)
@@ -192,10 +193,8 @@ def delete_video(
 
     # Clean up keyframe images
     for kf in video.keyframes:
-        try:
+        with contextlib.suppress(OSError):
             Path(kf.image_path).unlink(missing_ok=True)
-        except OSError:
-            pass
 
     repo.delete_video(video)
     repo.db.commit()
