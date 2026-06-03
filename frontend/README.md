@@ -1,6 +1,6 @@
-# AutoLabeling Frontend
+# VLM-AutoYOLO Frontend
 
-React + TypeScript + Vite frontend for the AutoLabeling pre-annotation and YOLO training workflow.
+React + TypeScript + Vite frontend for the VLM-AutoYOLO auto-labeling and YOLO training workflow.
 
 ## Requirements
 
