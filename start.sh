@@ -47,7 +47,7 @@ trap cleanup EXIT INT TERM
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  🚀 LocateAnything 已启动"
+echo "  🚀 VLMAutoYOLO 已启动"
 echo "  前端: http://localhost:$FRONTEND_PORT"
 echo "  后端: http://localhost:$BACKEND_PORT"
 echo "  API文档: http://localhost:$BACKEND_PORT/docs"

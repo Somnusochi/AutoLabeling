@@ -1,7 +1,4 @@
-"""LocateAnything model service — follows official NVIDIA Worker pattern.
-
-Tested on: M4 Pro (MPS), transformers==4.57.1, torch bfloat16.
-"""
+"""VLM model service — wraps LocateAnything-3B for visual grounding."""
 from __future__ import annotations
 
 import logging

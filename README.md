@@ -1,4 +1,4 @@
-# LocateAnything
+# VLMAutoYOLO
 
 [简体中文](README_ZH.md) | English
 
@@ -55,8 +55,8 @@
 ### Setup
 
 ```bash
-git clone https://github.com/Somnusochi/LocateAnything.git
-cd LocateAnything
+git clone https://github.com/Somnusochi/VLMAutoYOLO.git
+cd VLMAutoYOLO
 
 # Backend
 cd backend
@@ -113,7 +113,7 @@ docker compose up -d
 ## Project Structure
 
 ```
-LocateAnything/
+VLMAutoYOLO/
 ├── backend/
 │   ├── app/
 │   │   ├── api/
