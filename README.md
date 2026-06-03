@@ -2,11 +2,19 @@
 
 [简体中文](README_ZH.md) | English
 
-End-to-end **pre-annotation & training system** powered by NVIDIA LocateAnything-3B VLM.
+**End-to-end object detection auto-labeling and YOLO training platform.** VLM-powered data annotation with NVIDIA LocateAnything-3B, manual refinement, one-click YOLO training (v5/v8/v11/v26), video keyframe extraction, and model validation.
 
-> Images in, model out — VLM auto-labeling + manual refinement + one-click YOLO training + validation.
+> Images in, model out — VLM auto-labeling → manual refinement → YOLO training → validation.
 
-**Pipeline**: VLM Pre-annotation → Manual Refinement → Export Dataset → Train YOLO → Validate Model
+**Complete computer vision pipeline**: VLM Pre-annotation → Manual Refinement → Export Dataset → Train YOLO → Validate Model
+
+**Key features**:
+- 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
+- 🎥 **Video annotation**: Intelligent keyframe extraction (scene/motion/interval detection)
+- ✏️ **Manual refinement**: Canvas-based annotation with NMS filtering
+- 🚀 **One-click training**: YOLOv5/v8/v11/v26 with real-time progress tracking
+- ✅ **Model validation**: Batch image testing and real-time video inference
+- 🔄 **Export & deploy**: YOLO format export, ONNX conversion, dataset packaging
 
 ## Screenshots
 
