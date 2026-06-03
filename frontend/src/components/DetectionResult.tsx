@@ -43,6 +43,7 @@ export function DetectionResult({
   onDrawBox,
   isValidation = false,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -62,7 +63,7 @@ export function DetectionResult({
               type="text"
               value={drawCategory}
               onChange={(e) => onDrawCategoryChange(e.target.value)}
-              placeholder="标注类别..."
+              placeholder={t("detectionResult.drawCategoryPlaceholder")}
               className="rounded border border-gray-300 px-2 py-1 text-xs w-32"
             />
             {recentCategories.map((c) => (
@@ -94,10 +95,10 @@ export function DetectionResult({
 
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-gray-700">
-          检测结果 ({result.boxes.length} 个目标)
+          {t("detectionResult.resultCount", { count: result.boxes.length })}
           {result.elapsedMs != null && result.elapsedMs > 0 && (
             <span className="ml-2 text-gray-400 font-normal">
-              耗时 {result.elapsedMs >= 1000 ? `${(result.elapsedMs / 1000).toFixed(1)}s` : `${result.elapsedMs}ms`}
+              {t("detectionResult.timeElapsed")} {result.elapsedMs >= 1000 ? `${(result.elapsedMs / 1000).toFixed(1)}s` : `${result.elapsedMs}ms`}
             </span>
           )}
           {batchResults.length > 1 && (
@@ -114,7 +115,7 @@ export function DetectionResult({
               onClick={onSaveBoxes}
               className="rounded border border-green-300 px-3 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
             >
-              保存过滤结果
+              {t("detectionResult.saveFilter")}
             </button>
           )}
           {!isValidation && categories.length > 0 && (
@@ -124,7 +125,7 @@ export function DetectionResult({
               onClick={onReDetect}
               className="rounded bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
             >
-              {loading ? "检测中..." : "重新检测"}
+              {loading ? t("common.detecting") : t("detectionResult.redetect")}
             </button>
           )}
           <button
@@ -132,7 +133,7 @@ export function DetectionResult({
             onClick={() => downloadYoloTxt(result.boxes, categories, result.imageWidth, result.imageHeight, result.imageName)}
             className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors"
           >
-            导出 YOLO (.txt)
+            {t("detectionResult.exportYoloTxt")}
           </button>
           {!isValidation && (
             <button
@@ -144,7 +145,9 @@ export function DetectionResult({
               }}
               className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
             >
-              {batchResults.length > 1 ? `导出全部 (${batchResults.length} zip)` : "导出 YOLO (zip)"}
+              {batchResults.length > 1
+                ? t("detectionResult.exportAllZip", { count: batchResults.length })
+                : t("detectionResult.exportYoloZip")}
             </button>
           )}
         </div>

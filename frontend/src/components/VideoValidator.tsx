@@ -10,6 +10,7 @@ interface Props {
 }
 
 export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) {
+  const { t } = useTranslation();
   const [paused, setPaused] = useState(false);
   const [ended, setEnded] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -141,7 +142,7 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            {modelFile && !uploadedToken ? "上传模型中..." : "连接中..."}
+            {modelFile && !uploadedToken ? t("videoValidator.uploadingModel") : t("videoValidator.connecting")}
           </div>
         )}
         {mjpegUrl && (
@@ -150,7 +151,7 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
               key={mjpegUrl}
               ref={imgRef}
               src={mjpegUrl}
-              alt="实时推理"
+              alt={t("videoValidator.realtimeInference")}
               onLoad={() => {
                 setLoading(false);
                 setHasFrozenFrame(false);
@@ -173,19 +174,19 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
         {paused && !loading && !ended && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-sm text-gray-200 bg-black/40 gap-2 backdrop-blur-[1.5px] z-10">
             <PlayCircleOutlined className="text-white drop-shadow" style={{ fontSize: "40px" }} />
-            <span className="text-white font-medium drop-shadow text-xs">点击画面继续播放</span>
+            <span className="text-white font-medium drop-shadow text-xs">{t("videoValidator.clickToResume")}</span>
           </div>
         )}
         {ended && !loading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-sm text-gray-200 bg-black/50 gap-2 backdrop-blur-[1.5px] z-10">
             <ReloadOutlined className="text-white drop-shadow animate-pulse" style={{ fontSize: "40px" }} />
-            <span className="text-white font-medium drop-shadow text-xs">播放完成，点击重播</span>
+            <span className="text-white font-medium drop-shadow text-xs">{t("videoValidator.playerCompleted")}</span>
           </div>
         )}
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">MJPEG 实时推理流 — 逐帧 YOLO 检测</span>
+          <span className="text-xs text-gray-400">{t("videoValidator.mjpegStreamTips")}</span>
         <button
           type="button"
           onClick={(e) => {
@@ -195,7 +196,7 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
           className="text-xs text-green-600 hover:text-green-700 font-medium flex items-center gap-1 transition-all px-2.5 py-1.5 rounded-md hover:bg-green-50/50 border border-green-200/60 cursor-pointer active:scale-95 bg-white shadow-sm"
         >
           <ReloadOutlined className="text-xs" />
-          重新播放
+          {t("videoValidator.rerunValidation")}
         </button>
       </div>
     </div>

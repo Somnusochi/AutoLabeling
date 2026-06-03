@@ -11,12 +11,6 @@ interface Props {
   disabled?: boolean;
 }
 
-const METHOD_LABELS: Record<string, string> = {
-  scene: "场景切换",
-  motion: "运动检测",
-  interval: "固定间隔",
-};
-
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
@@ -24,6 +18,12 @@ function formatTime(seconds: number): string {
 }
 
 export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props) {
+  const { t } = useTranslation();
+  const methodLabels: Record<string, string> = {
+    scene: t("videoPanel.modeScene"),
+    motion: t("videoPanel.modeMotion"),
+    interval: t("videoPanel.modeInterval"),
+  };
   const isValidation = !!onValidateVideo;
   const queryClient = useQueryClient();
   const [dragOver, setDragOver] = useState(false);
@@ -47,9 +47,9 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
     mutationFn: uploadVideo,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
-      toast.success("视频上传成功");
+      toast.success(t("videoPanel.uploadSuccess"));
     },
-    onError: () => toast.error("上传失败"),
+    onError: () => toast.error(t("videoPanel.uploadFailed")),
   });
 
   const extractMut = useMutation({
@@ -58,11 +58,11 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
       setExtracting(false);
-      toast.success(`提取 ${data.keyframes.length} 个关键帧`);
+      toast.success(t("videoPanel.extractSuccess", { count: data.keyframes.length }));
     },
     onError: () => {
       setExtracting(false);
-      toast.error("关键帧提取失败");
+      toast.error(t("videoPanel.extractFailed"));
     },
   });
 
@@ -71,9 +71,9 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
       if (selectedVideoId) setSelectedVideoId(null);
-      toast.success("已删除");
+      toast.success(t("videoPanel.deleteSuccess"));
     },
-    onError: () => toast.error("删除失败"),
+    onError: () => toast.error(t("videoPanel.deleteFailed")),
   });
 
   const handleDrop = useCallback(
@@ -125,7 +125,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
   const handleLoadSelected = useCallback(
     async (video: VideoInfo) => {
       const selected = video.keyframes.filter((k) => selectedFrameIds.has(k.id));
-      if (selected.length === 0) { toast.error("请先选择关键帧"); return; }
+      if (selected.length === 0) { toast.error(t("videoPanel.selectFrameRequired")); return; }
       setLoadingAll(true);
       try {
         const files: File[] = [];
@@ -135,14 +135,14 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
           files.push(new File([blob], `kf_${kf.frameNumber}.jpg`, { type: "image/jpeg" }));
         }
         onLoadKeyframes(files, video.fileName);
-        toast.success(`已加载 ${files.length} 个关键帧到标注队列`);
+        toast.success(t("videoPanel.loadSuccess", { count: files.length }));
       } catch {
-        toast.error("加载失败");
+        toast.error(t("videoPanel.loadFailed"));
       } finally {
         setLoadingAll(false);
       }
     },
-    [selectedFrameIds, onLoadKeyframes],
+    [selectedFrameIds, onLoadKeyframes, t],
   );
 
   const selectedVideo = videoList?.items.find((v) => v.id === selectedVideoId);
@@ -159,12 +159,12 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
           disabled ? "pointer-events-none opacity-50" : ""
         } ${dragOver ? "border-primary-500 bg-primary-50" : "border-gray-300 hover:border-gray-400 bg-gray-50"}`}
       >
-        <p className="text-gray-500">拖拽视频或点击上传</p>
-        <p className="text-gray-400 text-[10px] mt-0.5">MP4 / MOV / AVI / MKV / WebM</p>
+        <p className="text-gray-500">{t("videoPanel.dragToUpload")}</p>
+        <p className="text-gray-400 text-[10px] mt-0.5">{t("videoPanel.uploadLimit")}</p>
         <input id="video-input" type="file" accept="video/*" className="hidden" disabled={disabled} onChange={handleFileInput} />
       </div>
 
-      {uploadMut.isPending && <p className="text-xs text-gray-400 text-center">上传中...</p>}
+      {uploadMut.isPending && <p className="text-xs text-gray-400 text-center">{t("videoPanel.uploading")}</p>}
 
       {/* Video list */}
       {videoList && videoList.items.length > 0 && (
@@ -183,13 +183,13 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                   <span className="truncate block">{v.fileName}</span>
                   <span className="text-[10px] text-gray-400">
                     {v.duration != null ? formatTime(v.duration) : "?"}
-                    {v.keyframes.length > 0 ? ` · ${v.keyframes.length}帧` : ""}
+                    {v.keyframes.length > 0 ? ` · ${v.keyframes.length}${t("videoPanel.unitFrames")}` : ""}
                   </span>
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); deleteMut.mutate(v.id); }}
                   className="text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 px-0.5"
-                >删</button>
+                >{t("common.delete")}</button>
               </div>
             </div>
           ))}
@@ -204,7 +204,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
               onClick={() => onValidateVideo!(selectedVideo.id)}
               className="w-full rounded bg-green-600 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
             >
-              验证视频（实时推理）
+              {t("videoPanel.validateVideoRealtime")}
             </button>
           </div>
         ) : (
@@ -219,7 +219,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                   method === m ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {METHOD_LABELS[m]}
+                {methodLabels[m]}
               </button>
             ))}
           </div>
@@ -230,15 +230,15 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
             {method === "scene" && (
               <div>
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-gray-500">画面变化灵敏度</span>
+                  <span className="text-gray-500">{t("videoPanel.sceneThreshold")}</span>
                   <span className="text-gray-700 font-medium">{threshold}</span>
                 </div>
                 <input type="range" min={1} max={100} value={threshold}
                   onChange={(e) => setThreshold(Number(e.target.value))}
                   className="w-full h-1 accent-primary-500" />
                 <div className="flex justify-between text-[10px] text-gray-400">
-                  <span>更敏感（更多帧）</span>
-                  <span>更迟钝（更少帧）</span>
+                  <span>{t("videoPanel.moreFrames")}</span>
+                  <span>{t("videoPanel.fewerFrames")}</span>
                 </div>
               </div>
             )}
@@ -246,52 +246,52 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
             {method === "motion" && (
               <div>
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-gray-500">累计位移阈值</span>
+                  <span className="text-gray-500">{t("videoPanel.motionThreshold")}</span>
                   <span className="text-gray-700 font-medium">{threshold}px</span>
                 </div>
                 <input type="range" min={1} max={50} step={0.5} value={threshold}
                   onChange={(e) => setThreshold(Number(e.target.value))}
                   className="w-full h-1 accent-primary-500" />
                 <div className="flex justify-between text-[10px] text-gray-400">
-                  <span>小动就截（更多帧）</span>
-                  <span>大动才截（更少帧）</span>
+                  <span>{t("videoPanel.motionMore")}</span>
+                  <span>{t("videoPanel.motionFewer")}</span>
                 </div>
               </div>
             )}
 
             {method === "interval" && (
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">时间间隔</span>
+                <span className="text-gray-500">{t("videoPanel.timeInterval")}</span>
                 <input type="number" min={0.5} max={60} step={0.5} value={intervalSec}
                   onChange={(e) => setIntervalSec(Number(e.target.value))}
                   className="w-14 rounded border border-gray-200 px-1.5 py-0.5 text-xs" />
-                <span className="text-gray-400">秒</span>
+                <span className="text-gray-400">{t("videoPanel.unitSeconds")}</span>
               </div>
             )}
 
             {/* Max frames */}
             <div className="flex items-center gap-2">
-              <span className="text-gray-500">最多提取</span>
+              <span className="text-gray-500">{t("videoPanel.maxFrames")}</span>
               <input type="number" min={1} max={1000} value={maxFrames}
                 onChange={(e) => setMaxFrames(Number(e.target.value))}
                 className="w-14 rounded border border-gray-200 px-1.5 py-0.5 text-xs" />
-              <span className="text-gray-400">帧</span>
+              <span className="text-gray-400">{t("videoPanel.unitFrames")}</span>
             </div>
 
             {/* SSIM dedup */}
             <div>
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-gray-500">SSIM 去重</span>
+                <span className="text-gray-500">{t("videoPanel.ssimThreshold")}</span>
                 <span className="text-gray-700 font-medium">
-                  {ssimThreshold >= 1 ? "关闭" : ssimThreshold.toFixed(2)}
+                  {ssimThreshold >= 1 ? t("videoPanel.ssimClose") : ssimThreshold.toFixed(2)}
                 </span>
               </div>
               <input type="range" min={0.5} max={1} step={0.01} value={ssimThreshold}
                 onChange={(e) => setSsimThreshold(Number(e.target.value))}
                 className="w-full h-1 accent-primary-500" />
               <div className="flex justify-between text-[10px] text-gray-400">
-                <span>严格（相似即去重）</span>
-                <span>宽松（保留更多）</span>
+                <span>{t("videoPanel.ssimStrict")}</span>
+                <span>{t("videoPanel.ssimLoose")}</span>
               </div>
             </div>
           </div>
@@ -303,7 +303,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                 disabled={extracting}
                 className="flex-1 rounded bg-primary-600 py-1.5 text-[11px] font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
               >
-                {extracting ? "提取中..." : "提取关键帧"}
+                {extracting ? t("videoPanel.extracting") : t("videoPanel.startExtract")}
               </button>
             ) : (
               <>
@@ -312,13 +312,13 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                   disabled={loadingAll || selectedFrameIds.size === 0}
                   className="flex-1 rounded bg-green-600 py-1.5 text-[11px] font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {loadingAll ? "加载中..." : `加载选中 ${selectedFrameIds.size} 帧`}
+                  {loadingAll ? t("common.loading") : t("videoPanel.loadSelected", { count: selectedFrameIds.size })}
                 </button>
                 <button
                   onClick={() => handleExtract(selectedVideoId)}
                   disabled={extracting}
                   className="rounded border border-gray-200 px-2 py-1.5 text-[11px] text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                >重提</button>
+                >{t("videoPanel.reExtract")}</button>
               </>
             )}
           </div>
@@ -330,7 +330,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              提取关键帧中...
+              {t("videoPanel.extracting")}
             </div>
           )}
 
@@ -338,11 +338,11 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
             <>
               <div className="flex items-center justify-between text-[10px]">
                 <span className="text-gray-400">
-                  已选 {selectedFrameIds.size}/{selectedVideo.keyframes.length}
+                  {t("videoPanel.selectedCount", { current: selectedFrameIds.size, total: selectedVideo.keyframes.length })}
                 </span>
                 <div className="flex gap-1">
-                  <button onClick={() => selectAllFrames(selectedVideo)} className="text-gray-500 hover:text-primary-600">全选</button>
-                  <button onClick={deselectAllFrames} className="text-gray-500 hover:text-primary-600">取消</button>
+                  <button onClick={() => selectAllFrames(selectedVideo)} className="text-gray-500 hover:text-primary-600">{t("videoPanel.selectAll")}</button>
+                  <button onClick={deselectAllFrames} className="text-gray-500 hover:text-primary-600">{t("videoPanel.deselectAll")}</button>
                 </div>
               </div>
               <Image.PreviewGroup>
@@ -364,7 +364,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                             src={keyframeImageUrl(selectedVideo.id, kf.id)}
                             alt={`#${kf.frameNumber}`}
                             className="w-full h-14 object-cover"
-                            preview={{ mask: "点击查看" }}
+                            preview={{ mask: t("videoPanel.clickToView") }}
                             style={{ display: "block" }}
                           />
                           {sel && (

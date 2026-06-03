@@ -8,6 +8,7 @@ interface Props {
 }
 
 export function CategoryInput({ categories, onChange, disabled, recentCategories = [] }: Props) {
+  const { t } = useTranslation();
   const [input, setInput] = useState("");
 
   const add = (cat?: string) => {
@@ -55,7 +56,7 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
           </span>
         ))}
         {categories.length === 0 && (
-          <span className="text-xs text-gray-400 self-center">输入目标类别，回车添加</span>
+          <span className="text-xs text-gray-400 self-center">{t("categoryInput.enterToConfirm")}</span>
         )}
       </div>
 
@@ -83,7 +84,7 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
           disabled={disabled}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="输入类别名，如 person, car..."
+          placeholder={t("categoryInput.enterCategory")}
           className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
         />
         <button
@@ -92,7 +93,7 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
           onClick={() => add()}
           className="rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
         >
-          添加
+          {t("common.add")}
         </button>
       </div>
     </div>

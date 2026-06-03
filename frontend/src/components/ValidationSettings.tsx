@@ -23,6 +23,7 @@ export function ValidationSettings({
   validateIou,
   onIouChange,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="rounded border border-green-200 p-2.5 text-xs space-y-3">
       <ModelSelector
@@ -35,7 +36,7 @@ export function ValidationSettings({
       />
       <div>
         <div className="flex items-center justify-between mb-0.5">
-          <span className="text-gray-500">Conf (置信度阈值)</span>
+          <span className="text-gray-500">{t("validationSettings.confThreshold")}</span>
           <span className="text-gray-700 font-medium">{validateConf.toFixed(2)}</span>
         </div>
         <input
@@ -50,7 +51,7 @@ export function ValidationSettings({
       </div>
       <div>
         <div className="flex items-center justify-between mb-0.5">
-          <span className="text-gray-500">IoU (重叠阈值)</span>
+          <span className="text-gray-500">{t("validationSettings.iouThreshold")}</span>
           <span className="text-gray-700 font-medium">{validateIou.toFixed(2)}</span>
         </div>
         <input

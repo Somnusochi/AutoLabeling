@@ -6,8 +6,9 @@ interface Props {
 }
 
 export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete }: Props) {
+  const { t } = useTranslation();
   if (boxes.length === 0) {
-    return <p className="py-4 text-sm text-gray-400 text-center">未检测到目标</p>;
+    return <p className="py-4 text-sm text-gray-400 text-center">{t("resultTable.noTargets")}</p>;
   }
 
   return (
@@ -16,12 +17,12 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
         <thead className="bg-gray-50">
           <tr>
             <th className="px-4 py-2 text-left font-medium text-gray-600">#</th>
-            <th className="px-4 py-2 text-left font-medium text-gray-600">类别</th>
+            <th className="px-4 py-2 text-left font-medium text-gray-600">{t("resultTable.category")}</th>
             <th className="px-4 py-2 text-left font-medium text-gray-600">x1</th>
             <th className="px-4 py-2 text-left font-medium text-gray-600">y1</th>
             <th className="px-4 py-2 text-left font-medium text-gray-600">x2</th>
             <th className="px-4 py-2 text-left font-medium text-gray-600">y2</th>
-            <th className="px-4 py-2 text-left font-medium text-gray-600">置信度</th>
+            <th className="px-4 py-2 text-left font-medium text-gray-600">{t("resultTable.confidence")}</th>
             <th className="px-4 py-2 w-10" />
             {onDelete && <th className="px-4 py-2 w-12" />}
           </tr>
@@ -42,7 +43,7 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
                 <button
                   onClick={() => onToggleVisibility(box.id)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
-                  title={hiddenIndices.has(box.id) ? "显示标注框" : "隐藏标注框"}
+                  title={hiddenIndices.has(box.id) ? t("resultTable.showBox") : t("resultTable.hideBox")}
                 >
                   {hiddenIndices.has(box.id) ? (
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -61,7 +62,7 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
                   <button
                     onClick={() => onDelete(box.id)}
                     className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                    title="删除此检测框"
+                    title={t("resultTable.deleteBox")}
                   >
                     ✕
                   </button>

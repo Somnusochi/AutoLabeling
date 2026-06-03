@@ -57,6 +57,7 @@ async function processFiles(fileList: FileList | File[]): Promise<File[]> {
 }
 
 export function ImageUploader({ onFiles, disabled }: Props) {
+  const { t } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
   const [compressing, setCompressing] = useState(false);
@@ -99,12 +100,12 @@ export function ImageUploader({ onFiles, disabled }: Props) {
         `}
       >
         {compressing ? (
-          <div className="text-gray-400 text-sm">压缩中...</div>
+          <div className="text-gray-400 text-sm">{t("imageUploader.compressing")}</div>
         ) : previews.length > 0 ? (
           previews.length === 1 ? (
             <div className="flex flex-col items-center gap-2">
               <img src={previews[0]} alt="" className="w-full max-h-44 rounded object-contain" />
-              <p className="text-xs text-gray-400">点击更换图片</p>
+              <p className="text-xs text-gray-400">{t("imageUploader.clickToChange")}</p>
             </div>
           ) : (
             <div className="flex flex-wrap gap-1 justify-center">
@@ -116,14 +117,16 @@ export function ImageUploader({ onFiles, disabled }: Props) {
                   +{previews.length - 8}
                 </span>
               )}
-              <p className="w-full text-xs text-gray-400 mt-1">{previews.length} 张图片</p>
+              <p className="w-full text-xs text-gray-400 mt-1">
+                {t("imageUploader.countImages", { count: previews.length })}
+              </p>
             </div>
           )
         ) : (
           <div className="text-gray-500">
-            <p className="text-sm">拖拽图片/文件夹到此处，或点击选择</p>
+            <p className="text-sm">{t("imageUploader.dragToUpload")}</p>
             <p className="mt-1 text-xs text-gray-400">
-              支持多选 · 文件夹 · JPG/PNG/WebP · 自动压缩至 {MAX_LONG_SIDE}px
+              {t("imageUploader.supportInfo")}
             </p>
           </div>
         )}

@@ -7,37 +7,40 @@ export function useDetectionListQuery(page = 1) {
 }
 
 export function useDetectMutation() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ file, categories }: { file: File; categories: string[] }) =>
       detectImage(file, categories),
     onSuccess: (data) => {
-      toast.success(`检测完成，找到 ${data.boxes.length} 个目标`);
+      toast.success(t("detection.detectSuccess", { count: data.boxes.length }));
       qc.invalidateQueries({ queryKey: ["detections"] });
     },
-    onError: () => toast.error("检测失败，请重试"),
+    onError: () => toast.error(t("detection.detectFailed")),
   });
 }
 
 export function useDeleteDetectionMutation() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteDetection(id),
     onSuccess: () => {
-      toast.success("已删除");
+      toast.success(t("historyList.deleteSuccess"));
       qc.invalidateQueries({ queryKey: ["detections"] });
     },
-    onError: () => toast.error("删除失败"),
+    onError: () => toast.error(t("historyList.deleteFailed")),
   });
 }
 
 export function useExportBatchMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (ids: string[]) => exportBatch(ids),
     onSuccess: (blob) => {
       downloadBlob(blob, "yolo_labels.zip");
-      toast.success("导出成功");
+      toast.success(t("detection.exportSuccess"));
     },
-    onError: () => toast.error("导出失败"),
+    onError: () => toast.error(t("detection.exportFailed")),
   });
 }
