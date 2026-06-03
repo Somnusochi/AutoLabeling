@@ -18,8 +18,8 @@
   },
   "home": {
     "detectBtnImage": "Start Detection",
-    "detectBtnImageCount": "Start Detection ({count} files)",
-    "detectingCount": "Detecting ({current}/{total})",
+    "detectBtnImageCount": "Start Detection ({{count}} files)",
+    "detectingCount": "Detecting ({{current}}/{{total}})",
     "detectingDefault": "Detecting...",
     "saveFilterSuccess": "Filter settings saved successfully",
     "saveFilterFailed": "Failed to save filter settings",
@@ -116,7 +116,7 @@
     "supportInfo": "Supports multi-selection · Folders · JPG/PNG/WebP · Auto-resized to 1280px",
     "compressing": "Compressing...",
     "clickToChange": "Click to change image",
-    "countImages": "{count} images"
+    "countImages": "{{count}} images"
   },
   "historyList": {
     "totalCount": "Total: {{count}}",
@@ -161,7 +161,7 @@
     "taskType": "Task Type",
     "startTrain": "Start Training",
     "trainPending": "Pending...",
-    "training": "Training ({epoch}/{totalEpochs})",
+    "training": "Training ({{epoch}}/{{totalEpochs}})",
     "trainCompleted": "Completed",
     "trainFailed": "Failed",
     "downloadModel": "Download Model (.pt)",

@@ -18,8 +18,8 @@
   },
   "home": {
     "detectBtnImage": "开始检测",
-    "detectBtnImageCount": "开始检测 ({count} 张)",
-    "detectingCount": "检测中 ({current}/{total})",
+    "detectBtnImageCount": "开始检测 ({{count}} 张)",
+    "detectingCount": "检测中 ({{current}}/{{total}})",
     "detectingDefault": "检测中...",
     "saveFilterSuccess": "过滤设置已保存",
     "saveFilterFailed": "保存失败",
@@ -116,7 +116,7 @@
     "supportInfo": "支持多选 · 文件夹 · JPG/PNG/WebP · 自动压缩至 1280px",
     "compressing": "压缩中...",
     "clickToChange": "点击更换图片",
-    "countImages": "{count} 张图片"
+    "countImages": "{{count}} 张图片"
   },
   "historyList": {
     "totalCount": "共 {{count}} 条",
@@ -161,7 +161,7 @@
     "taskType": "任务类型",
     "startTrain": "开始训练",
     "trainPending": "等待训练中...",
-    "training": "训练中 ({epoch}/{totalEpochs})",
+    "training": "训练中 ({{epoch}}/{{totalEpochs}})",
     "trainCompleted": "训练完成",
     "trainFailed": "训练失败",
     "downloadModel": "下载模型 (.pt)",
