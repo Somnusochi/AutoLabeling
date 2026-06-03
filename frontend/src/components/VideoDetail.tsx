@@ -58,7 +58,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
     } finally {
       setLoadingAll(false);
     }
-  }, [video, onLoadKeyframes]);
+  }, [video, onLoadKeyframes, t]);
 
   const keyframes = video.keyframes;
   const visible = expanded ? keyframes : keyframes.slice(0, 12);

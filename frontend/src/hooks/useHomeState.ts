@@ -186,7 +186,7 @@ export function useHomeState() {
     } finally {
       stopTimer();
     }
-  }, [files, categories, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress, setPreview]);
+  }, [files, categories, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress, setPreview, t]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
@@ -230,7 +230,7 @@ export function useHomeState() {
       setResult(updated);
       setBatchResults((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     } catch { /* ignore */ }
-  }, [result, drawCategory, setBatchResults]);
+  }, [result, drawCategory, setBatchResults, t]);
 
   const handleDeleteBox = useCallback(async (boxId: string) => {
     if (!result) return;

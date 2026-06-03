@@ -18,7 +18,7 @@ export function useYoloValidation() {
     };
     window.addEventListener("yolo-validate", handler);
     return () => window.removeEventListener("yolo-validate", handler);
-  }, []);
+  }, [t]);
 
   const exitValidation = useCallback(() => {
     setValidateMode(null);
@@ -80,7 +80,7 @@ export function useYoloValidation() {
         setValidating(false);
       }
     },
-    [validateMode, validateConf, validateIou],
+    [validateMode, validateConf, validateIou, t],
   );
 
   return {
