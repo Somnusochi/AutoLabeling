@@ -50,7 +50,89 @@
 
 ## 快速开始
 
-### 环境要求
+### Docker 部署（推荐）
+
+**使用预构建镜像快速启动：**
+
+```bash
+# 下载 docker-compose.yml
+curl -O https://raw.githubusercontent.com/Somnusochi/VLM-AutoYOLO/master/docker-compose.yml
+
+# 启动所有服务
+docker compose up -d
+
+# 访问应用
+open http://localhost  # 前端界面
+open http://localhost:8000/docs  # API 文档
+```
+
+**从源码构建：**
+
+```bash
+git clone https://github.com/Somnusochi/VLM-AutoYOLO.git
+cd VLM-AutoYOLO
+docker compose up -d --build
+```
+
+**服务列表：**
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| 前端 | 80 | React 界面（Nginx） |
+| 后端 | 8000 | FastAPI 服务器 |
+| 数据库 | 5432 | PostgreSQL |
+
+**GPU 支持：**
+
+如需使用 NVIDIA GPU 加速，编辑 `docker-compose.yml` 并在 backend 服务中添加 GPU 配置：
+
+```yaml
+backend:
+  # ... 其他配置 ...
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+  environment:
+    DEVICE: cuda  # 从 cpu 改为 cuda
+```
+
+**持久化存储：**
+
+Docker 卷用于：
+- `pgdata`: 数据库数据
+- `model-cache`: 下载的 VLM 模型
+- `uploads`: 用户上传的图片/视频
+- `training-data`: YOLO 训练任务和输出
+
+备份数据：
+```bash
+docker compose exec db pg_dump -U postgres locate_anything > backup.sql
+```
+
+恢复数据：
+```bash
+cat backup.sql | docker compose exec -T db psql -U postgres locate_anything
+```
+
+**查看日志：**
+```bash
+# 所有服务
+docker compose logs -f
+
+# 指定服务
+docker compose logs -f backend
+docker compose logs -f frontend
+```
+
+### 手动安装
+
+如果不想使用 Docker，按以下步骤操作：
+
+**环境要求：**
 
 | 资源 | 最低配置 |
 |------|---------|
@@ -62,7 +144,7 @@
 | NVIDIA GPU | 12GB 显存 |
 | CPU 模式 | 16GB 系统内存 |
 
-### 安装
+**安装：**
 
 ```bash
 # 1. 克隆仓库
@@ -82,7 +164,7 @@ pnpm install
 cd ..
 
 # 4. 数据库
-psql -d postgres -c "CREATE DATABASE autolabeling;"
+psql -d postgres -c "CREATE DATABASE locate_anything;"
 
 # 5. 配置
 cp backend/.env.example backend/.env
@@ -92,14 +174,14 @@ cd backend
 PYTHONPATH=. alembic upgrade head
 ```
 
-### 下载模型（可选）
+**下载模型（可选）：**
 
 ```bash
 # 首次运行会自动下载，网络慢可预下载
 huggingface-cli download nvidia/LocateAnything-3B --local-dir backend/model
 ```
 
-### 启动
+**启动：**
 
 ```bash
 # macOS / Linux
@@ -114,12 +196,6 @@ start.bat
 | 前端 | http://localhost:5173 |
 | 后端 | http://localhost:8000 |
 | API 文档 | http://localhost:8000/docs |
-
-### Docker
-
-```bash
-docker compose up -d
-```
 
 ## 项目结构
 

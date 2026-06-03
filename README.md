@@ -50,7 +50,89 @@ Comprehensive guides covering:
 
 ## Quick Start
 
-### Requirements
+### Docker Deployment (Recommended)
+
+**Quick start with pre-built images:**
+
+```bash
+# Download docker-compose.yml
+curl -O https://raw.githubusercontent.com/Somnusochi/VLM-AutoYOLO/master/docker-compose.yml
+
+# Start all services
+docker compose up -d
+
+# Access the application
+open http://localhost  # Frontend
+open http://localhost:8000/docs  # API documentation
+```
+
+**Build from source:**
+
+```bash
+git clone https://github.com/Somnusochi/VLM-AutoYOLO.git
+cd VLM-AutoYOLO
+docker compose up -d --build
+```
+
+**Services:**
+
+| Service | Port | Description |
+|---------|------|-------------|
+| Frontend | 80 | React web interface (Nginx) |
+| Backend | 8000 | FastAPI server |
+| Database | 5432 | PostgreSQL |
+
+**GPU Support:**
+
+For NVIDIA GPU acceleration, edit `docker-compose.yml` and add GPU configuration to the backend service:
+
+```yaml
+backend:
+  # ... other config ...
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+  environment:
+    DEVICE: cuda  # Change from cpu to cuda
+```
+
+**Persistent Storage:**
+
+Docker volumes are used for:
+- `pgdata`: Database data
+- `model-cache`: Downloaded VLM models
+- `uploads`: User uploaded images/videos
+- `training-data`: YOLO training runs and outputs
+
+To backup data:
+```bash
+docker compose exec db pg_dump -U postgres locate_anything > backup.sql
+```
+
+To restore:
+```bash
+cat backup.sql | docker compose exec -T db psql -U postgres locate_anything
+```
+
+**Logs:**
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f backend
+docker compose logs -f frontend
+```
+
+### Manual Setup
+
+If you prefer not to use Docker, follow these steps:
+
+**Requirements:**
 
 | Resource | Minimum |
 |----------|---------|
@@ -62,7 +144,7 @@ Comprehensive guides covering:
 | NVIDIA GPU | 12GB VRAM |
 | CPU mode | 16GB system RAM |
 
-### Setup
+**Setup:**
 
 ```bash
 git clone https://github.com/Somnusochi/VLM-AutoYOLO.git
@@ -81,7 +163,7 @@ pnpm install
 cd ..
 
 # Database
-psql -d postgres -c "CREATE DATABASE autolabeling;"
+psql -d postgres -c "CREATE DATABASE locate_anything;"
 
 # Config
 cp backend/.env.example backend/.env
@@ -91,14 +173,14 @@ cd backend
 PYTHONPATH=. alembic upgrade head
 ```
 
-### Model Download (Optional)
+**Model Download (Optional):**
 
 ```bash
 # Auto-downloaded on first run. Pre-download if network is slow:
 huggingface-cli download nvidia/LocateAnything-3B --local-dir backend/model
 ```
 
-### Launch
+**Launch:**
 
 ```bash
 # macOS / Linux
@@ -113,12 +195,6 @@ start.bat
 | Frontend | http://localhost:5173 |
 | Backend | http://localhost:8000 |
 | API Docs | http://localhost:8000/docs |
-
-### Docker
-
-```bash
-docker compose up -d
-```
 
 ## Project Structure
 

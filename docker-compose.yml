@@ -13,8 +13,10 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres -d locate_anything"]
       interval: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
+    image: ghcr.io/somnusochi/vlm-autoyolo-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -23,14 +25,29 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/locate_anything
       DEVICE: cpu
+      PYTHONPATH: /app
     volumes:
-      - ./backend:/app
       - model-cache:/app/model
+      - uploads:/app/uploads
+      - training-data:/app/training_runs
     depends_on:
       db:
         condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/somnusochi/vlm-autoyolo-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   pgdata:
   model-cache:
+  uploads:
+  training-data:
