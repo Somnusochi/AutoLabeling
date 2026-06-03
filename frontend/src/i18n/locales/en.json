@@ -14,7 +14,10 @@
     "delete": "Delete",
     "close": "Close",
     "loading": "Loading...",
-    "export": "Export"
+    "export": "Export",
+    "collapse": "Collapse",
+    "view": "View",
+    "draw": "Draw"
   },
   "home": {
     "detectBtnImage": "Start Detection",
@@ -103,7 +106,14 @@
     "ssimLoose": "Loose (Keep More)",
     "reExtract": "Re-extract",
     "selectedCount": "Selected {{current}}/{{total}}",
-    "clickToView": "Click to view"
+    "clickToView": "Click to view",
+    "totalFramesText": " · {{count}} frames",
+    "keyframesCountText": "{{count}} keyframes",
+    "deduplicate": "Deduplicate",
+    "loadAll": "Load all {{count}} frames to annotation queue",
+    "expandAll": "Expand all {{count}} frames",
+    "selectMethodToExtract": "Select extraction method and click \"Extract Keyframes\"",
+    "extractSuccessSSIM": "Extracted {{count}} keyframes (SSIM deduplicated)"
   },
   "keyframeGrid": {
     "frameNum": "Frame",
@@ -219,5 +229,13 @@
     "detectFailed": "Detection failed, please try again",
     "exportSuccess": "Exported successfully",
     "exportFailed": "Export failed"
+  },
+  "detectionCanvas": {
+    "dragTip": "Drag mouse to draw box"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "unknownError": "Unknown Error",
+    "retry": "Retry"
   }
 }

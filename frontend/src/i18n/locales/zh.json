@@ -14,7 +14,10 @@
     "delete": "删除",
     "close": "关闭",
     "loading": "加载中...",
-    "export": "导出"
+    "export": "导出",
+    "collapse": "收起",
+    "view": "查看",
+    "draw": "标注"
   },
   "home": {
     "detectBtnImage": "开始检测",
@@ -103,7 +106,14 @@
     "ssimLoose": "宽松（保留更多）",
     "reExtract": "重提",
     "selectedCount": "已选 {{current}}/{{total}}",
-    "clickToView": "点击查看"
+    "clickToView": "点击查看",
+    "totalFramesText": " · {{count}} 帧",
+    "keyframesCountText": "{{count}} 个关键帧",
+    "deduplicate": "去重",
+    "loadAll": "加载全部 {{count}} 帧到标注队列",
+    "expandAll": "展开全部 {{count}} 帧",
+    "selectMethodToExtract": "选择提取方式并点击「提取关键帧」",
+    "extractSuccessSSIM": "提取 {{count}} 个关键帧 (SSIM 去重后)"
   },
   "keyframeGrid": {
     "frameNum": "帧号",
@@ -219,5 +229,13 @@
     "detectFailed": "检测失败，请重试",
     "exportSuccess": "导出成功",
     "exportFailed": "导出失败"
+  },
+  "detectionCanvas": {
+    "dragTip": "拖拽鼠标绘制框"
+  },
+  "errorBoundary": {
+    "title": "出了点问题",
+    "unknownError": "未知错误",
+    "retry": "重试"
   }
 }

@@ -11,6 +11,7 @@ function formatTime(seconds: number): string {
 }
 
 export function KeyframeGrid({ videoId, keyframes, loading }: Props) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (loading) {
@@ -20,7 +21,7 @@ export function KeyframeGrid({ videoId, keyframes, loading }: Props) {
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
-        提取关键帧中...
+        {t("videoPanel.extracting")}
       </div>
     );
   }
@@ -55,7 +56,7 @@ export function KeyframeGrid({ videoId, keyframes, loading }: Props) {
           onClick={() => setExpanded(!expanded)}
           className="w-full text-[10px] text-gray-400 hover:text-gray-600"
         >
-          {expanded ? "收起" : `展开全部 ${keyframes.length} 帧`}
+          {expanded ? t("common.collapse") : t("videoPanel.expandAll", { count: keyframes.length })}
         </button>
       )}
     </div>

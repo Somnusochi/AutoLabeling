@@ -4,11 +4,7 @@ interface Props {
   onVideoUpdated: () => void;
 }
 
-const METHOD_LABELS: Record<string, string> = {
-  scene: "场景切换",
-  motion: "运动检测",
-  interval: "固定间隔",
-};
+const METHOD_KEYS = ["scene", "motion", "interval"] as const;
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -17,6 +13,7 @@ function formatTime(seconds: number): string {
 }
 
 export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [method, setMethod] = useState<"scene" | "motion" | "interval">("scene");
   const [threshold, setThreshold] = useState(30);
@@ -34,9 +31,9 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
       onVideoUpdated();
-      toast.success(`提取 ${data.keyframes.length} 个关键帧 (SSIM 去重后)`);
+      toast.success(t("videoPanel.extractSuccessSSIM", { count: data.keyframes.length }));
     },
-    onError: () => toast.error("关键帧提取失败"),
+    onError: () => toast.error(t("videoPanel.extractFailed")),
   });
 
   const handleExtract = useCallback(() => {
@@ -61,9 +58,9 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
         files.push(new File([blob], `kf_${kf.frameNumber}.jpg`, { type: "image/jpeg" }));
       }
       onLoadKeyframes(files, video.fileName);
-      toast.success(`已加载 ${files.length} 个关键帧到标注队列`);
+      toast.success(t("videoPanel.loadSuccess", { count: files.length }));
     } catch {
-      toast.error("加载失败");
+      toast.error(t("videoPanel.loadFailed"));
     } finally {
       setLoadingAll(false);
     }
@@ -81,17 +78,19 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
         <span className="text-gray-400 text-xs">
           {video.width}x{video.height}
           {video.duration != null && ` · ${video.duration.toFixed(1)}s`}
-          {video.totalFrames != null && ` · ${video.totalFrames} 帧`}
+          {video.totalFrames != null && t("videoPanel.totalFramesText", { count: video.totalFrames })}
         </span>
         {keyframes.length > 0 && (
-          <span className="text-primary-600 text-xs font-medium">{keyframes.length} 个关键帧</span>
+          <span className="text-primary-600 text-xs font-medium">
+            {t("videoPanel.keyframesCountText", { count: keyframes.length })}
+          </span>
         )}
       </div>
 
       {/* Extraction controls */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex gap-0.5 rounded bg-gray-100 p-0.5">
-          {(["scene", "motion", "interval"] as const).map((m) => (
+          {METHOD_KEYS.map((m) => (
             <button
               key={m}
               onClick={() => setMethod(m)}
@@ -99,14 +98,14 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
                 method === m ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {METHOD_LABELS[m]}
+              {t(`videoPanel.method${m.charAt(0).toUpperCase() + m.slice(1)}`)}
             </button>
           ))}
         </div>
 
         {method === "scene" && (
           <label className="flex items-center gap-1 text-xs text-gray-500">
-            灵敏度
+            {t("videoPanel.sensitivity")}
             <input type="range" min={1} max={100} value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
               className="w-20 h-1 accent-primary-500" />
@@ -115,7 +114,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
         )}
         {method === "motion" && (
           <label className="flex items-center gap-1 text-xs text-gray-500">
-            位移
+            {t("videoPanel.motionThreshold")}
             <input type="range" min={1} max={50} step={0.5} value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
               className="w-20 h-1 accent-primary-500" />
@@ -124,28 +123,28 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
         )}
         {method === "interval" && (
           <label className="flex items-center gap-1 text-xs text-gray-500">
-            间隔
+            {t("videoPanel.timeInterval")}
             <input type="number" min={0.5} max={60} step={0.5} value={intervalSec}
               onChange={(e) => setIntervalSec(Number(e.target.value))}
               className="w-14 rounded border border-gray-200 px-1 py-0.5 text-xs" />
-            秒
+            {t("videoPanel.unitSeconds")}
           </label>
         )}
 
         <label className="flex items-center gap-1 text-xs text-gray-500">
-          最多
+          {t("videoPanel.maxFrames")}
           <input type="number" min={1} max={1000} value={maxFrames}
             onChange={(e) => setMaxFrames(Number(e.target.value))}
             className="w-14 rounded border border-gray-200 px-1 py-0.5 text-xs" />
-          帧
+          {t("videoPanel.unitFrames")}
         </label>
 
         <label className="flex items-center gap-1 text-xs text-gray-500">
-          去重
+          {t("videoPanel.ssimThreshold")}
           <input type="range" min={0.5} max={1} step={0.01} value={ssimThreshold}
             onChange={(e) => setSsimThreshold(Number(e.target.value))}
             className="w-16 h-1 accent-primary-500" />
-          <span className="w-12 text-gray-700">{ssimThreshold >= 1 ? "关闭" : `SSIM ${ssimThreshold.toFixed(2)}`}</span>
+          <span className="w-12 text-gray-700">{ssimThreshold >= 1 ? t("videoPanel.ssimClose") : `SSIM ${ssimThreshold.toFixed(2)}`}</span>
         </label>
 
         <button
@@ -153,7 +152,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
           disabled={extracting}
           className="rounded bg-primary-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
         >
-          {extracting ? "提取中..." : keyframes.length > 0 ? "重新提取" : "提取关键帧"}
+          {extracting ? t("videoPanel.extracting") : keyframes.length > 0 ? t("videoPanel.reExtract") : t("videoPanel.startExtract")}
         </button>
 
         {keyframes.length > 0 && (
@@ -162,7 +161,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
             disabled={loadingAll}
             className="rounded bg-green-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            {loadingAll ? "加载中..." : `加载全部 ${keyframes.length} 帧到标注队列`}
+            {loadingAll ? t("common.loading") : t("videoPanel.loadAll", { count: keyframes.length })}
           </button>
         )}
       </div>
@@ -174,7 +173,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          正在提取关键帧...
+          {t("videoPanel.extracting")}
         </div>
       )}
 
@@ -202,7 +201,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
               onClick={() => setExpanded(!expanded)}
               className="text-xs text-gray-400 hover:text-gray-600"
             >
-              {expanded ? "收起" : `展开全部 ${keyframes.length} 帧`}
+              {expanded ? t("common.collapse") : t("videoPanel.expandAll", { count: keyframes.length })}
             </button>
           )}
         </>
@@ -210,7 +209,7 @@ export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
 
       {!extracting && keyframes.length === 0 && (
         <div className="text-sm text-gray-400 py-8 text-center">
-          选择提取方式并点击"提取关键帧"
+          {t("videoPanel.selectMethodToExtract")}
         </div>
       )}
     </div>

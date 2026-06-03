@@ -16,6 +16,7 @@ interface Props {
 export function DetectionCanvas({
   imageUrl, boxes, imgWidth, imgHeight, mode, hiddenIndices, onModeChange, onDrawBox,
 }: Props) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scale = Math.min(CANVAS_MAX_W / imgWidth, CANVAS_MAX_H / imgHeight, 1);
@@ -106,7 +107,7 @@ export function DetectionCanvas({
             onChange={() => onModeChange("view")}
             className="h-3 w-3"
           />
-          查看
+          {t("common.view")}
         </label>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
           <input
@@ -114,10 +115,10 @@ export function DetectionCanvas({
             onChange={() => onModeChange("draw")}
             className="h-3 w-3"
           />
-          标注
+          {t("common.draw")}
         </label>
         {mode === "draw" && (
-          <span className="text-xs text-orange-500">拖拽鼠标绘制框</span>
+          <span className="text-xs text-orange-500">{t("detectionCanvas.dragTip")}</span>
         )}
       </div>
 
