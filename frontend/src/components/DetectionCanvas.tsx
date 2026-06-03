@@ -1,3 +1,5 @@
+import { CANVAS_MAX_W, CANVAS_MAX_H, CANVAS_MIN_BOX_SIZE, BOX_COLORS } from "@/lib/constants";
+
 type Mode = "view" | "draw";
 
 interface Props {
