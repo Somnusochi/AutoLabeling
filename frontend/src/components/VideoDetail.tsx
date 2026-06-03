@@ -6,12 +6,6 @@ interface Props {
 
 const METHOD_KEYS = ["scene", "motion", "interval"] as const;
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
 export function VideoDetail({ video, onLoadKeyframes, onVideoUpdated }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();

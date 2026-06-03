@@ -65,6 +65,7 @@ declare global {
   const extractKeyframes: typeof import('./services/api').extractKeyframes
   const fetchTrainingJobs: typeof import('./services/api').fetchTrainingJobs
   const fetchYoloSeries: typeof import('./services/api').fetchYoloSeries
+  const formatTime: typeof import('./lib/formatTime').formatTime
   const forwardRef: typeof import('react').forwardRef
   const generateYoloTxt: typeof import('./lib/yoloExport').generateYoloTxt
   const getDetection: typeof import('./services/api').getDetection
