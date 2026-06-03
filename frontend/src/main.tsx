@@ -5,7 +5,7 @@ import App from "./App";
 import "./index.css";
 import "./i18n/config";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
-import {ThemeProvider} from "./hooks/useTheme";
+import {ThemeProvider} from "./components/ThemeProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
