@@ -419,7 +419,7 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
               <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
             </div>
           )}
-          <div className="mt-1.5 flex gap-3">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             {job.status === "completed" && (
               <>
                 <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">{t("trainingPanel.model")}</a>
