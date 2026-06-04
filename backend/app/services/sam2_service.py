@@ -247,6 +247,9 @@ def _get_sam_worker() -> SegmentAnythingWorker:
 def segment_image(image: Image.Image, boxes: list[dict]) -> list[list[list[float]]]:
     worker = _get_sam_worker()
     _bump_activity()
+    # Free fragmented GPU memory before segmentation
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     return worker.segment(image, boxes)
 
 

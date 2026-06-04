@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings
+
+# ── CUDA memory allocator tuning ───────────────────
+# Reduce fragmentation on smaller GPUs; harmless on macOS/MPS
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 
 class Settings(BaseSettings):

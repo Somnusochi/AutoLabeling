@@ -78,6 +78,8 @@ class LocateAnythingWorker:
             model_path,
             torch_dtype=self.dtype,
             trust_remote_code=True,
+            attn_implementation="sdpa",       # avoid flash_attn memory overhead on Windows
+            low_cpu_mem_usage=True,            # reduce RAM during loading
         )
 
         # ── Move to GPU ──
@@ -95,13 +97,13 @@ class LocateAnythingWorker:
             except Exception:
                 pass
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def detect(self, image: Image.Image, categories: list[str]) -> dict:
         cats = "</c>".join(categories)
         prompt = f"Locate all the instances that matches the following description: {cats}."
         return self._predict(image, prompt)
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def _predict(
         self,
         image: Image.Image,
@@ -316,7 +318,7 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     return boxes
 
 
-MAX_IMAGE_PX = 1024 * 1024  # ~1MP, safe for 10GB+ VRAM
+MAX_IMAGE_PX = 800 * 800  # ~640K px, safer for 10GB VRAM
 
 
 def detect(image_path: str | Path, categories: list[str]) -> dict:
@@ -325,6 +327,11 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
     except Exception as exc:
         raise InferenceError() from exc
     _bump_activity()
+
+    # Free fragmented GPU memory before inference
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     img = Image.open(image_path).convert("RGB")
     w, h = img.size
 
