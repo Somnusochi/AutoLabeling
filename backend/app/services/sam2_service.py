@@ -12,6 +12,7 @@ import torch
 from PIL import Image
 
 from ..core.config import settings
+from ..core.gpu_memory import get_memory_manager
 
 logger = logging.getLogger(__name__)
 
@@ -104,14 +105,7 @@ class SegmentAnythingWorker:
             polygons.append([])
 
         self.predictor.reset_image()
-        # Free MPS/CUDA memory after segmentation
-        import gc
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        elif torch.backends.mps.is_available():
-            torch.mps.synchronize()
-            torch.mps.empty_cache()
+        get_memory_manager().full_cleanup()
         return polygons
 
 
@@ -256,12 +250,7 @@ def _get_sam_worker() -> SegmentAnythingWorker:
 def segment_image(image: Image.Image, boxes: list[dict]) -> list[list[list[float]]]:
     worker = _get_sam_worker()
     _bump_activity()
-    # Free fragmented GPU memory before segmentation
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    elif torch.backends.mps.is_available():
-        torch.mps.synchronize()
-        torch.mps.empty_cache()
+    get_memory_manager().empty_cache()
     return worker.segment(image, boxes)
 
 
@@ -282,12 +271,7 @@ def unload_sam() -> None:
     if _sam_worker is not None:
         del _sam_worker.predictor
         _sam_worker = None
-    import gc
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    elif torch.backends.mps.is_available():
-        torch.mps.empty_cache()
+    get_memory_manager().full_cleanup()
     with _sam2_state_lock:
         _sam2_state["state"] = Sam2State.UNLOADED
         _sam2_state["stage"] = ""

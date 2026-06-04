@@ -24,18 +24,9 @@ class Settings(BaseSettings):
 
     @property
     def resolved_device(self) -> str:
-        if self.device:
-            return self.device
-        import torch
+        from .gpu_memory import _detect_device
 
-        if torch.cuda.is_available():
-            return "cuda"
-        if torch.backends.mps.is_available():
-            return "mps"
-        raise RuntimeError(
-            "No GPU detected. LocateAnything-3B requires CUDA (NVIDIA GPU) or MPS (Apple Silicon). "
-            "CPU inference is not supported."
-        )
+        return _detect_device(self.device)
 
     # Model idle timeout (seconds) — auto-unload to free GPU memory
     model_idle_timeout_seconds: int = 600

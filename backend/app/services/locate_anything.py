@@ -15,6 +15,7 @@ from PIL import Image
 
 from ..core.config import settings
 from ..core.exceptions import InferenceError
+from ..core.gpu_memory import get_memory_manager
 
 logger = logging.getLogger(__name__)
 
@@ -52,21 +53,6 @@ _model_state: dict = {
 _state_lock = threading.Lock()
 
 
-def _resolve_attn_impl(device: str) -> str:
-    """Use flash_attention_2 on CUDA when available (saves ~30% attention VRAM).
-
-    Falls back to sdpa on MPS, CPU, or when flash-attn is not installed.
-    """
-    if device == "cuda":
-        try:
-            import flash_attn  # type: ignore[import-not-found]  # noqa: F401
-            logger.info("flash_attention_2 available, using it for attention")
-            return "flash_attention_2"
-        except ImportError:
-            logger.info("flash-attn not installed, falling back to sdpa")
-    return "sdpa"
-
-
 class LocateAnythingWorker:
     def __init__(self, model_path: str, device: str = "mps", progress_cb=None):
         _ensure_decord_stub()
@@ -75,6 +61,8 @@ class LocateAnythingWorker:
 
         self.device = device
         self.dtype = torch.bfloat16
+
+        gpu_mem = get_memory_manager()
 
         # ── Download tokenizer ──
         self._set_progress(progress_cb, "downloading", "tokenizer", 10)
@@ -88,7 +76,7 @@ class LocateAnythingWorker:
 
         # ── Download model weights ──
         self._set_progress(progress_cb, "downloading", "model", 50)
-        attn_impl = _resolve_attn_impl(device)
+        attn_impl = gpu_mem.resolve_attn_impl()
         logger.info("Loading model to %s (attn=%s)...", device, attn_impl)
         self.model = AutoModel.from_pretrained(
             model_path,
@@ -164,13 +152,7 @@ class LocateAnythingWorker:
 
         # Aggressively free intermediate tensors before returning
         del inputs, response
-        import gc
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        elif torch.backends.mps.is_available():
-            torch.mps.synchronize()
-            torch.mps.empty_cache()
+        get_memory_manager().full_cleanup()
 
         return {"answer": raw_text}
 
@@ -346,26 +328,8 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     return boxes
 
 
-def _resolve_max_long_side() -> int:
-    """Pick maximum image long-side based on available GPU VRAM."""
-    try:
-        import torch
-        if torch.cuda.is_available():
-            total_mb = torch.cuda.get_device_properties(0).total_memory // (1024 * 1024)
-            if total_mb >= 16 * 1024:
-                return 1333
-            elif total_mb >= 12 * 1024:
-                return 1024
-            return 800  # < 12GB, conservative
-        elif torch.backends.mps.is_available():
-            return 1024  # Apple Silicon unified memory is ample
-    except Exception:
-        pass
-    return 800  # safe fallback
-
-
-MAX_LONG_SIDE = _resolve_max_long_side()
-logger.info("Image long-side cap set to %dpx (auto-detected from GPU VRAM)", MAX_LONG_SIDE)
+MAX_LONG_SIDE = get_memory_manager().resolve_max_long_side()
+logger.info("Image long-side cap set to %dpx (auto-detected from GPU)", MAX_LONG_SIDE)
 
 
 def detect(image_path: str | Path, categories: list[str]) -> dict:
@@ -375,11 +339,8 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
         raise InferenceError() from exc
     _bump_activity()
 
-    # Free fragmented GPU memory before inference
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    elif torch.backends.mps.is_available():
-        torch.mps.empty_cache()
+    gpu_mem = get_memory_manager()
+    gpu_mem.empty_cache()
 
     img = Image.open(image_path).convert("RGB")
     try:
@@ -407,15 +368,7 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
         return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h, "orig_w": orig_w, "orig_h": orig_h}
     finally:
         img.close()
-        # Aggressive cleanup to prevent VRAM fragmentation across multiple detects
-        import gc
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
-        elif torch.backends.mps.is_available():
-            torch.mps.synchronize()
-            torch.mps.empty_cache()
+        gpu_mem.full_cleanup()
 
 
 def get_model_status() -> dict:
@@ -438,13 +391,7 @@ def unload_model() -> None:
         del _worker.tokenizer
         del _worker.processor
         _worker = None
-    import gc
-
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    elif torch.backends.mps.is_available():
-        torch.mps.empty_cache()
+    get_memory_manager().full_cleanup()
     with _state_lock:
         _model_state["state"] = ModelState.UNLOADED
         _model_state["stage"] = ""

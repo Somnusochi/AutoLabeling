@@ -16,7 +16,7 @@ def _get_filtered_boxes(detection: Detection) -> list[dict]:
         {
             "x1": b.x1, "y1": b.y1, "x2": b.x2, "y2": b.y2,
             "class_name": b.class_name,
-            "mask_polygon": b.mask_polygon,
+            "mask_polygon": getattr(b, "mask_polygon", None),
         }
         for b in detection.boxes
     ]

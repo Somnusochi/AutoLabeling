@@ -18,6 +18,7 @@ from starlette.responses import StreamingResponse
 
 from ...core.config import settings
 from ...core.database import SessionLocal, get_db
+from ...core.gpu_memory import get_memory_manager
 from ...models.train import TrainingJob
 from ...models.video import Video
 from ...schemas.common import APIResponse
@@ -84,6 +85,8 @@ async def predict_with_model(
         )
     except Exception as exc:
         raise HTTPException(500, f"Inference failed: {exc}") from exc
+    finally:
+        get_memory_manager().full_cleanup()
 
     class_map = {}
     if job.metrics and isinstance(job.metrics, dict):
@@ -135,6 +138,8 @@ async def predict_external_model(
         )
     except Exception as exc:
         raise HTTPException(500, f"Inference failed: {exc}") from exc
+    finally:
+        get_memory_manager().full_cleanup()
 
     boxes_camel = [
         {
@@ -237,6 +242,7 @@ async def validate_mjpeg_external(
             raise
         finally:
             proc.terminate()
+            get_memory_manager().full_cleanup()
 
     return StreamingResponse(
         mjpeg_stream(),
@@ -325,6 +331,7 @@ async def validate_mjpeg(
             raise
         finally:
             proc.terminate()
+            get_memory_manager().full_cleanup()
 
     return StreamingResponse(
         mjpeg_stream(),
@@ -447,6 +454,7 @@ async def predict_video_stream(
             done_data = {"done": True, "frames": processed, "elapsed": round(elapsed, 2)}
             yield f"data: {json.dumps(done_data)}\n\n"
             Path(tmp_video_path).unlink(missing_ok=True)
+            get_memory_manager().full_cleanup()
 
     return StreamingResponse(
         event_stream(),
@@ -562,3 +570,4 @@ def predict_video(
         )
     finally:
         Path(tmp_video_path).unlink(missing_ok=True)
+        get_memory_manager().full_cleanup()
