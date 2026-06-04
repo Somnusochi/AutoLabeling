@@ -324,7 +324,26 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     return boxes
 
 
-MAX_LONG_SIDE = 800  # standard for VLM/ViT inference, preserves aspect ratio
+def _resolve_max_long_side() -> int:
+    """Pick maximum image long-side based on available GPU VRAM."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            total_mb = torch.cuda.get_device_properties(0).total_memory // (1024 * 1024)
+            if total_mb >= 16 * 1024:
+                return 1333
+            elif total_mb >= 12 * 1024:
+                return 1024
+            return 800  # < 12GB, conservative
+        elif torch.backends.mps.is_available():
+            return 1024  # Apple Silicon unified memory is ample
+    except Exception:
+        pass
+    return 800  # safe fallback
+
+
+MAX_LONG_SIDE = _resolve_max_long_side()
+logger.info("Image long-side cap set to %dpx (auto-detected from GPU VRAM)", MAX_LONG_SIDE)
 
 
 def detect(image_path: str | Path, categories: list[str]) -> dict:
