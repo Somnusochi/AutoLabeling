@@ -170,84 +170,7 @@ start.bat    # Windows
 
 ## Project Structure
 
-```
-VLM-AutoYOLO/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── deps.py              # Dependency injection
-│   │   │   └── routes/
-│   │   │       ├── detection.py     # Detection CRUD, manual annotation, model mgmt
-│   │   │       ├── export.py        # Multi-format dataset export
-│   │   │       ├── predict.py       # Model validation, video inference (MJPEG/SSE)
-│   │   │       ├── train.py         # YOLO training, SSE progress, retrain
-│   │   │       └── video.py         # Video upload, keyframe extraction
-│   │   ├── core/
-│   │   │   ├── config.py            # Settings, device auto-detect, allocator tuning
-│   │   │   ├── database.py          # SQLAlchemy engine + session
-│   │   │   ├── gpu_memory.py        # GPU memory strategy (CUDA / MPS / CPU)
-│   │   │   └── ...
-│   │   ├── models/                  # SQLAlchemy ORM
-│   │   │   ├── detection.py         # Detection & bounding boxes (incl. mask_polygon)
-│   │   │   ├── train.py             # Training jobs (detect & segment)
-│   │   │   └── video.py             # Videos & keyframes
-│   │   ├── repositories/            # Data access layer
-│   │   ├── schemas/                 # Pydantic models (camelCase)
-│   │   ├── services/
-│   │   │   ├── box_filter.py        # Box filtering, NMS dedup
-│   │   │   ├── locate_anything.py   # VLM inference engine
-│   │   │   ├── sam2_service.py      # SAM2 segmentation service
-│   │   │   ├── trainer.py           # YOLO training + validation
-│   │   │   ├── export.py            # Multi-format export dispatcher
-│   │   │   ├── yolo_format.py       # YOLO label conversion (bbox + seg)
-│   │   │   ├── coco_format.py       # COCO JSON exporter
-│   │   │   ├── voc_format.py        # Pascal VOC XML exporter
-│   │   │   ├── createml_format.py   # CreateML JSON exporter
-│   │   │   ├── video_service.py     # ffmpeg keyframe extraction + SSIM dedup
-│   │   │   └── frame_utils.py       # Frame prediction & annotation drawing
-│   │   └── main.py                  # FastAPI entry point
-│   ├── alembic/                     # Database migrations
-│   ├── requirements.txt
-│   └── pyproject.toml
-├── frontend/
-│   └── src/
-│       ├── components/              # React UI components
-│       │   ├── DetectionCanvas.tsx  # Image annotation canvas (bbox + mask)
-│       │   ├── DetectionResult.tsx  # Detection result with multi-format export
-│       │   ├── TrainingPanel.tsx    # YOLO training (detect & segment, dataset download)
-│       │   ├── HistoryList.tsx      # Detection history (paginated, export)
-│       │   ├── HistoryListItem.tsx  # Individual history item card
-│       │   ├── ResultTable.tsx      # Results table with mask column
-│       │   ├── training/            # YOLO training sub-components
-│       │   │   ├── TrainingCandidateList.tsx
-│       │   │   ├── CandidateListItem.tsx
-│       │   │   ├── TrainingJobItem.tsx
-│       │   │   ├── TrainingPreview.tsx
-│       │   │   └── StatusBadge.tsx
-│       │   ├── Sidebar.tsx          # Main sidebar (SAM2 toggle, detect, train)
-│       │   ├── VideoPanel.tsx       # Video upload & keyframe timeline
-│       │   ├── VideoValidator.tsx   # Video validation
-│       │   ├── ModelSelector.tsx    # YOLO model variant selector
-│       │   ├── ValidationSettings.tsx # Conf/IoU threshold controls
-│       │   ├── ImageUploader.tsx    # Drag-and-drop image upload
-│       │   ├── CategoryInput.tsx    # Category quick-fill input
-│       │   ├── FilterPanel.tsx      # Filter mode selector
-│       │   ├── BatchProgress.tsx    # Batch annotation progress
-│       │   ├── KeyframeGrid.tsx     # Video keyframe grid
-│       │   ├── ThemeProvider.tsx    # Light/dark theme
-│       │   ├── Layout.tsx           # App layout
-│       │   └── ...
-│       ├── pages/Home.tsx           # Main page
-│       ├── hooks/                   # Custom hooks (useHomeState, useBatchDetection, ...)
-│       ├── i18n/locales/            # en.json, zh.json
-│       ├── services/api.ts          # Unified API layer
-│       ├── lib/                     # Constants, filters, parsers, yoloExport
-│       └── types/index.ts           # TypeScript types (BBox, Detection, TrainingJob)
-├── docs/                            # Screenshots & user guides
-├── docker-compose.yml
-├── start.sh / start.bat
-└── README.md
-```
+Full directory tree: **[docs/STRUCTURE.md](docs/STRUCTURE.md)**
 
 ## Features
 
@@ -325,69 +248,7 @@ Canvas-based annotation with View / Draw modes.
 
 ## API Reference
 
-All fields camelCase. Errors carry correct HTTP status codes.
-
-### Detection & Annotation
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/v1/detect` | VLM pre-annotation (multipart, supports `use_sam2` flag) |
-| GET | `/api/v1/detections` | List detections (paginated) |
-| GET | `/api/v1/detections/{id}` | Detection detail |
-| GET | `/api/v1/detections/{id}/image` | Original image |
-| POST | `/api/v1/detections/{id}/boxes` | Add annotation box |
-| PUT | `/api/v1/detections/{id}/boxes` | Replace all boxes |
-| PUT | `/api/v1/detections/{id}/boxes/{boxId}` | Update box coordinates |
-| POST | `/api/v1/detections/{id}/boxes/{boxId}/delete` | Delete box |
-| PUT | `/api/v1/detections/{id}/filter-settings` | Save filter mode & NMS IoU |
-| POST | `/api/v1/detections/{id}/delete` | Delete detection |
-| GET | `/api/v1/detections/{id}/export` | Export single YOLO label |
-| POST | `/api/v1/detections/export-batch` | Multi-format export: `yolo` `yolo-seg` `coco` `voc` `createml` (zip) |
-| GET | `/api/v1/model/status` | VLM model status |
-| POST | `/api/v1/model/unload` | Unload VLM model |
-
-### Video
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/v1/videos/upload` | Upload video |
-| GET | `/api/v1/videos` | List videos (paginated) |
-| GET | `/api/v1/videos/{id}` | Video detail (includes keyframes) |
-| GET | `/api/v1/videos/{id}/file` | Video file download |
-| POST | `/api/v1/videos/{id}/extract-keyframes` | Extract keyframes |
-| GET | `/api/v1/videos/{id}/keyframes/{keyframeId}/image` | Keyframe image |
-| POST | `/api/v1/videos/{id}/delete` | Delete video and keyframes |
-
-### Training
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/v1/train/jobs` | Create training job (detect / segment, train/val split) |
-| GET | `/api/v1/train/jobs` | List training jobs (paginated) |
-| GET | `/api/v1/train/variants` | Available YOLO series |
-| GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE training progress |
-| GET | `/api/v1/train/jobs/{id}/download` | Download PT model |
-| GET | `/api/v1/train/jobs/{id}/dataset` | Download dataset zip |
-| GET | `/api/v1/train/jobs/{id}/charts/{name}` | Training charts |
-| POST | `/api/v1/train/jobs/{id}/export-onnx` | Export ONNX model |
-| POST | `/api/v1/train/jobs/{id}/predict` | YOLO inference (image) |
-| POST | `/api/v1/train/jobs/{id}/retrain` | Re-run with same settings |
-| GET | `/api/v1/train/jobs/{id}/validate-mjpeg/{video_id}` | Validate video (MJPEG) |
-| POST | `/api/v1/train/jobs/{id}/predict-video-stream` | Validate video (SSE) |
-| POST | `/api/v1/train/jobs/{id}/predict-video` | Validate video (sync batch) |
-| POST | `/api/v1/train/jobs/{id}/delete` | Delete training job |
-| POST | `/api/v1/train/upload-model` | Upload external model (.pt) |
-| POST | `/api/v1/train/validate-image/{token}` | Validate with external model |
-| GET | `/api/v1/train/validate-mjpeg/{token}/{video_id}` | Validate video with external model (MJPEG) |
-
-### Response Format
-
-```json
-{ "data": { ... } }                                    // Single: 200/201
-{ "data": [...], "total": 100, "page": 1, "pageSize": 20 }  // List: 200
-// Delete: 204 (empty body)
-{ "error": { "code": "NotFoundError", "message": "..." } }   // Error: 4xx/5xx
-```
+Full API documentation with request/response examples: **[docs/API.md](docs/API.md)**
 
 ## Cross-Platform
 
@@ -400,30 +261,7 @@ Auto-detection: CUDA → MPS. Override via `DEVICE` env. **CPU not supported.**
 
 ## Inference Benchmarks
 
-### Windows 11 + RTX 3080 10GB (CUDA)
-
-7 cat images, 3 rounds each, `max_new_tokens=512`, long side 800px.
-
-| Mode | Image Size | Avg Time | Stable Avg* |
-|------|-----------|----------|-------------|
-| VLM only | Large (800×640) | 1.0s | **1.0s** |
-| VLM only | Thumbnails | 367ms | **367ms** |
-| VLM + SAM2 | Large (800×640) | 3.4s | **3.4s** |
-| VLM + SAM2 | Thumbnails | 475ms | **475ms** |
-
-> *Excludes first image of Round 1 (model loading ~22s). **VRAM**: ~5.5GB loaded, ~7.5GB peak.
-
-### macOS Apple Silicon 24GB (MPS)
-
-13 cat images, 3 rounds each, `max_new_tokens=512`, long side 1024px.
-
-| Mode | Cold Start | Warm (R2) | Warm (R3) | Warm Avg |
-|------|-----------|-----------|-----------|----------|
-| VLM + SAM2 | 13.8s | 4.9s | 4.9s | **4.9s/img** |
-| VLM only | 3.7s | 4.3s | 4.3s | **4.3s/img** |
-
-> Cold start includes VLM + SAM2 model loading (~14s). SAM2 overhead: +0.65s (15%). Masks: 13/13.
-> **Memory**: 9.8–13GB stable across 6 rounds with MPS cleanup after each detection.
+Full benchmarks: **[docs/BENCHMARKS.md](docs/BENCHMARKS.md)**
 
 ## Highlights
 

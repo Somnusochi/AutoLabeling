@@ -170,84 +170,7 @@ start.bat    # Windows
 
 ## 项目结构
 
-```
-VLM-AutoYOLO/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── deps.py              # 依赖注入
-│   │   │   └── routes/
-│   │   │       ├── detection.py     # 检测 CRUD、手动标注、模型管理
-│   │   │       ├── export.py        # 多格式数据集导出
-│   │   │       ├── predict.py       # 模型验证、视频推理（MJPEG/SSE）
-│   │   │       ├── train.py         # YOLO 训练、SSE 进度、重训
-│   │   │       └── video.py         # 视频上传、关键帧提取
-│   │   ├── core/
-│   │   │   ├── config.py            # 配置、设备检测、分配器调优
-│   │   │   ├── database.py          # SQLAlchemy 引擎 + 会话
-│   │   │   ├── gpu_memory.py        # GPU 内存策略（CUDA / MPS / CPU）
-│   │   │   └── ...
-│   │   ├── models/                  # SQLAlchemy ORM
-│   │   │   ├── detection.py         # 检测 & 标注框（含 mask_polygon）
-│   │   │   ├── train.py             # 训练任务（检测 & 分割）
-│   │   │   └── video.py             # 视频 & 关键帧
-│   │   ├── repositories/            # 数据访问层
-│   │   ├── schemas/                 # Pydantic 模型（驼峰命名）
-│   │   ├── services/
-│   │   │   ├── box_filter.py        # 标注框过滤、NMS 去重
-│   │   │   ├── locate_anything.py   # VLM 推理引擎
-│   │   │   ├── sam2_service.py      # SAM2 分割服务
-│   │   │   ├── trainer.py           # YOLO 训练 + 验证
-│   │   │   ├── export.py            # 多格式导出分发器
-│   │   │   ├── yolo_format.py       # YOLO 标签转换（bbox + seg）
-│   │   │   ├── coco_format.py       # COCO JSON 导出
-│   │   │   ├── voc_format.py        # Pascal VOC XML 导出
-│   │   │   ├── createml_format.py   # CreateML JSON 导出
-│   │   │   ├── video_service.py     # ffmpeg 关键帧提取 + SSIM 去重
-│   │   │   └── frame_utils.py       # 帧预测与标注绘制
-│   │   └── main.py                  # FastAPI 入口
-│   ├── alembic/                     # 数据库迁移
-│   ├── requirements.txt
-│   └── pyproject.toml
-├── frontend/
-│   └── src/
-│       ├── components/              # React UI 组件
-│       │   ├── DetectionCanvas.tsx  # 图片标注画布（bbox + mask）
-│       │   ├── DetectionResult.tsx  # 检测结果（多格式导出）
-│       │   ├── TrainingPanel.tsx    # YOLO 训练面板（检测 & 分割，数据集下载）
-│       │   ├── HistoryList.tsx      # 检测历史（分页 + 导出下拉菜单）
-│       │   ├── HistoryListItem.tsx  # 历史记录单项卡片
-│       │   ├── ResultTable.tsx      # 结果表格（含 Mask 列）
-│       │   ├── training/            # YOLO 训练子组件
-│       │   │   ├── TrainingCandidateList.tsx
-│       │   │   ├── CandidateListItem.tsx
-│       │   │   ├── TrainingJobItem.tsx
-│       │   │   ├── TrainingPreview.tsx
-│       │   │   └── StatusBadge.tsx
-│       │   ├── Sidebar.tsx          # 主侧边栏（SAM2 开关、检测、训练）
-│       │   ├── VideoPanel.tsx       # 视频上传与关键帧时间轴
-│       │   ├── VideoValidator.tsx   # 视频验证
-│       │   ├── ModelSelector.tsx    # YOLO 模型选择器
-│       │   ├── ValidationSettings.tsx # Conf/IoU 阈值控制
-│       │   ├── ImageUploader.tsx    # 拖拽上传
-│       │   ├── CategoryInput.tsx    # 类别快速填充
-│       │   ├── FilterPanel.tsx      # 过滤模式选择
-│       │   ├── BatchProgress.tsx    # 批量标注进度
-│       │   ├── KeyframeGrid.tsx     # 视频关键帧网格
-│       │   ├── ThemeProvider.tsx    # 亮色/暗色主题
-│       │   ├── Layout.tsx           # 应用布局
-│       │   └── ...
-│       ├── pages/Home.tsx           # 主页面
-│       ├── hooks/                   # 自定义 Hooks（useHomeState, useBatchDetection, ...）
-│       ├── i18n/locales/            # en.json、zh.json
-│       ├── services/api.ts          # 统一 API 层
-│       ├── lib/                     # 常量、过滤器、解析器、yoloExport
-│       └── types/index.ts           # TypeScript 类型（BBox, Detection, TrainingJob）
-├── docs/                            # 截图与用户指南
-├── docker-compose.yml
-├── start.sh / start.bat
-└── README.md
-```
+完整目录树：**[docs/STRUCTURE.md](docs/STRUCTURE.md)**
 
 ## 功能
 
@@ -324,69 +247,7 @@ Canvas 画框模式，查看/标注双模式切换。
 
 ## API 概览
 
-所有字段驼峰命名。错误携带正确 HTTP 状态码。
-
-### 检测与标注
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/detect` | VLM 预标注（multipart，支持 `use_sam2` 参数） |
-| GET | `/api/v1/detections` | 历史列表（分页） |
-| GET | `/api/v1/detections/{id}` | 检测详情 |
-| GET | `/api/v1/detections/{id}/image` | 检测原图 |
-| POST | `/api/v1/detections/{id}/boxes` | 手动添加标注框 |
-| PUT | `/api/v1/detections/{id}/boxes` | 替换全部标注框 |
-| PUT | `/api/v1/detections/{id}/boxes/{boxId}` | 修改标注框坐标 |
-| POST | `/api/v1/detections/{id}/boxes/{boxId}/delete` | 删除标注框 |
-| PUT | `/api/v1/detections/{id}/filter-settings` | 保存过滤模式与 NMS IoU |
-| POST | `/api/v1/detections/{id}/delete` | 删除检测记录 |
-| GET | `/api/v1/detections/{id}/export` | 导出单图 YOLO 标注 |
-| POST | `/api/v1/detections/export-batch` | 多格式批量导出：`yolo` `yolo-seg` `coco` `voc` `createml`（zip） |
-| GET | `/api/v1/model/status` | VLM 模型状态 |
-| POST | `/api/v1/model/unload` | 卸载 VLM 模型 |
-
-### 视频
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/videos/upload` | 上传视频 |
-| GET | `/api/v1/videos` | 视频列表（分页） |
-| GET | `/api/v1/videos/{id}` | 视频详情（含关键帧） |
-| GET | `/api/v1/videos/{id}/file` | 视频文件下载 |
-| POST | `/api/v1/videos/{id}/extract-keyframes` | 提取关键帧 |
-| GET | `/api/v1/videos/{id}/keyframes/{keyframeId}/image` | 关键帧图片 |
-| POST | `/api/v1/videos/{id}/delete` | 删除视频及关键帧 |
-
-### 训练
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/train/jobs` | 创建训练任务（检测/分割，train/val 拆分） |
-| GET | `/api/v1/train/jobs` | 训练任务列表（分页） |
-| GET | `/api/v1/train/variants` | 可用 YOLO 系列 |
-| GET | `/api/v1/train/jobs/{id}/progress/stream` | SSE 训练进度 |
-| GET | `/api/v1/train/jobs/{id}/download` | 下载 PT 模型 |
-| GET | `/api/v1/train/jobs/{id}/dataset` | 下载数据集 zip |
-| GET | `/api/v1/train/jobs/{id}/charts/{name}` | 训练曲线图 |
-| POST | `/api/v1/train/jobs/{id}/export-onnx` | 导出 ONNX 模型 |
-| POST | `/api/v1/train/jobs/{id}/predict` | YOLO 推理（图片） |
-| POST | `/api/v1/train/jobs/{id}/retrain` | 同设置重新训练 |
-| GET | `/api/v1/train/jobs/{id}/validate-mjpeg/{video_id}` | 视频验证（MJPEG） |
-| POST | `/api/v1/train/jobs/{id}/predict-video-stream` | 视频验证（SSE） |
-| POST | `/api/v1/train/jobs/{id}/predict-video` | 视频验证（同步批量） |
-| POST | `/api/v1/train/jobs/{id}/delete` | 删除训练任务 |
-| POST | `/api/v1/train/upload-model` | 上传外部模型 (.pt) |
-| POST | `/api/v1/train/validate-image/{token}` | 外部模型验证图片 |
-| GET | `/api/v1/train/validate-mjpeg/{token}/{video_id}` | 外部模型验证视频（MJPEG） |
-
-### 响应格式
-
-```json
-{ "data": { ... } }                                    // 单条：200/201
-{ "data": [...], "total": 100, "page": 1, "pageSize": 20 }  // 列表：200
-// 删除：204（空响应体）
-{ "error": { "code": "NotFoundError", "message": "..." } }   // 错误：4xx/5xx
-```
+完整 API 文档与请求/响应示例：**[docs/API.md](docs/API.md)**
 
 ## 跨平台
 
@@ -399,30 +260,7 @@ Canvas 画框模式，查看/标注双模式切换。
 
 ## 推理性能基准
 
-### Windows 11 + RTX 3080 10GB (CUDA)
-
-7 张猫图，各 3 轮，`max_new_tokens=512`，长边 800px。
-
-| 模式 | 图片尺寸 | 平均耗时 | 稳定平均* |
-|------|---------|---------|----------|
-| VLM only | 大图 (800×640) | 1.0s | **1.0s** |
-| VLM only | 缩略图 | 367ms | **367ms** |
-| VLM + SAM2 | 大图 (800×640) | 3.4s | **3.4s** |
-| VLM + SAM2 | 缩略图 | 475ms | **475ms** |
-
-> *排除第 1 轮第 1 张（模型加载 ~22s）。**显存**：~5.5GB 加载后，~7.5GB 峰值。
-
-### macOS Apple Silicon 24GB (MPS)
-
-13 张猫图，各 3 轮，`max_new_tokens=512`，长边 1024px。
-
-| 模式 | 冷启动 | 热启动 (R2) | 热启动 (R3) | 热启动平均 |
-|------|--------|------------|------------|-----------|
-| VLM + SAM2 | 13.8s | 4.9s | 4.9s | **4.9s/张** |
-| VLM only | 3.7s | 4.3s | 4.3s | **4.3s/张** |
-
-> 冷启动含 VLM + SAM2 模型加载（~14s）。SAM2 额外开销：+0.65s (15%)。Mask：13/13。
-> **内存**：6 轮全程 9.8–13GB 稳定，每次检测后 MPS 清理生效。
+完整基准测试：**[docs/BENCHMARKS.md](docs/BENCHMARKS.md)**
 
 ## 项目亮点
 
