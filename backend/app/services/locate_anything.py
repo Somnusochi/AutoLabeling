@@ -106,7 +106,7 @@ class LocateAnythingWorker:
         self,
         image: Image.Image,
         question: str,
-        max_new_tokens: int = 2048,
+        max_new_tokens: int = 512,
     ) -> dict:
         messages = [
             {
