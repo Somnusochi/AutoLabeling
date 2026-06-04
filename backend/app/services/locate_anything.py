@@ -164,7 +164,7 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     return boxes
 
 
-MAX_IMAGE_PX = 512 * 512  # ~262k pixels, safe for 8GB CPU mode
+MAX_IMAGE_PX = 1024 * 1024  # ~1MP, safe for 10GB+ VRAM
 
 
 def detect(image_path: str | Path, categories: list[str]) -> dict:
