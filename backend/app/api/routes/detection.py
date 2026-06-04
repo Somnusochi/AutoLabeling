@@ -114,6 +114,7 @@ async def create_detection(
             "y1": b["y1"],
             "x2": b["x2"],
             "y2": b["y2"],
+            "confidence": b.get("confidence"),
             "mask_polygon": polygons[i] if i < len(polygons) else None,
         }
         for i, b in enumerate(boxes_orig)

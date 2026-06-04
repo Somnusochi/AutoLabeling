@@ -45,10 +45,16 @@ export function DetectionCanvas({
       ctx.clearRect(0, 0, displayW, displayH);
       ctx.drawImage(img, 0, 0, displayW, displayH);
 
+      // Build class→color map at draw time
+      const uniqClasses = [...new Set(boxes.map((b) => b.className))];
+      const classColorMap = new Map<string, string>();
+      uniqClasses.forEach((c, i) => classColorMap.set(c, BOX_COLORS[i % BOX_COLORS.length]));
+
       // Existing boxes
-      boxes.forEach((box, idx) => {
+      boxes.forEach((box) => {
         if (hiddenIndices.has(box.id)) return;
-        const color = BOX_COLORS[idx % BOX_COLORS.length];
+        const baseColor = classColorMap.get(box.className) ?? BOX_COLORS[0];
+        const color = confidenceColor(box.confidence, baseColor);
         if (showMask && box.maskPolygon && box.maskPolygon.length >= 3) {
           drawPolygon(ctx, box.maskPolygon, scale, color);
         }
@@ -162,6 +168,14 @@ export function DetectionCanvas({
 }
 
 // ── Helpers ─────────────────────────────────────
+
+function confidenceColor(conf: number | null | undefined, baseColor: string): string {
+  if (conf == null) return "#EF4444";  // red — no confidence
+  if (conf >= 0.8) return baseColor;    // green/blue — high confidence
+  if (conf >= 0.5) return "#F59E0B";    // amber — medium
+  return "#EF4444";                      // red — low
+}
+
 function drawPolygon(
   ctx: CanvasRenderingContext2D,
   polygon: number[][],

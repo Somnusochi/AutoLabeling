@@ -296,17 +296,24 @@ def _get_worker() -> LocateAnythingWorker:
 
 _REF_PATTERN = re.compile(r"<ref>([^<]+)</ref>")
 _BOX_PATTERN = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
-_TOKEN_PATTERN = re.compile(r"<ref>[^<]+</ref>|<box><\d+><\d+><\d+><\d+></box>")
+_CONF_PATTERN = re.compile(r"<conf>([\d.]+)</conf>")
+_TOKEN_PATTERN = re.compile(
+    r"<ref>[^<]+</ref>|<box><\d+><\d+><\d+><\d+></box>|<conf>[\d.]+</conf>"
+)
 
 
 def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
-    """Parse model output into boxes with class names.
+    """Parse model output into boxes with class names and confidence.
 
-    The model outputs one <ref> tag followed by multiple <box> tags sharing
-    that label. Later <ref> tags switch the label for subsequent boxes.
+    Expected model format:
+      <ref>cat</ref><box><100><200><300><400></box><conf>0.92</conf>
+
+    Each <conf> is optional and applies to the immediately preceding <box>.
+    <ref> tags set the label for all subsequent boxes until the next <ref>.
     """
     boxes: list[dict] = []
     current_class = ""
+    last_conf = None
 
     for token in _TOKEN_PATTERN.findall(raw_text):
         if token.startswith("<ref>"):
@@ -324,8 +331,17 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
                         "y1": int(y1 / 1000 * img_h),
                         "x2": int(x2 / 1000 * img_w),
                         "y2": int(y2 / 1000 * img_h),
+                        "confidence": last_conf,
                     }
                 )
+                last_conf = None
+        elif token.startswith("<conf>"):
+            m = _CONF_PATTERN.match(token)
+            if m:
+                try:
+                    last_conf = float(m.group(1))
+                except ValueError:
+                    last_conf = None
 
     return boxes
 
