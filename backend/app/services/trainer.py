@@ -131,7 +131,8 @@ def _build_dataset(
 
     def _write_set(dets: list[Detection], subset: str) -> int:
         fmt_fn = (
-            yolo_format.detection_to_yolo_seg if task_type == "segment"
+            yolo_format.detection_to_yolo_seg
+            if task_type == "segment"
             else yolo_format.detection_to_yolo
         )
         for det in dets:

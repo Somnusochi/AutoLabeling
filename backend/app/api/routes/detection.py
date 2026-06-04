@@ -89,6 +89,7 @@ async def create_detection(
     if use_sam2 and boxes_orig:
         try:
             from PIL import Image
+
             img = Image.open(filepath).convert("RGB")
             try:
                 polygons = segment_image(img, boxes_orig)

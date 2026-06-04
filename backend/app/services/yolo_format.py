@@ -14,7 +14,10 @@ def _get_filtered_boxes(detection: Detection) -> list[dict]:
     """Return boxes after applying saved filter settings, if any."""
     boxes = [
         {
-            "x1": b.x1, "y1": b.y1, "x2": b.x2, "y2": b.y2,
+            "x1": b.x1,
+            "y1": b.y1,
+            "x2": b.x2,
+            "y2": b.y2,
             "class_name": b.class_name,
             "mask_polygon": getattr(b, "mask_polygon", None),
         }

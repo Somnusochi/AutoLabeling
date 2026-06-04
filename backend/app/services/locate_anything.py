@@ -37,19 +37,20 @@ def _ensure_decord_stub():
 
 # ── Model state machine ────────────────────────────
 
+
 class ModelState(enum.StrEnum):
     UNLOADED = "unloaded"
-    DOWNLOADING = "downloading"   # fetching model files from HuggingFace
-    LOADING = "loading"           # loading into memory / moving to GPU
+    DOWNLOADING = "downloading"  # fetching model files from HuggingFace
+    LOADING = "loading"  # loading into memory / moving to GPU
     LOADED = "loaded"
     ERROR = "error"
 
 
 _model_state: dict = {
     "state": ModelState.UNLOADED,
-    "stage": "",        # e.g. "tokenizer", "processor", "model", "gpu"
-    "progress": 0,      # 0–100 percentage
-    "error": "",        # error message when state == ERROR
+    "stage": "",  # e.g. "tokenizer", "processor", "model", "gpu"
+    "progress": 0,  # 0–100 percentage
+    "error": "",  # error message when state == ERROR
 }
 _state_lock = threading.Lock()
 
@@ -367,8 +368,12 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
         logger.info("Detection: %s -> %d boxes for %s", image_path, len(boxes), categories)
 
         return {
-            "raw_text": raw_text, "boxes": boxes,
-            "img_w": w, "img_h": h, "orig_w": orig_w, "orig_h": orig_h,
+            "raw_text": raw_text,
+            "boxes": boxes,
+            "img_w": w,
+            "img_h": h,
+            "orig_w": orig_w,
+            "orig_h": orig_h,
         }
     finally:
         img.close()

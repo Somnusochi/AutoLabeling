@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # ── SAM2 State machine ──────────────────────────────
 
+
 class Sam2State(enum.StrEnum):
     UNLOADED = "unloaded"
     DOWNLOADING = "downloading"
@@ -91,8 +92,10 @@ class SegmentAnythingWorker:
         for box in boxes:
             bbox = np.array([box["x1"], box["y1"], box["x2"], box["y2"]])
             masks, scores, _ = self.predictor.predict(
-                point_coords=None, point_labels=None,
-                box=bbox[None, :], multimask_output=False,
+                point_coords=None,
+                point_labels=None,
+                box=bbox[None, :],
+                multimask_output=False,
             )
             if masks is None or masks.shape[0] == 0:
                 polygons.append([])
@@ -115,6 +118,7 @@ class SegmentAnythingWorker:
 def _clean_mask(mask: np.ndarray) -> np.ndarray:
     try:
         import cv2
+
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     except ImportError:
@@ -124,6 +128,7 @@ def _clean_mask(mask: np.ndarray) -> np.ndarray:
 def _contour_area(contour: np.ndarray) -> float:
     try:
         import cv2
+
         return cv2.contourArea(contour)
     except ImportError:
         return len(contour)
@@ -132,6 +137,7 @@ def _contour_area(contour: np.ndarray) -> float:
 def _find_contours(mask: np.ndarray):
     try:
         import cv2
+
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         return contours
     except ImportError:

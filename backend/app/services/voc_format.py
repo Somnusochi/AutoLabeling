@@ -16,7 +16,7 @@ def detection_to_voc(detection: Detection, class_map: dict[str, int]) -> str:
     img_h = detection.image_height or 1
     boxes = _get_filtered_boxes(detection)
 
-    lines = ['<annotation>', f'  <filename>{detection.image_name}</filename>']
+    lines = ["<annotation>", f"  <filename>{detection.image_name}</filename>"]
     lines.append("  <size>")
     lines.append(f"    <width>{img_w}</width>")
     lines.append(f"    <height>{img_h}</height>")
