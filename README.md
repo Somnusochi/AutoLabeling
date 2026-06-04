@@ -142,14 +142,14 @@ If you prefer not to use Docker, follow these steps:
 
 **Requirements:**
 
-| Resource | Minimum |
-|----------|---------|
-| Python | 3.12+ |
-| Node.js | 22+ |
-| PostgreSQL | 16+ |
-| ffmpeg | Any version |
-| macOS | Apple Silicon 24GB unified memory |
-| NVIDIA GPU | 12GB VRAM |
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| Python | 3.12+ | 3.12+ |
+| Node.js | 22+ | 22+ |
+| PostgreSQL | 16+ | 16+ |
+| ffmpeg | Any version | — |
+| macOS | Apple Silicon 24GB unified memory | 24GB+ |
+| NVIDIA GPU | 10GB VRAM | 12GB+ |
 
 **Setup:**
 
@@ -468,6 +468,17 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 
 Auto-detection priority: CUDA → MPS. Override via `DEVICE` env variable.
 **CPU inference is not supported** — LocateAnything-3B requires GPU acceleration.
+
+### Inference Benchmarks
+
+Tested with 1000×800 JPEG image, single category ("cat"), `max_new_tokens=512`.
+
+| Platform | GPU / VRAM | VLM Only | VLM + SAM2 | Notes |
+|----------|-----------|----------|------------|-------|
+| Windows 11 | RTX 3080 10GB | **1.4s** | **1.8s** | CUDA, 512 tokens |
+| macOS | Apple Silicon MPS 24GB | ~20s | — | Unified memory, no VRAM pressure |
+
+> **VRAM usage**: VLM model alone ~5.5GB after loading; peak ~9.2GB during inference. With SAM2 loaded concurrently, ~9.8GB peak. 10GB cards work but leave minimal headroom — close unused GPU apps before running.
 
 ## Development Checks
 
