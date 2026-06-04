@@ -170,7 +170,7 @@ start.bat    # Windows
 
 ## 项目结构
 
-完整目录树：**[docs/STRUCTURE.md](docs/STRUCTURE.md)**
+完整目录树：**[docs/STRUCTURE_ZH.md](docs/STRUCTURE_ZH.md)**
 
 ## 功能
 
@@ -247,7 +247,7 @@ Canvas 画框模式，查看/标注双模式切换。
 
 ## API 概览
 
-完整 API 文档与请求/响应示例：**[docs/API.md](docs/API.md)**
+完整 API 文档与请求/响应示例：**[docs/API_ZH.md](docs/API_ZH.md)**
 
 ## 跨平台
 
@@ -260,7 +260,7 @@ Canvas 画框模式，查看/标注双模式切换。
 
 ## 推理性能基准
 
-完整基准测试：**[docs/BENCHMARKS.md](docs/BENCHMARKS.md)**
+完整基准测试：**[docs/BENCHMARKS_ZH.md](docs/BENCHMARKS_ZH.md)**
 
 ## 项目亮点
 
