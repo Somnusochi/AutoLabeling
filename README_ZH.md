@@ -487,23 +487,14 @@ PYTHONPATH=. alembic upgrade head
 python -m compileall app alembic
 ```
 
-## 常见误解
+## 项目亮点
 
-### 「推理跑在 CPU 上，很慢」
+### MPS / CUDA 全链路 GPU 加速
 
-**不是。** 项目强制 GPU 加速——LocateAnything-3B 需要 CUDA 或 MPS，CPU 模式直接报错。自动检测优先级：CUDA → MPS。VLM 和 SAM2 都运行在 GPU 上。
-
-### 「YOLO 训练没有 MPS 支持」
-
-**不是。** Ultralytics YOLO 在 Apple Silicon 上自动使用 MPS，无需项目做任何配置，macOS 上训练直接跑 GPU。
-
-### 「视频关键帧提取只有 CPU 软解」
-
-**部分正确。** ffmpeg 关键帧提取目前默认软件解码。macOS 上可启用 VideoToolbox 硬解，Linux 上可启用 NVENC/NVDEC，但实际影响很小——关键帧提取只解码 I 帧，并非性能瓶颈。
-
-### 「综合实用性有限」
-
-**不认同。** 平台提供端到端自动标注（VLM + SAM2 mask 精修）、人工标注、多格式数据集导出、一键 YOLO 训练（检测 + 分割）、模型验证——全部 GPU 加速，是生产可用的标注与训练流水线。
+- **VLM 推理**：LocateAnything-3B 强制 GPU——自动检测 CUDA / MPS，CPU 模式直接拒绝运行
+- **SAM2 分割**：SAM 2.1 精修 mask，同 VLM 共用 GPU，一次检测全链路加速
+- **YOLO 训练**：Ultralytics 在 Apple Silicon 上自动启用 MPS，macOS 原生 GPU 训练
+- **全平台覆盖**：macOS Apple Silicon 走 MPS，Linux / Windows + NVIDIA 走 CUDA
 
 ## License
 

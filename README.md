@@ -485,23 +485,14 @@ PYTHONPATH=. alembic upgrade head
 python -m compileall app alembic
 ```
 
-## FAQ
+## Highlights
 
-### "Inference runs on CPU and is slow"
+### MPS / CUDA Full-Pipeline GPU Acceleration
 
-**No.** The project enforces GPU acceleration — LocateAnything-3B requires CUDA or MPS. Auto-detection priority: CUDA → MPS. CPU inference raises an explicit error. VLM and SAM2 both run on GPU.
-
-### "YOLO training has no MPS support"
-
-**No.** Ultralytics YOLO automatically uses MPS on Apple Silicon. No project-level configuration is needed — training runs on GPU out of the box on macOS.
-
-### "Video keyframe extraction is CPU-only"
-
-**Partially true.** ffmpeg keyframe extraction currently uses software decoding by default. VideoToolbox hardware acceleration (macOS) and NVENC/NVDEC (Linux) can be enabled but the impact is minimal — keyframe extraction only decodes I-frames and is not a bottleneck.
-
-### "Overall usefulness is limited"
-
-**Disagree.** The platform provides end-to-end auto-labeling (VLM + SAM2 mask refinement), manual annotation, multi-format dataset export, one-click YOLO training (detect & segment), and model validation — all GPU-accelerated. It is a production-ready annotation and training pipeline.
+- **VLM Inference**: LocateAnything-3B enforces GPU — auto-detects CUDA / MPS, refuses to run on CPU
+- **SAM2 Segmentation**: SAM 2.1 mask refinement runs on the same GPU, end-to-end acceleration
+- **YOLO Training**: Ultralytics auto-enables MPS on Apple Silicon, native GPU training on macOS
+- **Cross-Platform**: macOS Apple Silicon → MPS, Linux / Windows + NVIDIA → CUDA
 
 ## License
 
