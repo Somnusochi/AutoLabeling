@@ -471,14 +471,18 @@ Auto-detection priority: CUDA → MPS. Override via `DEVICE` env variable.
 
 ### Inference Benchmarks
 
-Tested with 1000×800 JPEG image, single category ("cat"), `max_new_tokens=512`.
+Tested with 7 cat images of varying sizes on Windows 11, `max_new_tokens=512`, no SAM2, 3 rounds.
 
-| Platform | GPU / VRAM | VLM Only | VLM + SAM2 | Notes |
-|----------|-----------|----------|------------|-------|
-| Windows 11 | RTX 3080 10GB | **1.4s** | **1.8s** | CUDA, 512 tokens |
-| macOS | Apple Silicon MPS 24GB | ~20s | — | Unified memory, no VRAM pressure |
+| Platform | GPU / VRAM | Image Size | Avg Time | Range |
+|----------|-----------|-----------|----------|-------|
+| Windows 11 | RTX 3080 10GB | 800×1000 (~100KB) | **11.6s** | 9.6–13.9s |
+| Windows 11 | RTX 3080 10GB | Thumbnails (~5KB) | **345ms** | 300–403ms |
+| Windows 11 | RTX 3080 10GB | All (7 images) | **5.2s** | 0.3–13.9s |
+| macOS | Apple Silicon MPS 24GB | 800×1000 | ~20s | — |
 
 > **VRAM usage**: VLM model alone ~5.5GB after loading; peak ~9.2GB during inference. With SAM2 loaded concurrently, ~9.8GB peak. 10GB cards work but leave minimal headroom — close unused GPU apps before running.
+>
+> **Performance note**: LocateAnything-3B generates tokens autoregressively — complex scenes with many objects take longer. Small/simple images complete in sub-second. Image resolution is auto-capped at 800×800 to control VRAM.
 
 ## Development Checks
 
