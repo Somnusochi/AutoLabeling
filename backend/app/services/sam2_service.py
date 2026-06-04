@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 import logging
 import threading
 import time
@@ -14,28 +15,62 @@ from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# ── SAM2 State machine ──────────────────────────────
+
+class Sam2State(str, enum.Enum):
+    UNLOADED = "unloaded"
+    DOWNLOADING = "downloading"
+    LOADING = "loading"
+    LOADED = "loaded"
+    ERROR = "error"
+
+
+_sam2_state: dict = {
+    "state": Sam2State.UNLOADED,
+    "stage": "",
+    "progress": 0,
+    "error": "",
+}
+_sam2_state_lock = threading.Lock()
+
 _sam_worker: SegmentAnythingWorker | None = None
 _last_activity: float = 0.0
 _watchdog_thread: threading.Thread | None = None
 _watchdog_stop: threading.Event | None = None
 _lock: threading.Lock = threading.Lock()
+_load_thread: threading.Thread | None = None
+_load_complete = threading.Event()
 
 
 class SegmentAnythingWorker:
-    def __init__(self, model_id: str = "facebook/sam2.1-hiera-base-plus", device: str | None = None):
+    def __init__(self, model_id: str = "facebook/sam2.1-hiera-base-plus", device: str | None = None, progress_cb=None):
         from sam2.build_sam import build_sam2_hf
         from sam2.sam2_image_predictor import SAM2ImagePredictor
 
         self.device = device or settings.resolved_device
         logger.info("Loading SAM2 (%s) to %s...", model_id, self.device)
 
+        # Stage 1: download model
+        self._set_progress(progress_cb, "downloading", "model", 30)
         sam2_model = build_sam2_hf(model_id, device="cpu")
+
+        # Stage 2: move to GPU
+        self._set_progress(progress_cb, "loading", "gpu", 80)
         if self.device != "cpu":
             sam2_model = sam2_model.to(self.device)
         sam2_model.eval()
         self.predictor = SAM2ImagePredictor(sam2_model)
 
         logger.info("SAM2 ready on %s", self.device)
+        self._set_progress(progress_cb, "loaded", "", 100)
+
+    @staticmethod
+    def _set_progress(cb, state: str, stage: str, progress: int):
+        if cb:
+            try:
+                cb(state, stage, progress)
+            except Exception:
+                pass
 
     @torch.no_grad()
     def segment(self, image: Image.Image, boxes: list[dict]) -> list[list[list[float]]]:
@@ -100,6 +135,57 @@ def _find_contours(mask: np.ndarray):
 # ── Module-level singleton ────────────────────────────
 
 
+def _sam2_progress_callback(state: str, stage: str, progress: int):
+    with _sam2_state_lock:
+        _sam2_state["state"] = Sam2State(state)
+        _sam2_state["stage"] = stage
+        _sam2_state["progress"] = progress
+        if state == "loaded":
+            _sam2_state["error"] = ""
+
+
+def _load_sam2_sync():
+    global _sam_worker
+    try:
+        _sam2_state["error"] = ""
+        _load_complete.clear()
+        _sam_worker = SegmentAnythingWorker(progress_cb=_sam2_progress_callback)
+        with _sam2_state_lock:
+            _sam2_state["state"] = Sam2State.LOADED
+            _sam2_state["stage"] = ""
+            _sam2_state["progress"] = 100
+        _bump_activity()
+        _start_watchdog()
+    except Exception as exc:
+        logger.exception("SAM2 loading failed")
+        with _sam2_state_lock:
+            _sam2_state["state"] = Sam2State.ERROR
+            _sam2_state["stage"] = ""
+            _sam2_state["progress"] = 0
+            _sam2_state["error"] = str(exc)
+    finally:
+        _load_complete.set()
+
+
+def _start_sam2_loading():
+    global _load_thread
+    with _sam2_state_lock:
+        if _sam2_state["state"] in (Sam2State.DOWNLOADING, Sam2State.LOADING):
+            return
+        _sam2_state["state"] = Sam2State.DOWNLOADING
+        _sam2_state["stage"] = "starting"
+        _sam2_state["progress"] = 0
+        _sam2_state["error"] = ""
+
+    _load_complete.clear()
+    _load_thread = threading.Thread(
+        target=_load_sam2_sync,
+        daemon=True,
+        name="sam2-loader",
+    )
+    _load_thread.start()
+
+
 def _watchdog_loop():
     while _watchdog_stop is not None and not _watchdog_stop.is_set():
         _watchdog_stop.wait(timeout=30)
@@ -108,7 +194,7 @@ def _watchdog_loop():
         with _lock:
             idle = time.monotonic() - _last_activity
         if idle >= settings.model_idle_timeout_seconds:
-            logger.info("SAM unloaded after %.0fs idle", idle)
+            logger.info("SAM2 unloaded after %.0fs idle", idle)
             unload_sam()
             break
 
@@ -138,10 +224,23 @@ def _bump_activity():
 
 def _get_sam_worker() -> SegmentAnythingWorker:
     global _sam_worker
+    if _sam_worker is not None:
+        return _sam_worker
+
+    # If already loading in background, wait for it
+    with _sam2_state_lock:
+        if _sam2_state["state"] in (Sam2State.DOWNLOADING, Sam2State.LOADING):
+            pass
+
     if _sam_worker is None:
-        _sam_worker = SegmentAnythingWorker()
-        _bump_activity()
-        _start_watchdog()
+        _start_sam2_loading()
+        _load_complete.wait()
+
+        if _sam_worker is None:
+            with _sam2_state_lock:
+                err = _sam2_state["error"]
+            raise RuntimeError(err or "SAM2 loading failed")
+
     return _sam_worker
 
 
@@ -151,16 +250,22 @@ def segment_image(image: Image.Image, boxes: list[dict]) -> list[list[list[float
     return worker.segment(image, boxes)
 
 
+def get_sam2_status() -> dict:
+    with _sam2_state_lock:
+        return dict(_sam2_state)
+
+
 def is_sam_loaded() -> bool:
-    return _sam_worker is not None
+    with _sam2_state_lock:
+        return _sam2_state["state"] == Sam2State.LOADED
 
 
 def unload_sam() -> None:
-    global _sam_worker
+    global _sam_worker, _load_thread
     _stop_watchdog()
+    _load_thread = None
     if _sam_worker is not None:
-        del _sam_worker.model
-        del _sam_worker.processor
+        del _sam_worker.predictor
         _sam_worker = None
     import gc
     gc.collect()
@@ -168,4 +273,9 @@ def unload_sam() -> None:
         torch.cuda.empty_cache()
     elif torch.backends.mps.is_available():
         torch.mps.empty_cache()
-    logger.info("SAM unloaded")
+    with _sam2_state_lock:
+        _sam2_state["state"] = Sam2State.UNLOADED
+        _sam2_state["stage"] = ""
+        _sam2_state["progress"] = 0
+        _sam2_state["error"] = ""
+    logger.info("SAM2 unloaded")

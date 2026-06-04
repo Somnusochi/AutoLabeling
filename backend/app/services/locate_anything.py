@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 import logging
 import re
 import sys
@@ -17,7 +18,7 @@ from ..core.exceptions import InferenceError
 
 logger = logging.getLogger(__name__)
 
-# decord is Linux-only; on macOS we provide a stub
+# decord is Linux-only; on macOS/Windows we provide a stub
 _decord_loaded = False
 
 
@@ -25,15 +26,34 @@ def _ensure_decord_stub():
     global _decord_loaded
     if _decord_loaded:
         return
-    if sys.platform == "darwin":
+    if sys.platform in ("darwin", "win32"):
         stub_dir = str(Path(settings.resolved_model_dir) / "stubs")
         if Path(stub_dir).exists() and stub_dir not in sys.path:
             sys.path.insert(0, stub_dir)
     _decord_loaded = True
 
 
+# ── Model state machine ────────────────────────────
+
+class ModelState(str, enum.Enum):
+    UNLOADED = "unloaded"
+    DOWNLOADING = "downloading"   # fetching model files from HuggingFace
+    LOADING = "loading"           # loading into memory / moving to GPU
+    LOADED = "loaded"
+    ERROR = "error"
+
+
+_model_state: dict = {
+    "state": ModelState.UNLOADED,
+    "stage": "",        # e.g. "tokenizer", "processor", "model", "gpu"
+    "progress": 0,      # 0–100 percentage
+    "error": "",        # error message when state == ERROR
+}
+_state_lock = threading.Lock()
+
+
 class LocateAnythingWorker:
-    def __init__(self, model_path: str, device: str = "mps"):
+    def __init__(self, model_path: str, device: str = "mps", progress_cb=None):
         _ensure_decord_stub()
 
         from transformers import AutoModel, AutoProcessor, AutoTokenizer
@@ -41,23 +61,39 @@ class LocateAnythingWorker:
         self.device = device
         self.dtype = torch.bfloat16
 
+        # ── Download tokenizer ──
+        self._set_progress(progress_cb, "downloading", "tokenizer", 10)
         logger.info("Loading tokenizer...")
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
+        # ── Download processor ──
+        self._set_progress(progress_cb, "downloading", "processor", 30)
         logger.info("Loading processor...")
         self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
 
+        # ── Download model weights ──
+        self._set_progress(progress_cb, "downloading", "model", 50)
         logger.info("Loading model to %s...", device)
-        self.model = (
-            AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=self.dtype,
-                trust_remote_code=True,
-            )
-            .to(device)
-            .eval()
+        self.model = AutoModel.from_pretrained(
+            model_path,
+            torch_dtype=self.dtype,
+            trust_remote_code=True,
         )
+
+        # ── Move to GPU ──
+        self._set_progress(progress_cb, "loading", "gpu", 90)
+        self.model = self.model.to(device).eval()
+
         logger.info("LocateAnything model ready on %s", device)
+        self._set_progress(progress_cb, "loaded", "", 100)
+
+    @staticmethod
+    def _set_progress(cb, state: str, stage: str, progress: int):
+        if cb:
+            try:
+                cb(state, stage, progress)
+            except Exception:
+                pass
 
     @torch.no_grad()
     def detect(self, image: Image.Image, categories: list[str]) -> dict:
@@ -116,6 +152,63 @@ _last_activity: float = 0.0
 _watchdog_thread: threading.Thread | None = None
 _watchdog_stop: threading.Event | None = None
 _lock: threading.Lock = threading.Lock()
+_load_thread: threading.Thread | None = None
+_load_complete = threading.Event()
+
+
+def _progress_callback(state: str, stage: str, progress: int):
+    """Update the shared model state dict for polling by the status endpoint."""
+    with _state_lock:
+        _model_state["state"] = ModelState(state)
+        _model_state["stage"] = stage
+        _model_state["progress"] = progress
+        if state == "loaded":
+            _model_state["error"] = ""
+
+
+def _load_worker_sync(model_path: str, device: str):
+    """Load the model synchronously (runs in background thread)."""
+    global _worker
+    try:
+        _model_state["error"] = ""
+        _load_complete.clear()
+        _worker = LocateAnythingWorker(model_path, device=device, progress_cb=_progress_callback)
+        with _state_lock:
+            _model_state["state"] = ModelState.LOADED
+            _model_state["stage"] = ""
+            _model_state["progress"] = 100
+        _bump_activity()
+        _start_watchdog()
+    except Exception as exc:
+        logger.exception("Model loading failed")
+        with _state_lock:
+            _model_state["state"] = ModelState.ERROR
+            _model_state["stage"] = ""
+            _model_state["progress"] = 0
+            _model_state["error"] = str(exc)
+    finally:
+        _load_complete.set()
+
+
+def _start_loading(model_path: str, device: str):
+    """Start background model loading if not already in progress."""
+    global _load_thread
+    with _state_lock:
+        if _model_state["state"] in (ModelState.DOWNLOADING, ModelState.LOADING):
+            return  # already loading
+        _model_state["state"] = ModelState.DOWNLOADING
+        _model_state["stage"] = "starting"
+        _model_state["progress"] = 0
+        _model_state["error"] = ""
+
+    _load_complete.clear()
+    _load_thread = threading.Thread(
+        target=_load_worker_sync,
+        args=(model_path, device),
+        daemon=True,
+        name="model-loader",
+    )
+    _load_thread.start()
 
 
 def _watchdog_loop():
@@ -158,14 +251,32 @@ def _bump_activity():
 
 def _get_worker() -> LocateAnythingWorker:
     global _worker
+    if _worker is not None:
+        return _worker
+
+    model_path = settings.resolved_model_dir
+    model_dir_path = Path(model_path)
+    if not (model_dir_path.exists() and (model_dir_path / "config.json").exists()):
+        model_path = settings.model_id
+
+    device = settings.resolved_device
+
+    # If already loading in background, wait for it
+    with _state_lock:
+        if _model_state["state"] in (ModelState.DOWNLOADING, ModelState.LOADING):
+            pass  # wait below
+
     if _worker is None:
-        model_path = settings.resolved_model_dir
-        model_dir_path = Path(model_path)
-        if not (model_dir_path.exists() and (model_dir_path / "config.json").exists()):
-            model_path = settings.model_id
-        _worker = LocateAnythingWorker(model_path, device=settings.resolved_device)
-        _bump_activity()
-        _start_watchdog()
+        # Start or wait for background load
+        _start_loading(model_path, device)
+        _load_complete.wait()  # block until load finishes
+
+        if _worker is None:
+            # Loading failed
+            with _state_lock:
+                err = _model_state["error"]
+            raise RuntimeError(err or "Model loading failed")
+
     return _worker
 
 
@@ -217,7 +328,7 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
     img = Image.open(image_path).convert("RGB")
     w, h = img.size
 
-    # Downscale large images to avoid MPS OOM (ViT attention is quadratic)
+    # Downscale large images to avoid GPU OOM (ViT attention is quadratic)
     if w * h > MAX_IMAGE_PX:
         scale = (MAX_IMAGE_PX / (w * h)) ** 0.5
         new_w, new_h = int(w * scale), int(h * scale)
@@ -236,13 +347,21 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
     return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h}
 
 
+def get_model_status() -> dict:
+    """Return current model state for the status endpoint."""
+    with _state_lock:
+        return dict(_model_state)
+
+
 def is_model_loaded() -> bool:
-    return _worker is not None
+    with _state_lock:
+        return _model_state["state"] == ModelState.LOADED
 
 
 def unload_model() -> None:
-    global _worker
+    global _worker, _load_thread
     _stop_watchdog()
+    _load_thread = None
     if _worker is not None:
         del _worker.model
         del _worker.tokenizer
@@ -255,4 +374,9 @@ def unload_model() -> None:
         torch.cuda.empty_cache()
     elif torch.backends.mps.is_available():
         torch.mps.empty_cache()
+    with _state_lock:
+        _model_state["state"] = ModelState.UNLOADED
+        _model_state["stage"] = ""
+        _model_state["progress"] = 0
+        _model_state["error"] = ""
     logger.info("Model unloaded")

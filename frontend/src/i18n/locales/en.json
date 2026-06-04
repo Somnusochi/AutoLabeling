@@ -122,7 +122,8 @@
     "loadAll": "Load all {{count}} frames to annotation queue",
     "expandAll": "Expand all {{count}} frames",
     "selectMethodToExtract": "Select extraction method and click \"Extract Keyframes\"",
-    "extractSuccessSSIM": "Extracted {{count}} keyframes (SSIM deduplicated)"
+    "extractSuccessSSIM": "Extracted {{count}} keyframes (SSIM deduplicated)",
+    "clearAllVideos": "Clear All Videos"
   },
   "keyframeGrid": {
     "frameNum": "Frame",
@@ -135,7 +136,8 @@
     "supportInfo": "Supports multi-selection · Folders · JPG/PNG/WebP · Auto-resized to 1280px",
     "compressing": "Compressing...",
     "clickToChange": "Click to change image",
-    "countImages": "{{count}} images"
+    "countImages": "{{count}} images",
+    "clearAll": "Clear All"
   },
   "historyList": {
     "totalCount": "Total: {{count}}",
@@ -258,9 +260,21 @@
   "modelStatus": {
     "loaded": "VLM Model Loaded",
     "unloaded": "VLM Model Unloaded",
+    "download": "Downloading Model",
+    "downloading": "Downloading Model...",
+    "loading": "Loading to GPU...",
+    "error": "Model Error",
     "unload": "Unload",
     "unloading": "Unloading...",
     "unloadSuccess": "VLM model unloaded",
-    "unloadFailed": "Failed to unload model"
+    "unloadFailed": "Failed to unload model",
+    "sam2UnloadSuccess": "SAM2 model unloaded",
+    "sam2UnloadFailed": "Failed to unload SAM2 model",
+    "preparing": "Preparing...",
+    "stageStarting": "Starting...",
+    "stageTokenizer": "Tokenizer...",
+    "stageProcessor": "Processor...",
+    "stageModel": "Model weights...",
+    "stageGpu": "Moving to GPU..."
   }
 }

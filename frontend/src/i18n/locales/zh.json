@@ -122,7 +122,8 @@
     "loadAll": "加载全部 {{count}} 帧到标注队列",
     "expandAll": "展开全部 {{count}} 帧",
     "selectMethodToExtract": "选择提取方式并点击「提取关键帧」",
-    "extractSuccessSSIM": "提取 {{count}} 个关键帧 (SSIM 去重后)"
+    "extractSuccessSSIM": "提取 {{count}} 个关键帧 (SSIM 去重后)",
+    "clearAllVideos": "清空全部视频"
   },
   "keyframeGrid": {
     "frameNum": "帧号",
@@ -135,7 +136,8 @@
     "supportInfo": "支持多选 · 文件夹 · JPG/PNG/WebP · 自动压缩至 1280px",
     "compressing": "压缩中...",
     "clickToChange": "点击更换图片",
-    "countImages": "{{count}} 张图片"
+    "countImages": "{{count}} 张图片",
+    "clearAll": "清空全部"
   },
   "historyList": {
     "totalCount": "共 {{count}} 条",
@@ -258,9 +260,21 @@
   "modelStatus": {
     "loaded": "VLM 模型已加载",
     "unloaded": "VLM 模型未加载",
+    "download": "下载模型",
+    "downloading": "正在下载模型...",
+    "loading": "加载到 GPU...",
+    "error": "模型错误",
     "unload": "卸载",
     "unloading": "卸载中...",
     "unloadSuccess": "VLM 模型已卸载",
-    "unloadFailed": "卸载失败"
+    "unloadFailed": "卸载失败",
+    "sam2UnloadSuccess": "SAM2 模型已卸载",
+    "sam2UnloadFailed": "SAM2 卸载失败",
+    "preparing": "准备中...",
+    "stageStarting": "启动中...",
+    "stageTokenizer": "下载分词器...",
+    "stageProcessor": "下载处理器...",
+    "stageModel": "下载模型权重...",
+    "stageGpu": "加载到 GPU..."
   }
 }

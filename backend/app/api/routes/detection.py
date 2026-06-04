@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import shutil
@@ -15,8 +16,8 @@ from ...core.exceptions import AppError, NotFoundError
 from ...repositories.detection import DetectionRepository
 from ...schemas.common import APIResponse, BaseSchema
 from ...schemas.detection import DetectionOut
-from ...services.locate_anything import detect, is_model_loaded, unload_model
-from ...services.sam2_service import segment_image
+from ...services.locate_anything import detect, get_model_status, is_model_loaded, unload_model
+from ...services.sam2_service import get_sam2_status, is_sam_loaded, segment_image, unload_sam
 from ..deps import get_repo, get_request_id
 
 logger = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ async def create_detection(
 
     t0 = time.perf_counter()
     try:
-        result = detect(filepath, cat_list)
+        result = await asyncio.to_thread(detect, filepath, cat_list)
     except AppError as exc:
         logger.exception("Inference failed")
         raise HTTPException(exc.status_code, detail=exc.detail) from exc
@@ -272,10 +273,39 @@ def get_detection_image(
 
 @router.get("/model/status")
 def model_status() -> APIResponse:
-    return APIResponse(data={"loaded": is_model_loaded()})
+    status = get_model_status()
+    return APIResponse(
+        data={
+            "loaded": status["state"] == "loaded",
+            "state": status["state"],
+            "stage": status["stage"],
+            "progress": status["progress"],
+            "error": status["error"],
+        }
+    )
 
 
 @router.post("/model/unload", status_code=204)
 def model_unload() -> None:
     if is_model_loaded():
         unload_model()
+
+
+@router.get("/model/sam2/status")
+def sam2_status() -> APIResponse:
+    status = get_sam2_status()
+    return APIResponse(
+        data={
+            "loaded": status["state"] == "loaded",
+            "state": status["state"],
+            "stage": status["stage"],
+            "progress": status["progress"],
+            "error": status["error"],
+        }
+    )
+
+
+@router.post("/model/sam2/unload", status_code=204)
+def sam2_unload() -> None:
+    if is_sam_loaded():
+        unload_sam()

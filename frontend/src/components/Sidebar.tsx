@@ -229,7 +229,15 @@ export function Sidebar({
           ))}
         </div>
         {inputMode === 'image' ? (
-          <ImageUploader onFiles={handleFiles} disabled={loading} />
+          <ImageUploader
+            onFiles={handleFiles}
+            onClear={() => {
+              setFiles([]);
+              setPreviewUrl(null);
+              setBatchResults([]);
+            }}
+            disabled={loading}
+          />
         ) : (
           <VideoPanel
             onLoadKeyframes={handleSelectKeyframe}
@@ -367,14 +375,44 @@ export function Sidebar({
 function ModelStatus() {
   const { t } = useTranslation();
   const [unloading, setUnloading] = useState(false);
+  const [unloadingSam2, setUnloadingSam2] = useState(false);
 
   const { data, refetch } = useQuery({
     queryKey: ["model-status"],
     queryFn: getModelStatus,
-    refetchInterval: 5000,
+    refetchInterval: (query) => {
+      const state = query.state.data?.state;
+      if (state === "downloading" || state === "loading") return 1500;
+      return false;
+    },
+    staleTime: 10_000,
   });
 
-  const loaded = data?.loaded ?? false;
+  const sam2Query = useQuery({
+    queryKey: ["sam2-status"],
+    queryFn: getSam2Status,
+    refetchInterval: (query) => {
+      const s = query.state.data?.state;
+      if (s === "downloading" || s === "loading") return 1500;
+      return false;
+    },
+    staleTime: 10_000,
+  });
+
+  const state = data?.state ?? "unloaded";
+  const loaded = state === "loaded";
+  const isDownloading = state === "downloading";
+  const isLoading = state === "loading";
+  const isError = state === "error";
+  const progress = data?.progress ?? 0;
+  const stage = data?.stage ?? "";
+  const sam2State = sam2Query.data?.state ?? "unloaded";
+  const sam2Loaded = sam2State === "loaded";
+  const sam2Downloading = sam2State === "downloading";
+  const sam2Loading = sam2State === "loading";
+  const sam2Progress = sam2Query.data?.progress ?? 0;
+  const sam2Stage = sam2Query.data?.stage ?? "";
+  const sam2Error = sam2Query.data?.error ?? "";
 
   const handleUnload = useCallback(async () => {
     setUnloading(true);
@@ -389,24 +427,152 @@ function ModelStatus() {
     }
   }, [t, refetch]);
 
+  const handleUnloadSam2 = useCallback(async () => {
+    setUnloadingSam2(true);
+    try {
+      await unloadSam2();
+      sam2Query.refetch();
+      toast.success(t("modelStatus.sam2UnloadSuccess"));
+    } catch {
+      toast.error(t("modelStatus.sam2UnloadFailed"));
+    } finally {
+      setUnloadingSam2(false);
+    }
+  }, [t, sam2Query]);
+
+  const stageLabels: Record<string, string> = {
+    starting: t("modelStatus.stageStarting"),
+    tokenizer: t("modelStatus.stageTokenizer"),
+    processor: t("modelStatus.stageProcessor"),
+    model: t("modelStatus.stageModel"),
+    gpu: t("modelStatus.stageGpu"),
+  };
+
   return (
-    <div className="flex items-center justify-between rounded bg-gray-50 px-2.5 py-1.5 text-[11px]">
-      <span className="flex items-center gap-1.5">
-        <span className={`inline-block h-1.5 w-1.5 rounded-full ${loaded ? "bg-green-500" : "bg-gray-300"}`} />
-        <span className="text-gray-500">
-          {loaded ? t("modelStatus.loaded") : t("modelStatus.unloaded")}
-        </span>
-      </span>
-      {loaded && (
-        <button
-          type="button"
-          disabled={unloading}
-          onClick={handleUnload}
-          className="text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors cursor-pointer"
-        >
-          {unloading ? t("modelStatus.unloading") : t("modelStatus.unload")}
-        </button>
-      )}
+    <div className="space-y-1">
+      {/* VLM Model */}
+      <div
+        className={`rounded px-2.5 py-1.5 text-[11px] ${
+          isError ? "bg-red-50 border border-red-200" : "bg-gray-50"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            {isDownloading || isLoading ? (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
+            ) : isError ? (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+            ) : (
+              <span
+                className={`inline-block h-1.5 w-1.5 rounded-full ${loaded ? "bg-green-500" : "bg-gray-300"}`}
+              />
+            )}
+            <span className={`${isError ? "text-red-600" : "text-gray-500"}`}>
+              {"VLM "}
+              {isDownloading
+                ? t("modelStatus.downloading")
+                : isLoading
+                  ? t("modelStatus.loading")
+                  : isError
+                    ? t("modelStatus.error")
+                    : loaded
+                      ? t("modelStatus.loaded")
+                      : t("modelStatus.unloaded")}
+            </span>
+          </span>
+          {loaded && (
+            <button
+              type="button"
+              disabled={unloading}
+              onClick={handleUnload}
+              className="text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {unloading ? t("modelStatus.unloading") : t("modelStatus.unload")}
+            </button>
+          )}
+        </div>
+        {(isDownloading || isLoading) && (
+          <div className="mt-1.5">
+            <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
+              <span>{stageLabels[stage] || stage || t("modelStatus.preparing")}</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1 overflow-hidden">
+              <div
+                className="bg-primary-500 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {isError && data?.error && (
+          <div className="mt-1 text-[10px] text-red-500 truncate max-w-[380px]" title={data.error}>
+            {data.error}
+          </div>
+        )}
+      </div>
+
+      {/* SAM2 Model */}
+      <div
+        className={`rounded px-2.5 py-1.5 text-[11px] ${
+          sam2State === "error" ? "bg-red-50 border border-red-200" : "bg-gray-50"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            {sam2Downloading || sam2Loading ? (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
+            ) : sam2State === "error" ? (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+            ) : (
+              <span
+                className={`inline-block h-1.5 w-1.5 rounded-full ${sam2Loaded ? "bg-green-500" : "bg-gray-300"}`}
+              />
+            )}
+            <span className={`${sam2State === "error" ? "text-red-600" : "text-gray-500"}`}>
+              {"SAM2 "}
+              {sam2Downloading
+                ? t("modelStatus.downloading")
+                : sam2Loading
+                  ? t("modelStatus.loading")
+                  : sam2State === "error"
+                    ? t("modelStatus.error")
+                    : sam2Loaded
+                      ? t("modelStatus.loaded")
+                      : t("modelStatus.unloaded")}
+            </span>
+          </span>
+          {sam2Loaded && (
+            <button
+              type="button"
+              disabled={unloadingSam2}
+              onClick={handleUnloadSam2}
+              className="text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {unloadingSam2 ? t("modelStatus.unloading") : t("modelStatus.unload")}
+            </button>
+          )}
+        </div>
+        {(sam2Downloading || sam2Loading) && (
+          <div className="mt-1.5">
+            <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
+              <span>{sam2Stage ? (stageLabels[sam2Stage] || sam2Stage) : t("modelStatus.preparing")}</span>
+              <span>{sam2Progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1 overflow-hidden">
+              <div
+                className="bg-primary-500 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${sam2Progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {sam2State === "error" && sam2Error && (
+          <div className="mt-1 text-[10px] text-red-500 truncate max-w-[380px]" title={sam2Error}>
+            {sam2Error}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

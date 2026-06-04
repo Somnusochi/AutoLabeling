@@ -43,7 +43,14 @@ export function TrainingPanel({ detections }: Props) {
   const jobsQuery = useQuery({
     queryKey: ["training-jobs"],
     queryFn: fetchTrainingJobs,
-    refetchInterval: 10_000,
+    refetchInterval: (query) => {
+      const jobs = query.state.data;
+      if (!jobs || jobs.length === 0) return false;
+      // Only poll if any job is in a transient state
+      const hasActiveJobs = jobs.some((j) => j.status === "running" || j.status === "pending");
+      return hasActiveJobs ? 10_000 : false;
+    },
+    staleTime: 5_000,
   });
 
   const trainMut = useMutation({

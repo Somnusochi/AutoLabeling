@@ -89,6 +89,13 @@ export function useHomeState() {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   }, []);
 
+  // Cleanup timer on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
   // ── History ──────────────────────────────────────
   const { data: historyData } = useDetectionListQuery();
   const recentCategories = Array.from(

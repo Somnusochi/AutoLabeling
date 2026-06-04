@@ -73,6 +73,7 @@ declare global {
   const generateYoloTxt: typeof import('./lib/yoloExport').generateYoloTxt
   const getDetection: typeof import('./services/api').getDetection
   const getModelStatus: typeof import('./services/api').getModelStatus
+  const getSam2Status: typeof import('./services/api').getSam2Status
   const getVideo: typeof import('./services/api').getVideo
   const keyframeImageUrl: typeof import('./services/api').keyframeImageUrl
   const lazy: typeof import('react').lazy
@@ -87,6 +88,7 @@ declare global {
   const toast: typeof import('react-hot-toast').toast
   const tokenCache: typeof import('./lib/constants').tokenCache
   const unloadModel: typeof import('./services/api').unloadModel
+  const unloadSam2: typeof import('./services/api').unloadSam2
   const uploadCache: typeof import('./lib/constants').uploadCache
   const uploadVideo: typeof import('./services/api').uploadVideo
   const use: typeof import('react').use
@@ -215,7 +217,7 @@ declare global {
   export type { FilterMode } from './lib/filterBoxes'
   import('./lib/filterBoxes')
   // @ts-ignore
-  export type { YoloSeries } from './services/api'
+  export type { YoloSeries, ModelStatus } from './services/api'
   import('./services/api')
   // @ts-ignore
   export type { BBox, Detection, DetectResponse, TrainingJob, KeyFrame, VideoInfo, VideoList, ListResponse } from './types/index'

@@ -188,7 +188,7 @@ def _write_data_yaml(work_dir: Path, class_map: dict[str, int]) -> Path:
     names = {v: k for k, v in sorted(class_map.items(), key=lambda x: x[1])}
     yaml_path = work_dir / "data.yaml"
     yaml_path.write_text(
-        f"path: {work_dir}\n"
+        f"path: {work_dir.as_posix()}\n"
         f"train: images/train\n"
         f"val: images/val\n"
         f"nc: {len(names)}\n"

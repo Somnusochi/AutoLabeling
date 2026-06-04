@@ -168,11 +168,28 @@ export function downloadDatasetUrl(jobId: string): string {
 
 // ── Model ────────────────────────────────────────
 
-export async function getModelStatus(): Promise<{ loaded: boolean }> {
-  const { data } = await request.get<{ data: { loaded: boolean } }>("/model/status");
+export interface ModelStatus {
+  loaded: boolean;
+  state: "unloaded" | "downloading" | "loading" | "loaded" | "error";
+  stage: string;
+  progress: number;
+  error: string;
+}
+
+export async function getModelStatus(): Promise<ModelStatus> {
+  const { data } = await request.get<{ data: ModelStatus }>("/model/status");
   return data.data;
 }
 
 export async function unloadModel(): Promise<void> {
   await request.post("/model/unload");
+}
+
+export async function getSam2Status(): Promise<ModelStatus> {
+  const { data } = await request.get<{ data: ModelStatus }>("/model/sam2/status");
+  return data.data;
+}
+
+export async function unloadSam2(): Promise<void> {
+  await request.post("/model/sam2/unload");
 }

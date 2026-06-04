@@ -5,6 +5,7 @@ const JPEG_QUALITY = 0.75;
 
 interface Props {
   onFiles: (files: File[]) => void;
+  onClear?: () => void;
   disabled?: boolean;
 }
 
@@ -56,7 +57,7 @@ async function processFiles(fileList: FileList | File[]): Promise<File[]> {
   return results;
 }
 
-export function ImageUploader({ onFiles, disabled }: Props) {
+export function ImageUploader({ onFiles, onClear, disabled }: Props) {
   const { t } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -73,6 +74,15 @@ export function ImageUploader({ onFiles, disabled }: Props) {
     },
     [onFiles],
   );
+
+  const handleClear = useCallback(() => {
+    // Revoke blob URLs to free memory
+    previews.forEach((url) => URL.revokeObjectURL(url));
+    setPreviews([]);
+    onFiles([]);
+    if (inputRef.current) inputRef.current.value = "";
+    onClear?.();
+  }, [previews, onFiles, onClear]);
 
   const onDrop = useCallback(
     (e: DragEvent) => {
@@ -143,6 +153,15 @@ export function ImageUploader({ onFiles, disabled }: Props) {
           }}
         />
       </div>
+      {previews.length > 0 && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); handleClear(); }}
+          className="mt-2 w-full rounded border border-red-200 bg-red-50 py-1 text-[11px] text-red-500 hover:bg-red-100 transition-colors cursor-pointer"
+        >
+          {t("imageUploader.clearAll")} ({previews.length})
+        </button>
+      )}
     </div>
   );
 }

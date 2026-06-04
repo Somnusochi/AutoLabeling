@@ -70,6 +70,12 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
     onError: () => toast.error(t("videoPanel.deleteFailed")),
   });
 
+  const handleClearAllVideos = useCallback(() => {
+    const allIds = (videoList?.items ?? []).map((v) => v.id);
+    for (const id of allIds) deleteMut.mutate(id);
+    setSelectedVideoId(null);
+  }, [videoList, deleteMut]);
+
   const handleDrop = useCallback(
     async (e: DragEvent) => {
       e.preventDefault();
@@ -162,32 +168,41 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
 
       {/* Video list */}
       {videoList && videoList.items.length > 0 && (
-        <div className="space-y-0.5 max-h-36 overflow-y-auto">
-          {videoList.items.map((v) => (
-            <div key={v.id}>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setSelectedVideoId(v.id === selectedVideoId ? null : v.id)}
-                  className={`flex-1 text-left rounded px-2 py-1 text-xs truncate transition-colors ${
-                    selectedVideoId === v.id
-                      ? "bg-primary-100 text-primary-700 font-medium"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  <span className="truncate block">{v.fileName}</span>
-                  <span className="text-[10px] text-gray-400">
-                    {v.duration != null ? formatTime(v.duration) : "?"}
-                    {v.keyframes.length > 0 ? ` · ${v.keyframes.length}${t("videoPanel.unitFrames")}` : ""}
-                  </span>
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteMut.mutate(v.id); }}
-                  className="text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 px-0.5"
-                >{t("common.delete")}</button>
+        <>
+          <div className="space-y-0.5 max-h-36 overflow-y-auto">
+            {videoList.items.map((v) => (
+              <div key={v.id}>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSelectedVideoId(v.id === selectedVideoId ? null : v.id)}
+                    className={`flex-1 text-left rounded px-2 py-1 text-xs truncate transition-colors ${
+                      selectedVideoId === v.id
+                        ? "bg-primary-100 text-primary-700 font-medium"
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="truncate block">{v.fileName}</span>
+                    <span className="text-[10px] text-gray-400">
+                      {v.duration != null ? formatTime(v.duration) : "?"}
+                      {v.keyframes.length > 0 ? ` · ${v.keyframes.length} ${t("videoPanel.unitFrames")}` : ""}
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteMut.mutate(v.id); }}
+                    className="text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 px-0.5"
+                  >{t("common.delete")}</button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleClearAllVideos}
+            className="w-full rounded border border-red-200 bg-red-50 py-1 text-[10px] text-red-500 hover:bg-red-100 transition-colors"
+          >
+            {t("videoPanel.clearAllVideos")} ({videoList.items.length})
+          </button>
+        </>
       )}
 
       {/* Extraction panel */}

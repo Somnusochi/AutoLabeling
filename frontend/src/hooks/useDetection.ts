@@ -12,9 +12,15 @@ export function useDetectMutation() {
   return useMutation({
     mutationFn: ({ file, categories, useSam2 }: { file: File; categories: string[]; useSam2?: boolean }) =>
       detectImage(file, categories, useSam2),
-    onSuccess: (data) => {
+    onMutate: ({ useSam2 }) => {
+      qc.invalidateQueries({ queryKey: ["model-status"] });
+      if (useSam2) qc.invalidateQueries({ queryKey: ["sam2-status"] });
+    },
+    onSuccess: (data, { useSam2 }) => {
       toast.success(t("detection.detectSuccess", { count: data.boxes.length }));
       qc.invalidateQueries({ queryKey: ["detections"] });
+      qc.invalidateQueries({ queryKey: ["model-status"] });
+      if (useSam2) qc.invalidateQueries({ queryKey: ["sam2-status"] });
     },
     onError: () => toast.error(t("detection.detectFailed")),
   });
