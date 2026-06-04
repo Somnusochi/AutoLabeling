@@ -491,19 +491,19 @@ Image long side auto-capped at 800px (matching ViT patch alignment). Model loade
 
 #### macOS Apple Silicon 24GB (MPS)
 
-Tested with 13 cat images, 3 rounds each, `max_new_tokens=512`.
-Image long side auto-capped at 1024px. Model loaded fresh before first image.
+Tested with 13 cat images, 3 rounds each, `max_new_tokens=512`. Image long-side auto-capped at 1024px. Model cold-loaded on first image of Round 1.
 
-| Mode | Round 1 | Round 2 | Round 3 | Avg |
-|------|---------|---------|---------|-----|
-| VLM + SAM2 | 5497ms | 4769ms | 4818ms | **5028ms** |
-| VLM only | 4283ms | 4272ms | 4260ms | **4272ms** |
+| Mode | Cold Start | Warm (R2) | Warm (R3) | Warm Avg |
+|------|-----------|-----------|-----------|----------|
+| VLM + SAM2 | 13.8s | 4.9s | 4.9s | **4.9s/img** |
+| VLM only | 3.7s | 4.3s | 4.3s | **4.3s/img** |
 
-> Round 1 first image is cold start (VLM + SAM2 model loading). SAM2 overhead: +756ms (18%).
+> Cold start includes VLM + SAM2 model loading (~14s). Warm rounds use cached models.
+> SAM2 overhead on warm images: +0.65s (15%). All 13 images per round detected with masks (13/13).
 
-**Memory**: 9.8–13GB stable across all 6 rounds with MPS cleanup after each detection.
+**Memory**: 9.8–13GB stable across all 6 rounds. MPS cleanup (`synchronize` + `empty_cache` + `gc.collect`) runs after each detection.
 
-**Performance note**: Long-side cap is auto-selected by GPU VRAM (800px <12GB, 1024px 12–16GB, 1333px ≥16GB; MPS → 1024px). Aggressive GPU memory cleanup runs after each detection on both CUDA and MPS.
+**Performance note**: Long-side cap auto-selected by GPU VRAM (<12GB → 800px, 12–16GB → 1024px, ≥16GB → 1333px; MPS → 1024px). GPU memory management uses a Strategy Pattern (`gpu_memory.py`) that centralizes CUDA and MPS cleanup, avoiding scattered `if-cuda-elif-mps` branches. `expandable_segments:True` replaces the legacy `max_split_size_mb` for reduced fragmentation on CUDA.
 
 ## Development Checks
 
