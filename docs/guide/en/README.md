@@ -10,14 +10,18 @@ Welcome to VLM-AutoYOLO! This guide will help you get started and make the most 
 
 ## System Requirements
 
-| Platform | Minimum Configuration |
+| Resource | Minimum Configuration |
 |----------|----------------------|
-| **GPU** | NVIDIA GPU 8GB+ VRAM / Apple Silicon (MPS) |
-| **Memory** | 16GB RAM (32GB recommended) |
+| **NVIDIA GPU** | 12GB VRAM (for VLM and YOLO training acceleration) |
+| **macOS (Apple Silicon)** | 24GB Unified Memory (MPS) |
+| **Memory (CPU Mode)** | 16GB System RAM (32GB recommended) |
 | **Storage** | 50GB available space |
 | **OS** | macOS 12+ / Ubuntu 20.04+ / Windows 10+ |
 | **Python** | 3.12+ |
 | **Node.js** | 22+ |
+| **PostgreSQL** | 16+ |
+| **ffmpeg** | Any version (for video keyframe extraction) |
+
 
 ## Core Workflow
 

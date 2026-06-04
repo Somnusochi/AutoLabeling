@@ -10,14 +10,18 @@
 
 ## 系统要求
 
-| 平台 | 最低配置 |
+| 资源 | 最低配置 |
 |------|---------|
-| **GPU** | NVIDIA GPU 8GB+ 显存 / Apple Silicon (MPS) |
-| **内存** | 16GB RAM（推荐 32GB） |
+| **NVIDIA GPU** | 12GB 显存 (用于加速 VLM 和 YOLO 训练) |
+| **macOS (Apple Silicon)** | 24GB 统一内存 (MPS) |
+| **内存 (CPU 模式)** | 16GB 系统内存 (推荐 32GB) |
 | **存储** | 50GB 可用空间 |
 | **操作系统** | macOS 12+ / Ubuntu 20.04+ / Windows 10+ |
 | **Python** | 3.12+ |
 | **Node.js** | 22+ |
+| **PostgreSQL** | 16+ |
+| **ffmpeg** | 任意版本 (用于视频关键帧提取) |
+
 
 ## 核心工作流
 
