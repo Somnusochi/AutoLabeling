@@ -31,6 +31,9 @@ class Settings(BaseSettings):
             "CPU inference is not supported."
         )
 
+    # Model idle timeout (seconds) — auto-unload to free GPU memory
+    model_idle_timeout_seconds: int = 600
+
     # Server
     host: str = "0.0.0.0"
     port: int = 8000

@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import re
 import sys
+import threading
+import time
 from pathlib import Path
 
 import torch
@@ -110,6 +112,48 @@ class LocateAnythingWorker:
 # ── Module-level singleton ────────────────────────────
 
 _worker: LocateAnythingWorker | None = None
+_last_activity: float = 0.0
+_watchdog_thread: threading.Thread | None = None
+_watchdog_stop: threading.Event | None = None
+_lock: threading.Lock = threading.Lock()
+
+
+def _watchdog_loop():
+    """Background thread that unloads the model after idle timeout."""
+    while _watchdog_stop is not None and not _watchdog_stop.is_set():
+        _watchdog_stop.wait(timeout=30)
+        if _watchdog_stop is None or _watchdog_stop.is_set():
+            break
+        with _lock:
+            idle = time.monotonic() - _last_activity
+        if idle >= settings.model_idle_timeout_seconds:
+            logger.info("Model idle for %.0fs, auto-unloading...", idle)
+            unload_model()
+            break
+
+
+def _start_watchdog():
+    global _watchdog_thread, _watchdog_stop
+    if _watchdog_thread is not None and _watchdog_thread.is_alive():
+        return
+    _watchdog_stop = threading.Event()
+    _watchdog_thread = threading.Thread(target=_watchdog_loop, daemon=True, name="model-idle-watchdog")
+    _watchdog_thread.start()
+    logger.info("Idle watchdog started (timeout=%ds)", settings.model_idle_timeout_seconds)
+
+
+def _stop_watchdog():
+    global _watchdog_thread, _watchdog_stop
+    if _watchdog_stop is not None:
+        _watchdog_stop.set()
+    _watchdog_thread = None
+    _watchdog_stop = None
+
+
+def _bump_activity():
+    global _last_activity
+    with _lock:
+        _last_activity = time.monotonic()
 
 
 def _get_worker() -> LocateAnythingWorker:
@@ -120,6 +164,8 @@ def _get_worker() -> LocateAnythingWorker:
         if not (model_dir_path.exists() and (model_dir_path / "config.json").exists()):
             model_path = settings.model_id
         _worker = LocateAnythingWorker(model_path, device=settings.resolved_device)
+        _bump_activity()
+        _start_watchdog()
     return _worker
 
 
@@ -167,6 +213,7 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
         worker = _get_worker()
     except Exception as exc:
         raise InferenceError() from exc
+    _bump_activity()
     img = Image.open(image_path).convert("RGB")
     w, h = img.size
 
@@ -195,8 +242,8 @@ def is_model_loaded() -> bool:
 
 def unload_model() -> None:
     global _worker
+    _stop_watchdog()
     if _worker is not None:
-        # Explicitly delete tensors before clearing cache
         del _worker.model
         del _worker.tokenizer
         del _worker.processor
