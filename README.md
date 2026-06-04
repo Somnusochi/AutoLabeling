@@ -53,7 +53,9 @@ Comprehensive guides covering:
 
 ## Quick Start
 
-### Docker Deployment (Recommended)
+### Docker Deployment (Linux with NVIDIA GPU)
+
+> **macOS users:** Docker on Mac does not support GPU passthrough for MPS or CUDA. Please use [Manual Setup](#manual-setup) instead.
 
 **Quick start with pre-built images:**
 

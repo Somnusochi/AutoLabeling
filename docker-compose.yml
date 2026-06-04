@@ -26,9 +26,9 @@ services:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/autolabeling
       PYTHONPATH: /app
     volumes:
-      - ./backend/model:/app/model:ro
-      - ./backend/uploads:/app/uploads
-      - ./backend/training_runs:/app/training_runs
+      - model-cache:/app/model
+      - uploads:/app/uploads
+      - training-data:/app/training_runs
     depends_on:
       db:
         condition: service_healthy
@@ -47,3 +47,6 @@ services:
 
 volumes:
   pgdata:
+  model-cache:
+  uploads:
+  training-data:

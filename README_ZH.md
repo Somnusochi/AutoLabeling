@@ -53,7 +53,9 @@
 
 ## 快速开始
 
-### Docker 部署（推荐）
+### Docker 部署（Linux + NVIDIA GPU）
+
+> **macOS 用户：** Docker on Mac 不支持 GPU 直通（MPS/CUDA），请使用[手动部署](#手动部署)。
 
 **使用预构建镜像快速启动：**
 
