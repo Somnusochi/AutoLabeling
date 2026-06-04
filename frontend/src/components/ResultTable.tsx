@@ -23,6 +23,7 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
             <th className="px-4 py-2 text-left font-medium text-gray-600">x2</th>
             <th className="px-4 py-2 text-left font-medium text-gray-600">y2</th>
             <th className="px-4 py-2 text-left font-medium text-gray-600">{t("resultTable.confidence")}</th>
+            <th className="px-4 py-2 text-left font-medium text-gray-600">Mask</th>
             <th className="px-4 py-2 w-10" />
             {onDelete && <th className="px-4 py-2 w-12" />}
           </tr>
@@ -38,6 +39,11 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
               <td className="px-4 py-2 text-gray-600">{box.y2}</td>
               <td className="px-4 py-2 text-gray-600">
                 {box.confidence != null ? box.confidence.toFixed(3) : "-"}
+              </td>
+              <td className="px-4 py-2 text-gray-500">
+                {box.maskPolygon && box.maskPolygon.length >= 3
+                  ? `${box.maskPolygon.length} pts`
+                  : "-"}
               </td>
               <td className="px-2 py-2">
                 <button

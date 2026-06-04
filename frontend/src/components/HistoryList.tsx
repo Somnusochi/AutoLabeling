@@ -1,3 +1,5 @@
+import {Dropdown} from "antd";
+
 interface Props {
   data: { total: number; items: Detection[] } | undefined;
   onSelect: (det: Detection) => void;
@@ -154,9 +156,29 @@ export function HistoryList({ data, onSelect }: Props) {
                     {t("trainingPanel.targetsCount", { count: det.boxes.length })}
                   </p>
                   <div className="flex gap-2 mt-1.5">
-                    <a href={exportSingleUrl(det.id)} download onClick={(e) => e.stopPropagation()} className="text-xs text-primary-600 hover:underline">
-                      {t("common.export")}
-                    </a>
+                    <Dropdown
+                      menu={{
+                        items: [
+                          { key: "yolo", label: "YOLO (.txt)" },
+                          { key: "yolo-seg", label: "YOLO Segmentation" },
+                          { key: "coco", label: "COCO (.json)" },
+                          { key: "voc", label: "Pascal VOC (.xml)" },
+                          { key: "createml", label: "CreateML (.json)" },
+                        ],
+                        onClick: async ({ key }) => {
+                          const labels: Record<string, string> = { yolo: "YOLO", "yolo-seg": "YOLO_Seg", coco: "COCO", voc: "VOC", createml: "CreateML" };
+                          try {
+                            const blob = await exportBatch([det.id], key);
+                            downloadBlob(blob, `${labels[key] ?? key}_dataset.zip`);
+                          } catch { /* ignore */ }
+                        },
+                      }}
+                      trigger={["click"]}
+                    >
+                      <button type="button" onClick={(e) => e.stopPropagation()} className="text-xs text-primary-600 hover:underline">
+                        {t("common.export")}
+                      </button>
+                    </Dropdown>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteMut.mutate(det.id); }}
                       disabled={deleteMut.isPending}

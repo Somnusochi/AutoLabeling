@@ -7,12 +7,23 @@ import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .yolo_format import detection_to_yolo
+from .coco_format import export_coco_json
+from .createml_format import export_createml_json
+from .voc_format import detection_to_voc
+from .yolo_format import detection_to_yolo, detection_to_yolo_seg
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from ..models.detection import Detection
+
+FORMAT_LABELS = {
+    "yolo": "YOLO",
+    "yolo-seg": "YOLO Segmentation",
+    "coco": "COCO JSON",
+    "voc": "Pascal VOC",
+    "createml": "CreateML JSON",
+}
 
 
 def export_single(db: Session, detection_id: str) -> tuple[str, str]:
@@ -27,43 +38,87 @@ def export_single(db: Session, detection_id: str) -> tuple[str, str]:
     return detection_to_yolo(det, class_map), det.image_name
 
 
-def export_batch(db: Session, detection_ids: list[str]) -> bytes:
-    """Export multiple detections as a YOLO-format zip file with unified class map."""
+def export_single_zip(db: Session, detection_id: str, format: str = "yolo") -> bytes:
+    """Export a single detection as a zip in the requested format."""
+    return export_batch(db, [detection_id], format=format)
+
+
+def export_batch(db: Session, detection_ids: list[str], format: str = "yolo") -> bytes:
+    """Export multiple detections as a zip file in the requested format."""
     from ..models.detection import Detection
 
-    # Pre-load all detections
     dets: list[Detection] = []
     for det_id in detection_ids:
         det = db.query(Detection).filter(Detection.id == det_id).first()
         if det:
             dets.append(det)
 
-    # Build unified class map across ALL detections
     unified_map = _build_class_map(dets)
 
+    if format == "yolo":
+        return _export_yolo(dets, unified_map)
+    if format == "yolo-seg":
+        return _export_yolo(dets, unified_map, seg_mode=True)
+    if format == "coco":
+        return _export_coco(dets, unified_map)
+    if format == "voc":
+        return _export_voc(dets, unified_map)
+    if format == "createml":
+        return _export_createml(dets, unified_map)
+    raise ValueError(f"Unsupported format: {format}. Supported: {list(FORMAT_LABELS)}")
+
+
+def _export_yolo(dets: list[Detection], unified_map: dict[str, int], seg_mode: bool = False) -> bytes:
+    fmt_fn = detection_to_yolo_seg if seg_mode else detection_to_yolo
+    label_dir = "labels"
     buf = io.BytesIO()
+    seen_names: dict[str, int] = {}
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        seen_names: dict[str, int] = {}
-
         for det in dets:
-            base = Path(det.image_name).stem or str(uuid.uuid4())[:8]
-            if base in seen_names:
-                seen_names[base] += 1
-                base = f"{base}_{seen_names[base]}"
-            else:
-                seen_names[base] = 1
-
-            yolo_txt = detection_to_yolo(det, unified_map)
-            zf.writestr(f"labels/{base}.txt", yolo_txt)
+            base = _unique_base(det, seen_names)
+            zf.writestr(f"{label_dir}/{base}.txt", fmt_fn(det, unified_map))
             zf.write(det.image_path, f"images/{base}{Path(det.image_name).suffix}")
-
-        # Include data.yaml with the unified class map
         names = {i: name for name, i in sorted(unified_map.items(), key=lambda x: x[1])}
-        data_yaml = f"nc: {len(names)}\nnames: {json.dumps(names)}\n"
-        zf.writestr("data.yaml", data_yaml)
-
+        zf.writestr("data.yaml", f"nc: {len(names)}\nnames: {json.dumps(names)}\n")
     buf.seek(0)
     return buf.getvalue()
+
+
+def _export_coco(dets: list[Detection], unified_map: dict[str, int]) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("annotations.json", export_coco_json(dets, unified_map))
+    buf.seek(0)
+    return buf.getvalue()
+
+
+def _export_voc(dets: list[Detection], unified_map: dict[str, int]) -> bytes:
+    buf = io.BytesIO()
+    seen_names: dict[str, int] = {}
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for det in dets:
+            base = _unique_base(det, seen_names)
+            zf.writestr(f"{base}.xml", detection_to_voc(det, unified_map))
+    buf.seek(0)
+    return buf.getvalue()
+
+
+def _export_createml(dets: list[Detection], unified_map: dict[str, int]) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("annotations.json", export_createml_json(dets, unified_map))
+    buf.seek(0)
+    return buf.getvalue()
+
+
+def _unique_base(det: Detection, seen_names: dict[str, int]) -> str:
+    base = Path(det.image_name).stem or str(uuid.uuid4())[:8]
+    if base in seen_names:
+        seen_names[base] += 1
+        base = f"{base}_{seen_names[base]}"
+    else:
+        seen_names[base] = 1
+    return base
 
 
 def _build_class_map(detections: list[Detection]) -> dict[str, int]:

@@ -36,7 +36,8 @@
     "placeholderSelectVideo": "Select a video, expand it and click \"Validate Video\"",
     "placeholderVideoRunning": "Video inference in progress. Adjust Conf/IoU and click \"Validate Video\" to run again.",
     "placeholderDefault": "Upload image/video and enter target categories, then click \"Start Detection\"",
-    "yoloValidation": "YOLO Validation"
+    "yoloValidation": "YOLO Validation",
+    "useSam2": "Enable SAM2 Segmentation"
   },
   "filter": {
     "filterMode": "Filter Mode",
@@ -156,9 +157,9 @@
     "timeElapsed": "Time elapsed",
     "saveFilter": "Save filter results",
     "redetect": "Re-detect",
-    "exportYoloTxt": "Export YOLO (.txt)",
-    "exportAllZip": "Export All ({{count}} zip)",
-    "exportYoloZip": "Export YOLO (zip)"
+    "exportLabel": "Export Labels",
+    "exportAllDataset": "Export All Datasets ({{count}})",
+    "exportDataset": "Export Dataset"
   },
   "resultTable": {
     "noTargets": "No targets detected",
@@ -221,7 +222,10 @@
     "statusPending": "Pending",
     "statusRunning": "Running",
     "statusCompleted": "Completed",
-    "statusFailed": "Failed"
+    "statusFailed": "Failed",
+    "downloadDataset": "Download Dataset",
+    "datasetDownloaded": "Dataset downloaded successfully",
+    "datasetDownloadFailed": "Failed to download dataset"
   },
   "videoValidator": {
     "playerCompleted": "Playback completed. Click to replay",

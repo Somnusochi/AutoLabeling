@@ -6,6 +6,7 @@ export interface BBox {
   x2: number;
   y2: number;
   confidence: number | null;
+  maskPolygon?: number[][] | null;
 }
 
 export interface Detection {

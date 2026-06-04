@@ -16,6 +16,7 @@ class DetectionBoxOut(BaseSchema):
     x2: int
     y2: int
     confidence: float | None = None
+    mask_polygon: list | None = None
 
     model_config = {"from_attributes": True}
 
@@ -49,3 +50,4 @@ class DetectionOut(BaseSchema):
 
 class ExportBatchIn(BaseSchema):
     detection_ids: list[str] = Field(..., min_length=1)
+    format: str = "yolo"

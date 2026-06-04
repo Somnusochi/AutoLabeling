@@ -10,8 +10,8 @@ export function useDetectMutation() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ file, categories }: { file: File; categories: string[] }) =>
-      detectImage(file, categories),
+    mutationFn: ({ file, categories, useSam2 }: { file: File; categories: string[]; useSam2?: boolean }) =>
+      detectImage(file, categories, useSam2),
     onSuccess: (data) => {
       toast.success(t("detection.detectSuccess", { count: data.boxes.length }));
       qc.invalidateQueries({ queryKey: ["detections"] });

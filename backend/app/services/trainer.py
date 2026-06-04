@@ -73,6 +73,7 @@ def _build_dataset(
     work_dir: Path,
     train_ratio: float = 0.8,
     val_ratio: float = 0.2,
+    task_type: str = "detect",
 ) -> tuple[int, dict[str, int], int, int, int]:
     """Copy images + write YOLO labels into train/val(/test) split.
 
@@ -129,12 +130,13 @@ def _build_dataset(
     test_dets = detections[val_end:] if has_test else []
 
     def _write_set(dets: list[Detection], subset: str) -> int:
+        fmt_fn = yolo_format.detection_to_yolo_seg if task_type == "segment" else yolo_format.detection_to_yolo
         for det in dets:
             src = Path(det.image_path)
             dst_img = work_dir / "images" / subset / f"{det.id}{src.suffix}"
             shutil.copy2(src, dst_img)
             dst_lbl = work_dir / "labels" / subset / f"{det.id}.txt"
-            dst_lbl.write_text(yolo_format.detection_to_yolo(det, class_map))
+            dst_lbl.write_text(fmt_fn(det, class_map))
         return len(dets)
 
     train_n = _write_set(train_dets, "train")
@@ -206,6 +208,7 @@ def run_training(
     batch: int = 16,
     train_ratio: float = 0.8,
     val_ratio: float = 0.2,
+    task_type: str = "detect",
 ) -> str:
     """Run YOLO training synchronously. Returns the path to the trained model.
 
@@ -225,6 +228,7 @@ def run_training(
         work_dir,
         train_ratio,
         val_ratio,
+        task_type,
     )
     if sample_count == 0:
         raise ValueError("No valid training samples found")
@@ -396,6 +400,7 @@ def run_training_safe(
     batch: int,
     train_ratio: float = 0.8,
     val_ratio: float = 0.2,
+    task_type: str = "detect",
 ) -> None:
     """Run training in background, updating DB status on completion/failure."""
     from ..core.database import SessionLocal
@@ -418,6 +423,7 @@ def run_training_safe(
             batch=batch,
             train_ratio=train_ratio,
             val_ratio=val_ratio,
+            task_type=task_type,
         )
     except Exception as exc:
         logger.exception("Training job %s failed", job_id)

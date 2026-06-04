@@ -7,6 +7,7 @@ export function useBatchDetection() {
     async (
       files: File[],
       categories: string[],
+      useSam2: boolean,
       onEach: (result: Detection, file: File, index: number, elapsed: number) => void,
     ) => {
       const results: Detection[] = [];
@@ -18,7 +19,7 @@ export function useBatchDetection() {
       try {
         for (let i = 0; i < files.length; i++) {
           if (!batchRef.current) break;
-          const data = await detectImage(files[i], categories);
+          const data = await detectImage(files[i], categories, useSam2);
           results.push(data);
           setBatchResults([...results]);
           if (i === files.length - 1) {

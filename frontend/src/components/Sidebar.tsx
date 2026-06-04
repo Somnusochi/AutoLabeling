@@ -52,6 +52,8 @@ export interface SidebarProps {
   result: Detection | null;
   setResult: (result: Detection | null) => void;
   handleSelectKeyframe: (files: File[]) => void;
+  useSam2: boolean;
+  setUseSam2: (v: boolean) => void;
 }
 
 export function Sidebar({
@@ -95,6 +97,8 @@ export function Sidebar({
   result,
   setResult,
   handleSelectKeyframe,
+  useSam2,
+  setUseSam2,
 }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
@@ -257,6 +261,18 @@ export function Sidebar({
               recentCategories={recentCategories}
             />
           </div>
+
+          {appMode === "annotate" && (
+            <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useSam2}
+                onChange={(e) => setUseSam2(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-gray-300 text-primary-600"
+              />
+              {t("home.useSam2")}
+            </label>
+          )}
 
           <button
             type="button"

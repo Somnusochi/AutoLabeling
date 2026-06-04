@@ -58,6 +58,7 @@ declare global {
   const deleteVideo: typeof import('./services/api').deleteVideo
   const detectImage: typeof import('./services/api').detectImage
   const downloadBlob: typeof import('./services/api').downloadBlob
+  const downloadDatasetBatch: typeof import('./services/api').downloadDatasetBatch
   const downloadDatasetUrl: typeof import('./services/api').downloadDatasetUrl
   const downloadModelUrl: typeof import('./services/api').downloadModelUrl
   const downloadOnnxUrl: typeof import('./services/api').downloadOnnxUrl

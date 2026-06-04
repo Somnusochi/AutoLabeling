@@ -16,6 +16,7 @@ from ...repositories.detection import DetectionRepository
 from ...schemas.common import APIResponse, BaseSchema
 from ...schemas.detection import DetectionOut
 from ...services.locate_anything import detect, is_model_loaded, unload_model
+from ...services.sam2_service import segment_image
 from ..deps import get_repo, get_request_id
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ def _save_upload(file: UploadFile) -> tuple[str, str]:
 async def create_detection(
     file: UploadFile = File(...),
     categories: str = Form(...),
+    use_sam2: bool = Form(False),
     repo: DetectionRepository = Depends(get_repo),
     request_id: str = Depends(get_request_id),
 ) -> APIResponse:
@@ -63,6 +65,16 @@ async def create_detection(
         logger.exception("Inference failed")
         raise HTTPException(exc.status_code, detail=exc.detail) from exc
 
+    # ── SAM2 segmentation (optional) ──
+    polygons: list[list[list[float]]] = []
+    if use_sam2 and result["boxes"]:
+        try:
+            from PIL import Image
+            img = Image.open(filepath).convert("RGB")
+            polygons = segment_image(img, result["boxes"])
+        except Exception:
+            logger.exception("SAM2 segmentation failed, falling back to bbox-only")
+
     # ── persistence via repository ──
     detection = repo.create(
         image_path=filepath,
@@ -79,8 +91,9 @@ async def create_detection(
             "y1": b["y1"],
             "x2": b["x2"],
             "y2": b["y2"],
+            "mask_polygon": polygons[i] if i < len(polygons) else None,
         }
-        for b in result["boxes"]
+        for i, b in enumerate(result["boxes"])
     ]
     repo.add_boxes(detection.id, box_dicts)
     repo.db.commit()

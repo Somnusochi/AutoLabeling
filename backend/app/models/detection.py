@@ -68,6 +68,7 @@ class DetectionBox(Base):
     x2: Mapped[int] = mapped_column(Integer, nullable=False)
     y2: Mapped[int] = mapped_column(Integer, nullable=False)
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mask_polygon: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

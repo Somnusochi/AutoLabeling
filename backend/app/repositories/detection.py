@@ -41,7 +41,7 @@ class DetectionRepository:
         return det
 
     def add_boxes(self, detection_id: str, boxes: list[dict]) -> list[DetectionBox]:
-        """boxes: [{"x1","y1","x2","y2","class_name","confidence"}, ...]"""
+        """boxes: [{"x1","y1","x2","y2","class_name","confidence","mask_polygon"}, ...]"""
         entities = [
             DetectionBox(
                 detection_id=detection_id,
@@ -51,6 +51,7 @@ class DetectionRepository:
                 x2=b["x2"],
                 y2=b["y2"],
                 confidence=b.get("confidence"),
+                mask_polygon=b.get("mask_polygon"),
             )
             for b in boxes
         ]

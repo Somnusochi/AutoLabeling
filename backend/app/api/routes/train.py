@@ -75,6 +75,7 @@ def create_training_job(
             body.batch,
             body.train_ratio,
             body.val_ratio,
+            body.task_type,
         ),
         daemon=True,
     )
@@ -334,6 +335,7 @@ def retrain_job(
             new_job.batch,
             new_job.train_ratio,
             new_job.val_ratio,
+            new_job.task_type,
         ),
         daemon=True,
     )

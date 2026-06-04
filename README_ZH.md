@@ -299,6 +299,16 @@ VLM-AutoYOLO/
 - 支持文件夹 / 视频关键帧批量上传，流式返回结果
 - 流式处理：第一张结果立即可见，后续结果实时追加
 
+### SAM2 分割
+
+VLM 检测出 bbox 后，可启用 SAM2（Segment Anything Model 2）自动生成精确的像素级 mask 轮廓。
+
+- 勾选「启用 SAM2 分割」复选框后，每次检测自动运行
+- SAM 2.1 模型（base+ / large 可选），惰性加载 + 闲置自动卸载
+- mask 多边形半透明渲染在画布上，bbox 和 mask 可独立开关显示
+- 结果表格显示每个目标的 mask 顶点数
+- 预览浮窗同步渲染 mask，同样支持开关
+
 ### 视频标注
 
 上传视频，智能提取关键帧，挑选后批量标注。
@@ -326,13 +336,15 @@ Canvas 画框模式，自由绘制边界框。
 - 缩略图 + 类别标签展示
 - 按标签多选筛选
 - 点击查看详情，支持重新检测
-- 批量/单张导出 YOLO 格式标注文件
-- 单图支持浏览器端 `.txt` 快速导出；批量导出使用后端 zip
+- 单张/批量导出多格式数据集：YOLO、YOLO Segmentation、COCO JSON、Pascal VOC XML、CreateML JSON
+- 导出下拉菜单选择格式，一键下载 zip
 - 保存过滤结果后历史列表实时更新
 
 ### YOLO 训练
 
-- 多系列可选：YOLOv5 / v8 / v11 / v26（n/s/m/l/x）
+- 多系列可选：YOLOv8 / v11 / v26（n/s/m/l/x）
+- 任务类型：目标检测（Detect）、实例分割（Segment）
+- 分割训练自动使用 SAM2 产出的 polygon 标签（无 polygon 时 fallback 到 bbox）
 - 标签筛选 + 缩略图预览，精确选择训练数据
 - 数据集拆分：预设比例（70/20/10、80/20 等），自动分 train/val/test
 - 一键训练，SSE 实时推送 Epoch / Loss / mAP 进度
@@ -355,11 +367,12 @@ Canvas 画框模式，自由绘制边界框。
 - **容器固定 16:9 比例自适应**（aspect-video），消除所有加载和切换时的画面尺寸收缩与抖动
 - 验证结果是临时结果，可直接导出单图 YOLO `.txt` 标注文件
 
-### VLM 模型管理
+### 模型管理
 
-- **状态查询**：查询 VLM 模型是否已加载到内存（`GET /api/v1/model/status`）
-- **卸载释放**：按需卸载 VLM 模型，释放 GPU 内存（`POST /api/v1/model/unload`）
-- 模型在首次检测请求时懒加载，常驻内存直至显式卸载
+- **惰性加载**：VLM 和 SAM2 模型在首次使用时自动加载，闲置超时后自动卸载
+- **闲置看门狗**：默认 10 分钟无请求后自动释放 GPU 显存（可通过 `MODEL_IDLE_TIMEOUT_SECONDS` 配置）
+- **状态查询**：查询 VLM 模型是否已加载（`GET /api/v1/model/status`）
+- **手动卸载**：按需释放 GPU 内存（`POST /api/v1/model/unload`）
 
 ### 重新训练
 

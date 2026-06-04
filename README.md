@@ -298,6 +298,16 @@ Upload images or video keyframes with open-vocabulary descriptions (e.g. `fire, 
 - Batch upload: drag a folder or load video keyframes, stream results as they arrive
 - Streaming: first result appears immediately, subsequent results append in real time
 
+### SAM2 Segmentation
+
+Enable SAM2 (Segment Anything Model 2) to refine VLM bounding boxes into precise pixel-level masks.
+
+- Toggle "Enable SAM2 Segmentation" before detection to auto-run mask generation
+- SAM 2.1 model (base+ / large), lazy-loaded with auto-unload on idle
+- Masks rendered as semi-transparent overlays on canvas; BBox and Mask can be toggled independently
+- Result table shows polygon vertex count per object
+- Hover preview popup also renders masks with independent toggle switches
+
 ### Video Annotation
 
 Upload a video, extract keyframes intelligently, select and batch-annotate.
@@ -325,16 +335,18 @@ Canvas drawing mode for precise box annotation.
 - Thumbnail previews with category tags
 - Multi-select tag filtering
 - Click to view details, re-detect with updated labels
-- Export single or batch YOLO format labels
-- Single-image `.txt` export runs in the browser; batch export uses backend zip generation
+- Export single or batch datasets in multiple formats: YOLO, YOLO Segmentation, COCO JSON, Pascal VOC XML, CreateML JSON
+- Format selection via dropdown menu, download as zip
 - History list refreshes in real time after saving filter results
 
 ### YOLO Training
 
-- Multi-series: YOLOv5 / v8 / v11 / v26 (n/s/m/l/x)
+- Multi-series: YOLOv8 / v11 / v26 (n/s/m/l/x)
+- Task types: Object Detection, Instance Segmentation
+- Segmentation training auto-uses SAM2 polygon labels (falls back to bbox)
 - Tag filter + thumbnail preview for precise training data selection
 - One-click training with SSE real-time progress (Epoch / Loss / mAP)
-- Download trained `.pt` model on completion
+- Auto ONNX export; download PT / ONNX / dataset zip
 - Training jobs and detections linked through a separate association table
 - Metrics and class maps stored as JSONB
 - Training dataset generation uses each detection's saved filter settings
@@ -353,11 +365,12 @@ Canvas drawing mode for precise box annotation.
 - **Smooth fixed 16:9 aspect ratio container** (`aspect-video`), completely eliminating container resizing or layout jumps.
 - Validation results are temporary; supports exporting predictions as single-image YOLO `.txt` files.
 
-### VLM Model Management
+### Model Management
 
-- **Status check**: query whether the VLM model is currently loaded in memory (`GET /api/v1/model/status`).
-- **Unload**: free GPU memory by unloading the VLM model on demand (`POST /api/v1/model/unload`).
-- Model is lazily loaded on first detection request and stays resident until explicitly unloaded.
+- **Lazy loading**: VLM and SAM2 models load on first use, auto-unload after idle timeout
+- **Idle watchdog**: defaults to 10-minute idle auto-unload (configurable via `MODEL_IDLE_TIMEOUT_SECONDS`)
+- **Status check**: query whether the VLM model is loaded (`GET /api/v1/model/status`)
+- **Manual unload**: free GPU memory on demand (`POST /api/v1/model/unload`)
 
 ### Retrain
 

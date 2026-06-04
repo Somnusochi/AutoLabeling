@@ -3,10 +3,12 @@
 export async function detectImage(
   file: File,
   categories: string[],
+  useSam2?: boolean,
 ): Promise<DetectResponse> {
   const form = new FormData();
   form.append("file", file);
   form.append("categories", JSON.stringify(categories));
+  if (useSam2) form.append("use_sam2", "true");
   const { data } = await request.post<{ data: DetectResponse }>("/detect", form);
   return data.data;
 }
@@ -45,10 +47,10 @@ export function exportSingleUrl(id: string): string {
   return `${API_BASE}/detections/${id}/export`;
 }
 
-export async function exportBatch(ids: string[]): Promise<Blob> {
+export async function exportBatch(ids: string[], format = "yolo"): Promise<Blob> {
   const { data } = await request.post(
     "/detections/export-batch",
-    { detectionIds: ids },
+    { detectionIds: ids, format },
     { responseType: "blob" },
   );
   return data;

@@ -36,7 +36,8 @@
     "placeholderSelectVideo": "选择一个视频，展开后点击「验证视频」",
     "placeholderVideoRunning": "视频推理中，调整上方 Conf/IoU 后重新点击「验证视频」",
     "placeholderDefault": "上传图片/视频并输入目标类别，点击“开始检测”",
-    "yoloValidation": "YOLO 验证"
+    "yoloValidation": "YOLO 验证",
+    "useSam2": "启用 SAM2 分割（生成精确 mask）"
   },
   "filter": {
     "filterMode": "过滤模式",
@@ -156,9 +157,9 @@
     "timeElapsed": "耗时",
     "saveFilter": "保存过滤结果",
     "redetect": "重新检测",
-    "exportYoloTxt": "导出 YOLO (.txt)",
-    "exportAllZip": "导出全部 ({{count}} zip)",
-    "exportYoloZip": "导出 YOLO (zip)"
+    "exportLabel": "导出标注",
+    "exportAllDataset": "导出全部数据集 ({{count}})",
+    "exportDataset": "导出数据集"
   },
   "resultTable": {
     "noTargets": "未检测到目标",
@@ -221,7 +222,10 @@
     "statusPending": "等待中",
     "statusRunning": "训练中",
     "statusCompleted": "已完成",
-    "statusFailed": "失败"
+    "statusFailed": "失败",
+    "downloadDataset": "下载数据集",
+    "datasetDownloaded": "数据集下载成功",
+    "datasetDownloadFailed": "数据集下载失败"
   },
   "videoValidator": {
     "playerCompleted": "播放完成，点击重播",

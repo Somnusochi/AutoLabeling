@@ -23,6 +23,8 @@ export function DetectionCanvas({
   const [drawing, setDrawing] = useState<{
     startX: number; startY: number; currentX: number; currentY: number;
   } | null>(null);
+  const [showBBox, setShowBBox] = useState(true);
+  const [showMask, setShowMask] = useState(true);
 
   // ── Draw image + boxes ──────────────────────────
   const redraw = useCallback(() => {
@@ -46,9 +48,15 @@ export function DetectionCanvas({
       // Existing boxes
       boxes.forEach((box, idx) => {
         if (hiddenIndices.has(box.id)) return;
-        drawRect(ctx, box.x1 * scale, box.y1 * scale,
-          (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale,
-          BOX_COLORS[idx % BOX_COLORS.length], box.className);
+        const color = BOX_COLORS[idx % BOX_COLORS.length];
+        if (showMask && box.maskPolygon && box.maskPolygon.length >= 3) {
+          drawPolygon(ctx, box.maskPolygon, scale, color);
+        }
+        if (showBBox) {
+          drawRect(ctx, box.x1 * scale, box.y1 * scale,
+            (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale,
+            color, box.className);
+        }
       });
 
       // Drawing preview
@@ -60,7 +68,7 @@ export function DetectionCanvas({
         drawRect(ctx, x, y, w, h, "#FF9800", "");
       }
     };
-  }, [imageUrl, boxes, scale, drawing, hiddenIndices, imgWidth, imgHeight]);
+  }, [imageUrl, boxes, scale, drawing, hiddenIndices, imgWidth, imgHeight, showBBox, showMask]);
 
   useEffect(() => {
     redraw();
@@ -100,7 +108,7 @@ export function DetectionCanvas({
   return (
     <div>
       {/* Mode toggle */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-3 mb-2 flex-wrap">
         <label className="flex items-center gap-1 text-xs cursor-pointer">
           <input
             type="radio" name="canvas-mode" checked={mode === "view"}
@@ -116,6 +124,23 @@ export function DetectionCanvas({
             className="h-3 w-3"
           />
           {t("common.draw")}
+        </label>
+        <span className="text-gray-300">|</span>
+        <label className="flex items-center gap-1 text-xs cursor-pointer">
+          <input
+            type="checkbox" checked={showBBox}
+            onChange={(e) => setShowBBox(e.target.checked)}
+            className="h-3 w-3 rounded"
+          />
+          BBox
+        </label>
+        <label className="flex items-center gap-1 text-xs cursor-pointer">
+          <input
+            type="checkbox" checked={showMask}
+            onChange={(e) => setShowMask(e.target.checked)}
+            className="h-3 w-3 rounded"
+          />
+          Mask
         </label>
         {mode === "draw" && (
           <span className="text-xs text-orange-500">{t("detectionCanvas.dragTip")}</span>
@@ -136,7 +161,29 @@ export function DetectionCanvas({
   );
 }
 
-// ── Helper ──────────────────────────────────────
+// ── Helpers ─────────────────────────────────────
+function drawPolygon(
+  ctx: CanvasRenderingContext2D,
+  polygon: number[][],
+  scale: number,
+  color: string,
+) {
+  if (polygon.length < 3) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(polygon[0][0] * scale, polygon[0][1] * scale);
+  for (let i = 1; i < polygon.length; i++) {
+    ctx.lineTo(polygon[i][0] * scale, polygon[i][1] * scale);
+  }
+  ctx.closePath();
+  ctx.fillStyle = color + "30";
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawRect(
   ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number,
   color: string, label: string,

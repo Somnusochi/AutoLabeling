@@ -1,3 +1,5 @@
+import {Dropdown} from "antd";
+
 interface Props {
   result: Detection;
   previewUrl: string;
@@ -128,27 +130,56 @@ export function DetectionResult({
               {loading ? t("common.detecting") : t("detectionResult.redetect")}
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => downloadYoloTxt(result.boxes, categories, result.imageWidth, result.imageHeight, result.imageName)}
-            className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors"
+          <Dropdown
+            menu={{
+              items: [
+                { key: "yolo", label: "YOLO (.txt)" },
+                { key: "yolo-seg", label: "YOLO Segmentation" },
+                { key: "coco", label: "COCO (.json)" },
+                { key: "voc", label: "Pascal VOC (.xml)" },
+                { key: "createml", label: "CreateML (.json)" },
+              ],
+              onClick: async ({ key }) => {
+                if (key === "yolo") {
+                  downloadYoloTxt(result.boxes, categories, result.imageWidth, result.imageHeight, result.imageName);
+                } else {
+                  const labels: Record<string, string> = { coco: "COCO", "yolo-seg": "YOLO_Seg", voc: "VOC", createml: "CreateML" };
+                  const blob = await exportBatch([result.id], key);
+                  downloadBlob(blob, `${labels[key] ?? key}_dataset.zip`);
+                }
+              },
+            }}
+            trigger={["click"]}
           >
-            {t("detectionResult.exportYoloTxt")}
-          </button>
-          {!isValidation && (
-            <button
-              type="button"
-              onClick={async () => {
-                const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
-                const blob = await exportBatch(ids);
-                downloadBlob(blob, "yolo_labels.zip");
-              }}
-              className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
-            >
-              {batchResults.length > 1
-                ? t("detectionResult.exportAllZip", { count: batchResults.length })
-                : t("detectionResult.exportYoloZip")}
+            <button type="button" className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors">
+              {t("detectionResult.exportLabel")}
             </button>
+          </Dropdown>
+          {!isValidation && (
+            <Dropdown
+              menu={{
+                items: [
+                  { key: "yolo", label: "YOLO (.txt)" },
+                  { key: "yolo-seg", label: "YOLO Segmentation" },
+                  { key: "coco", label: "COCO (.json)" },
+                  { key: "voc", label: "Pascal VOC (.xml)" },
+                  { key: "createml", label: "CreateML (.json)" },
+                ],
+                onClick: async ({ key }) => {
+                  const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
+                  const labels: Record<string, string> = { yolo: "YOLO", "yolo-seg": "YOLO_Seg", coco: "COCO", voc: "VOC", createml: "CreateML" };
+                  const blob = await exportBatch(ids, key);
+                  downloadBlob(blob, `${labels[key] ?? key}_dataset.zip`);
+                },
+              }}
+              trigger={["click"]}
+            >
+              <button type="button" className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors">
+                {batchResults.length > 1
+                  ? t("detectionResult.exportAllDataset", { count: batchResults.length })
+                  : t("detectionResult.exportDataset")}
+              </button>
+            </Dropdown>
           )}
         </div>
       </div>

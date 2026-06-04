@@ -1,4 +1,4 @@
-import {Modal, Select, InputNumber} from "antd";
+import {Modal, Select, InputNumber, Dropdown} from "antd";
 
 
 
@@ -94,6 +94,20 @@ export function TrainingPanel({ detections }: Props) {
     });
   };
 
+  const handleDownloadDataset = async (format: string, label: string) => {
+    if (selectedCount === 0) {
+      toast.error(t("trainingPanel.selectRecordRequired"));
+      return;
+    }
+    try {
+      const blob = await exportBatch([...selected], format);
+      downloadBlob(blob, `${label}_dataset.zip`);
+      toast.success(t("trainingPanel.datasetDownloaded"));
+    } catch {
+      toast.error(t("trainingPanel.datasetDownloadFailed"));
+    }
+  };
+
   // Tag filter for training candidates
   const trainCategories = useMemo(() => {
     const count = new Map<string, number>();
@@ -150,14 +164,38 @@ export function TrainingPanel({ detections }: Props) {
             total: detections.length,
           })}
         </span>
-        <button type="button" onClick={selectAll}
-          className="text-xs text-primary-600 hover:underline">
-          {(() => {
-            const targets = trainFilter.size > 0 ? filteredDetections : detections;
-            return selectedCount === targets.length && targets.every((d) => selected.has(d.id))
-              ? t("trainingPanel.deselectAll") : t("trainingPanel.selectAll");
-          })()}
-        </button>
+        <div className="flex items-center gap-2">
+          {selectedCount > 0 && (
+            <Dropdown
+              menu={{
+                items: [
+                  { key: "yolo", label: "YOLO (.txt)" },
+                  { key: "yolo-seg", label: "YOLO Segmentation" },
+                  { key: "coco", label: "COCO (.json)" },
+                  { key: "voc", label: "Pascal VOC (.xml)" },
+                  { key: "createml", label: "CreateML (.json)" },
+                ],
+                onClick: ({ key }) => {
+                  const labels: Record<string, string> = { yolo: "YOLO", "yolo-seg": "YOLO_Seg", coco: "COCO", voc: "VOC", createml: "CreateML" };
+                  handleDownloadDataset(key, labels[key] ?? key);
+                },
+              }}
+              trigger={["click"]}
+            >
+              <button type="button" className="text-xs text-primary-600 hover:underline">
+                {t("trainingPanel.downloadDataset")}
+              </button>
+            </Dropdown>
+          )}
+          <button type="button" onClick={selectAll}
+            className="text-xs text-primary-600 hover:underline">
+            {(() => {
+              const targets = trainFilter.size > 0 ? filteredDetections : detections;
+              return selectedCount === targets.length && targets.every((d) => selected.has(d.id))
+                ? t("trainingPanel.deselectAll") : t("trainingPanel.selectAll");
+            })()}
+          </button>
+        </div>
       </div>
 
       {/* Detection checklist with thumbnails */}
@@ -283,7 +321,7 @@ export function TrainingPanel({ detections }: Props) {
             onChange={setTaskType}
             options={[
               { value: "detect", label: t("trainingPanel.taskDetect") },
-              { value: "segment", label: t("trainingPanel.taskSegment"), disabled: true },
+              { value: "segment", label: t("trainingPanel.taskSegment") },
               { value: "classify", label: t("trainingPanel.taskClassify"), disabled: true },
               { value: "pose", label: t("trainingPanel.taskPose"), disabled: true },
               { value: "obb", label: t("trainingPanel.taskObb"), disabled: true },
@@ -464,7 +502,8 @@ function TrainingJobItem({ job }: { job: TrainingJob }) {
 function TrainingPreview({ detection }: { detection: Detection }) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Build className → color map at component level (used by both canvas and chips)
+  const [showBBox, setShowBBox] = useState(true);
+  const [showMask, setShowMask] = useState(true);
   const colorMap = useMemo(() => {
     const map = new Map<string, string>();
     detection.boxes.forEach((box) => {
@@ -488,21 +527,40 @@ function TrainingPreview({ detection }: { detection: Detection }) {
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       detection.boxes.forEach((box) => {
-        const x = box.x1 * scale, y = box.y1 * scale;
-        const w = (box.x2 - box.x1) * scale, h = (box.y2 - box.y1) * scale;
         const color = colorMap.get(box.className)!;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(x, y, w, h);
-        ctx.font = "10px system-ui";
-        const tw = ctx.measureText(box.className).width + 4;
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y - 14, tw, 14);
-        ctx.fillStyle = "#fff";
-        ctx.fillText(box.className, x + 2, y - 4);
+        // Draw mask polygon
+        if (showMask && box.maskPolygon && box.maskPolygon.length >= 3) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(box.maskPolygon[0][0] * scale, box.maskPolygon[0][1] * scale);
+          for (let i = 1; i < box.maskPolygon.length; i++) {
+            ctx.lineTo(box.maskPolygon[i][0] * scale, box.maskPolygon[i][1] * scale);
+          }
+          ctx.closePath();
+          ctx.fillStyle = color + "30";
+          ctx.fill();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Draw bbox
+        if (showBBox) {
+          const x = box.x1 * scale, y = box.y1 * scale;
+          const w = (box.x2 - box.x1) * scale, h = (box.y2 - box.y1) * scale;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x, y, w, h);
+          ctx.font = "10px system-ui";
+          const tw = ctx.measureText(box.className).width + 4;
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y - 14, tw, 14);
+          ctx.fillStyle = "#fff";
+          ctx.fillText(box.className, x + 2, y - 4);
+        }
       });
     };
-  }, [colorMap, detection]);
+  }, [colorMap, detection, showBBox, showMask]);
 
   return (
     <div className="w-[min(520px,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-3 shadow-xl">
@@ -529,6 +587,16 @@ function TrainingPreview({ detection }: { detection: Detection }) {
             </div>
           );
         })()}
+      </div>
+      <div className="flex items-center gap-3 mb-1.5">
+        <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+          <input type="checkbox" checked={showBBox} onChange={(e) => setShowBBox(e.target.checked)} className="h-3 w-3 rounded" />
+          BBox
+        </label>
+        <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+          <input type="checkbox" checked={showMask} onChange={(e) => setShowMask(e.target.checked)} className="h-3 w-3 rounded" />
+          Mask
+        </label>
       </div>
       <canvas
         ref={canvasRef}
