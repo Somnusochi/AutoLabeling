@@ -471,7 +471,9 @@ Auto-detection priority: CUDA → MPS. Override via `DEVICE` env variable.
 
 ### Inference Benchmarks
 
-Tested with 7 cat images, 3 rounds each, on Windows 11 + RTX 3080 10GB, `max_new_tokens=512`.
+#### Windows 11 + RTX 3080 10GB (CUDA)
+
+Tested with 7 cat images, 3 rounds each, `max_new_tokens=512`.
 Image long side auto-capped at 800px (matching ViT patch alignment). Model loaded fresh before first image.
 
 | Mode | Image Size | Avg Time | Range | Stable Avg* |
@@ -484,10 +486,24 @@ Image long side auto-capped at 800px (matching ViT patch alignment). Model loade
 | **VLM + SAM2** | **All 7 images** | **1.4s** | 0.5–3.4s | **1.3s** |
 
 > *Stable Avg excludes first image of Round 1 (model loading: ~22s).
->
-> **VRAM usage**: VLM model ~5.5GB after loading; peak ~7.5GB during inference. 10GB cards are comfortable.
->
-> **Performance note**: Long-side cap is auto-selected by GPU VRAM (800px <12GB, 1024px 12–16GB, 1333px ≥16GB). Image long side capped at 800px aligns with ViT patch size (16px), maximizing throughput. Aggressive GPU memory cleanup runs after each detection.
+
+**VRAM**: VLM ~5.5GB loaded; peak ~7.5GB during inference. 10GB GPUs are comfortable.
+
+#### macOS Apple Silicon 24GB (MPS)
+
+Tested with 13 cat images, 3 rounds each, `max_new_tokens=512`.
+Image long side auto-capped at 1024px. Model loaded fresh before first image.
+
+| Mode | Round 1 | Round 2 | Round 3 | Avg |
+|------|---------|---------|---------|-----|
+| VLM + SAM2 | 5497ms | 4769ms | 4818ms | **5028ms** |
+| VLM only | 4283ms | 4272ms | 4260ms | **4272ms** |
+
+> Round 1 first image is cold start (VLM + SAM2 model loading). SAM2 overhead: +756ms (18%).
+
+**Memory**: 9.8–13GB stable across all 6 rounds with MPS cleanup after each detection.
+
+**Performance note**: Long-side cap is auto-selected by GPU VRAM (800px <12GB, 1024px 12–16GB, 1333px ≥16GB; MPS → 1024px). Aggressive GPU memory cleanup runs after each detection on both CUDA and MPS.
 
 ## Development Checks
 
