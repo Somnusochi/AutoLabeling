@@ -324,7 +324,7 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     return boxes
 
 
-MAX_IMAGE_PX = 800 * 800  # ~640K px, safer for 10GB VRAM
+MAX_LONG_SIDE = 800  # standard for VLM/ViT inference, preserves aspect ratio
 
 
 def detect(image_path: str | Path, categories: list[str]) -> dict:
@@ -343,8 +343,9 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
     w, h = orig_w, orig_h
 
     # Downscale large images to avoid GPU OOM (ViT attention is quadratic)
-    if w * h > MAX_IMAGE_PX:
-        scale = (MAX_IMAGE_PX / (w * h)) ** 0.5
+    longest = max(w, h)
+    if longest > MAX_LONG_SIDE:
+        scale = MAX_LONG_SIDE / longest
         new_w, new_h = int(w * scale), int(h * scale)
         logger.info("Resizing image %dx%d -> %dx%d", w, h, new_w, new_h)
         img = img.resize((new_w, new_h), Image.LANCZOS)

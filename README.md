@@ -487,7 +487,7 @@ Model loaded fresh before first round (first image ~28s includes model loading).
 >
 > **VRAM usage**: VLM model alone ~5.5GB after loading; peak ~9.2GB during inference. With SAM2 loaded concurrently, ~9.8GB peak. 10GB cards work but leave minimal headroom — close unused GPU apps before running.
 >
-> **Performance note**: LocateAnything-3B generates tokens autoregressively — complex scenes take longer. Small/simple images complete in sub-second. Image resolution is auto-capped at 800×800 to control VRAM. Aggressive GPU memory cleanup (`gc.collect` + `cuda.empty_cache` + `cuda.ipc_collect`) runs after each detection to prevent fragmentation.
+> **Performance note**: LocateAnything-3B generates tokens autoregressively — complex scenes take longer. Small/simple images complete in sub-second. Image long side is auto-capped at 800px to control VRAM. Aggressive GPU memory cleanup (`gc.collect` + `cuda.empty_cache` + `cuda.ipc_collect`) runs after each detection to prevent fragmentation.
 
 ## Development Checks
 
