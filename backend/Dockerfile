@@ -22,11 +22,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy decord stub (decord is Linux-only, not needed by LocateAnything-3B)
+COPY decord_stub.py /usr/local/lib/python3.12/site-packages/decord.py
+
 # Copy Python packages from builder
 COPY --from=builder /install /usr/local
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown appuser:appuser /app
+# Create non-root user and data directories
+RUN useradd -m -u 1000 appuser \
+    && mkdir -p /app/uploads /app/model /app/training_runs \
+    && chown -R appuser:appuser /app
 USER appuser
 
 # Copy application code
