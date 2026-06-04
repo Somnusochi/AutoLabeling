@@ -4,13 +4,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: locate_anything
+      POSTGRES_DB: autolabeling
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d locate_anything"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d autolabeling"]
       interval: 5s
       retries: 5
     restart: unless-stopped
@@ -23,7 +23,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/locate_anything
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/autolabeling
       DEVICE: cpu
       PYTHONPATH: /app
     volumes:

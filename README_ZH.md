@@ -113,12 +113,12 @@ Docker 卷用于：
 
 备份数据：
 ```bash
-docker compose exec db pg_dump -U postgres locate_anything > backup.sql
+docker compose exec db pg_dump -U postgres autolabeling > backup.sql
 ```
 
 恢复数据：
 ```bash
-cat backup.sql | docker compose exec -T db psql -U postgres locate_anything
+cat backup.sql | docker compose exec -T db psql -U postgres autolabeling
 ```
 
 **查看日志：**
@@ -167,7 +167,7 @@ pnpm install
 cd ..
 
 # 4. 数据库
-psql -d postgres -c "CREATE DATABASE locate_anything;"
+psql -d postgres -c "CREATE DATABASE autolabeling;"
 
 # 5. 配置
 cp backend/.env.example backend/.env

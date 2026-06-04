@@ -113,12 +113,12 @@ Docker volumes are used for:
 
 To backup data:
 ```bash
-docker compose exec db pg_dump -U postgres locate_anything > backup.sql
+docker compose exec db pg_dump -U postgres autolabeling > backup.sql
 ```
 
 To restore:
 ```bash
-cat backup.sql | docker compose exec -T db psql -U postgres locate_anything
+cat backup.sql | docker compose exec -T db psql -U postgres autolabeling
 ```
 
 **Logs:**
@@ -166,7 +166,7 @@ pnpm install
 cd ..
 
 # Database
-psql -d postgres -c "CREATE DATABASE locate_anything;"
+psql -d postgres -c "CREATE DATABASE autolabeling;"
 
 # Config
 cp backend/.env.example backend/.env
