@@ -144,6 +144,12 @@ class LocateAnythingWorker:
         )
 
         raw_text = response[0] if isinstance(response, tuple) else response
+
+        # Aggressively free intermediate tensors before returning
+        del inputs, response
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         return {"answer": raw_text}
 
 
@@ -351,6 +357,14 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
 
     boxes = parse_boxes(raw_text, w, h)
     logger.info("Detection: %s -> %d boxes for %s", image_path, len(boxes), categories)
+
+    # Aggressive cleanup to prevent VRAM fragmentation across multiple detects
+    import gc
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+
     return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h}
 
 
