@@ -472,22 +472,22 @@ Auto-detection priority: CUDA → MPS. Override via `DEVICE` env variable.
 ### Inference Benchmarks
 
 Tested with 7 cat images, 3 rounds each, on Windows 11 + RTX 3080 10GB, `max_new_tokens=512`.
-Model loaded fresh before first round (first image ~28s includes model loading).
+Image long side auto-capped at 800px (matching ViT patch alignment). Model loaded fresh before first image.
 
 | Mode | Image Size | Avg Time | Range | Stable Avg* |
 |------|-----------|----------|-------|-------------|
-| VLM only | 800×1000 (~100KB) | 6.3s | 5.1–7.3s | **5.6s** |
-| VLM only | Thumbnails (~5KB) | 368ms | 355–396ms | **373ms** |
-| **VLM only** | **All 7 images** | **3.8s** | 0.4–7.3s | **2.6s** |
-| VLM + SAM2 | 800×1000 (~100KB) | 9.7s | 7.4–10.7s | **9.9s** |
-| VLM + SAM2 | Thumbnails (~5KB) | 710ms | 465–1522ms | **484ms** |
-| **VLM + SAM2** | **All 7 images** | **4.6s** | 0.5–10.7s | **4.5s** |
+| VLM only | Large (800×640) | 1.2s | 1.1–1.2s | **1.2s** |
+| VLM only | Thumbnails | 367ms | 355–383ms | **367ms** |
+| **VLM only** | **All 7 images** | **1.6s** | 0.4–1.2s | **627ms** |
+| VLM + SAM2 | Large (800×640) | 4.2s | 4.2–4.3s | **4.2s** |
+| VLM + SAM2 | Thumbnails | 477ms | 468–498ms | **477ms** |
+| **VLM + SAM2** | **All 7 images** | **1.6s** | 0.5–4.3s | **1.5s** |
 
-> *Stable Avg excludes first-round first-image (model loading) outlier.
+> *Stable Avg excludes first image of Round 1 (model loading: ~22s).
 >
-> **VRAM usage**: VLM model alone ~5.5GB after loading; peak ~9.2GB during inference. With SAM2 loaded concurrently, ~9.8GB peak. 10GB cards work but leave minimal headroom — close unused GPU apps before running.
+> **VRAM usage**: VLM model ~5.5GB after loading; peak ~7.5GB during inference. 10GB cards are comfortable.
 >
-> **Performance note**: LocateAnything-3B generates tokens autoregressively — complex scenes take longer. Small/simple images complete in sub-second. Image long side is auto-capped at 800px to control VRAM. Aggressive GPU memory cleanup (`gc.collect` + `cuda.empty_cache` + `cuda.ipc_collect`) runs after each detection to prevent fragmentation.
+> **Performance note**: Long-side cap is auto-selected by GPU VRAM (800px <12GB, 1024px 12–16GB, 1333px ≥16GB). Image long side capped at 800px aligns with ViT patch size (16px), maximizing throughput. Aggressive GPU memory cleanup runs after each detection.
 
 ## Development Checks
 
