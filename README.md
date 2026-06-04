@@ -476,12 +476,12 @@ Image long side auto-capped at 800px (matching ViT patch alignment). Model loade
 
 | Mode | Image Size | Avg Time | Range | Stable Avg* |
 |------|-----------|----------|-------|-------------|
-| VLM only | Large (800×640) | 1.2s | 1.1–1.2s | **1.2s** |
-| VLM only | Thumbnails | 367ms | 355–383ms | **367ms** |
-| **VLM only** | **All 7 images** | **1.6s** | 0.4–1.2s | **627ms** |
-| VLM + SAM2 | Large (800×640) | 4.2s | 4.2–4.3s | **4.2s** |
-| VLM + SAM2 | Thumbnails | 477ms | 468–498ms | **477ms** |
-| **VLM + SAM2** | **All 7 images** | **1.6s** | 0.5–4.3s | **1.5s** |
+| VLM only | Large (800×640) | 1.0s | 1.0–1.1s | **1.0s** |
+| VLM only | Thumbnails | 367ms | 352–391ms | **367ms** |
+| **VLM only** | **All 7 images** | **1.6s** | 0.4–1.1s | **586ms** |
+| VLM + SAM2 | Large (800×640) | 3.4s | 3.4s | **3.4s** |
+| VLM + SAM2 | Thumbnails | 475ms | 457–496ms | **475ms** |
+| **VLM + SAM2** | **All 7 images** | **1.4s** | 0.5–3.4s | **1.3s** |
 
 > *Stable Avg excludes first image of Round 1 (model loading: ~22s).
 >
