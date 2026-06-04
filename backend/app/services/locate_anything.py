@@ -339,7 +339,8 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
         torch.cuda.empty_cache()
 
     img = Image.open(image_path).convert("RGB")
-    w, h = img.size
+    orig_w, orig_h = img.size
+    w, h = orig_w, orig_h
 
     # Downscale large images to avoid GPU OOM (ViT attention is quadratic)
     if w * h > MAX_IMAGE_PX:
@@ -365,7 +366,7 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
 
-    return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h}
+    return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h, "orig_w": orig_w, "orig_h": orig_h}
 
 
 def get_model_status() -> dict:

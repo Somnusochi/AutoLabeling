@@ -72,7 +72,28 @@ async def create_detection(
         try:
             from PIL import Image
             img = Image.open(filepath).convert("RGB")
-            polygons = segment_image(img, result["boxes"])
+            orig_w, orig_h = img.size
+            detect_w, detect_h = result["img_w"], result["img_h"]
+
+            # If detect() resized the image, scale boxes back to original dimensions
+            # so SAM2 mask aligns with the original image
+            if (detect_w, detect_h) != (orig_w, orig_h):
+                scale_x = orig_w / detect_w
+                scale_y = orig_h / detect_h
+                scaled_boxes = [
+                    {
+                        **b,
+                        "x1": int(b["x1"] * scale_x),
+                        "y1": int(b["y1"] * scale_y),
+                        "x2": int(b["x2"] * scale_x),
+                        "y2": int(b["y2"] * scale_y),
+                    }
+                    for b in result["boxes"]
+                ]
+            else:
+                scaled_boxes = result["boxes"]
+
+            polygons = segment_image(img, scaled_boxes)
         except Exception:
             logger.exception("SAM2 segmentation failed, falling back to bbox-only")
 
