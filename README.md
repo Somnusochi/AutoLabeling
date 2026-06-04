@@ -100,7 +100,7 @@ backend:
             count: 1
             capabilities: [gpu]
   environment:
-    DEVICE: cuda  # Change from cpu to cuda
+    DEVICE: cuda
 ```
 
 **Persistent Storage:**
@@ -145,7 +145,6 @@ If you prefer not to use Docker, follow these steps:
 | ffmpeg | Any version |
 | macOS | Apple Silicon 24GB unified memory |
 | NVIDIA GPU | 12GB VRAM |
-| CPU mode | 16GB system RAM |
 
 **Setup:**
 
@@ -354,7 +353,7 @@ Canvas drawing mode for precise box annotation.
 ### VLM Model Management
 
 - **Status check**: query whether the VLM model is currently loaded in memory (`GET /api/v1/model/status`).
-- **Unload**: free GPU/CPU memory by unloading the VLM model on demand (`POST /api/v1/model/unload`).
+- **Unload**: free GPU memory by unloading the VLM model on demand (`POST /api/v1/model/unload`).
 - Model is lazily loaded on first detection request and stays resident until explicitly unloaded.
 
 ### Retrain
@@ -444,9 +443,9 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 |----------|-----------|----------|
 | macOS (Apple Silicon) | MPS | MPS |
 | Linux / Windows (NVIDIA) | CUDA | CUDA |
-| No GPU | CPU | CPU |
 
-Auto-detection priority: CUDA → MPS → CPU. Override via `DEVICE` env variable.
+Auto-detection priority: CUDA → MPS. Override via `DEVICE` env variable.
+**CPU inference is not supported** — LocateAnything-3B requires GPU acceleration.
 
 ## Development Checks
 

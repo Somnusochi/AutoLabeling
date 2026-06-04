@@ -68,7 +68,6 @@ class LocateAnythingWorker:
         self,
         image: Image.Image,
         question: str,
-        generation_mode: str = "hybrid",
         max_new_tokens: int = 2048,
     ) -> dict:
         messages = [
@@ -86,7 +85,6 @@ class LocateAnythingWorker:
         )
         images, videos = self.processor.process_vision_info(messages)
         inputs = self.processor(text=[text], images=images, videos=videos, return_tensors="pt")
-        # Safely move tensors only (some fields are numpy arrays)
         inputs = {k: v.to(self.device) if hasattr(v, "to") else v for k, v in inputs.items()}
 
         response = self.model.generate(
@@ -97,7 +95,7 @@ class LocateAnythingWorker:
             tokenizer=self.tokenizer,
             max_new_tokens=max_new_tokens,
             use_cache=True,
-            generation_mode=generation_mode,
+            generation_mode="hybrid",
             temperature=0.7,
             do_sample=True,
             top_p=0.9,
@@ -117,11 +115,15 @@ _worker: LocateAnythingWorker | None = None
 def _get_worker() -> LocateAnythingWorker:
     global _worker
     if _worker is None:
-        model_path = (
-            settings.resolved_model_dir
-            if Path(settings.resolved_model_dir).exists()
-            else settings.model_id
-        )
+        model_path = settings.resolved_model_dir
+        # Check if model directory has required files
+        model_dir_path = Path(model_path)
+        if model_dir_path.exists() and (model_dir_path / "config.json").exists():
+            # Use local model directory
+            pass
+        else:
+            # Fall back to HuggingFace model ID
+            model_path = settings.model_id
         _worker = LocateAnythingWorker(model_path, device=settings.resolved_device)
     return _worker
 
@@ -162,7 +164,7 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     return boxes
 
 
-MAX_IMAGE_PX = 1024 * 1024  # ~1MP, safe for 24GB unified memory
+MAX_IMAGE_PX = 512 * 512  # ~262k pixels, safe for 8GB CPU mode
 
 
 def detect(image_path: str | Path, categories: list[str]) -> dict:

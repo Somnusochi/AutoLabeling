@@ -24,12 +24,11 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/autolabeling
-      DEVICE: cpu
       PYTHONPATH: /app
     volumes:
-      - model-cache:/app/model
-      - uploads:/app/uploads
-      - training-data:/app/training_runs
+      - ./backend/model:/app/model:ro
+      - ./backend/uploads:/app/uploads
+      - ./backend/training_runs:/app/training_runs
     depends_on:
       db:
         condition: service_healthy
@@ -48,6 +47,3 @@ services:
 
 volumes:
   pgdata:
-  model-cache:
-  uploads:
-  training-data:

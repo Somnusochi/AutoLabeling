@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+psycopg2://somnusochi:somnusochi@localhost:5432/autolabeling"
 
-    # Model (auto-detect: cuda → mps → cpu)
+    # Model (auto-detect: cuda → mps; CPU is not supported)
     model_dir: str = ""
     device: str = ""
     model_id: str = "nvidia/LocateAnything-3B"
@@ -26,7 +26,10 @@ class Settings(BaseSettings):
             return "cuda"
         if torch.backends.mps.is_available():
             return "mps"
-        return "cpu"
+        raise RuntimeError(
+            "No GPU detected. LocateAnything-3B requires CUDA (NVIDIA GPU) or MPS (Apple Silicon). "
+            "CPU inference is not supported."
+        )
 
     # Server
     host: str = "0.0.0.0"
