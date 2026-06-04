@@ -104,7 +104,6 @@ class SegmentAnythingWorker:
                     continue
             polygons.append([])
 
-        self.predictor.reset_image()
         get_memory_manager().full_cleanup()
         return polygons
 
