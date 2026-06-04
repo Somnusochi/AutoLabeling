@@ -213,8 +213,15 @@ VLM-AutoYOLO/
 │       │   ├── DetectionCanvas.tsx  # 图片标注画布（bbox + mask）
 │       │   ├── DetectionResult.tsx  # 检测结果（多格式导出）
 │       │   ├── TrainingPanel.tsx    # YOLO 训练面板（检测 & 分割，数据集下载）
-│       │   ├── HistoryList.tsx      # 检测历史（导出下拉菜单 + 前端分页）
+│       │   ├── HistoryList.tsx      # 检测历史（分页 + 导出下拉菜单）
+│       │   ├── HistoryListItem.tsx  # 历史记录单项卡片
 │       │   ├── ResultTable.tsx      # 结果表格（含 Mask 列）
+│       │   ├── training/            # YOLO 训练子组件
+│       │   │   ├── TrainingCandidateList.tsx
+│       │   │   ├── CandidateListItem.tsx
+│       │   │   ├── TrainingJobItem.tsx
+│       │   │   ├── TrainingPreview.tsx
+│       │   │   └── StatusBadge.tsx
 │       │   ├── Sidebar.tsx          # 主侧边栏（SAM2 开关、检测、训练）
 │       │   ├── VideoPanel.tsx       # 视频上传与关键帧时间轴
 │       │   ├── VideoValidator.tsx   # 视频验证

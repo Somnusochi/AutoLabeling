@@ -213,8 +213,15 @@ VLM-AutoYOLO/
 │       │   ├── DetectionCanvas.tsx  # Image annotation canvas (bbox + mask)
 │       │   ├── DetectionResult.tsx  # Detection result with multi-format export
 │       │   ├── TrainingPanel.tsx    # YOLO training (detect & segment, dataset download)
-│       │   ├── HistoryList.tsx      # Detection history with export dropdowns
+│       │   ├── HistoryList.tsx      # Detection history (paginated, export)
+│       │   ├── HistoryListItem.tsx  # Individual history item card
 │       │   ├── ResultTable.tsx      # Results table with mask column
+│       │   ├── training/            # YOLO training sub-components
+│       │   │   ├── TrainingCandidateList.tsx
+│       │   │   ├── CandidateListItem.tsx
+│       │   │   ├── TrainingJobItem.tsx
+│       │   │   ├── TrainingPreview.tsx
+│       │   │   └── StatusBadge.tsx
 │       │   ├── Sidebar.tsx          # Main sidebar (SAM2 toggle, detect, train)
 │       │   ├── VideoPanel.tsx       # Video upload & keyframe timeline
 │       │   ├── VideoValidator.tsx   # Video validation
