@@ -3,6 +3,7 @@ backend/model/
 backend/trained_models/
 backend/training_runs/
 backend/uploads/
+runs/
 
 # Python
 backend/.venv/
