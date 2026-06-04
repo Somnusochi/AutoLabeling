@@ -9,11 +9,16 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
+# Check if we are using SQLite
+is_sqlite = settings.resolved_database_url.startswith("sqlite")
+connect_args = {"check_same_thread": False} if is_sqlite else {}
+
 engine = create_engine(
-    settings.database_url,
-    pool_size=5,
-    max_overflow=10,
-    pool_pre_ping=True,
+    settings.resolved_database_url,
+    pool_size=5 if not is_sqlite else 0, # pool_size doesn't apply cleanly to SQLite in all configs
+    max_overflow=10 if not is_sqlite else 0,
+    pool_pre_ping=True if not is_sqlite else False,
+    connect_args=connect_args,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -38,7 +43,7 @@ def init_db() -> None:
         try:
             logger.info("Running database migrations via Alembic...")
             alembic_cfg = Config(ini_path)
-            alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+            alembic_cfg.set_main_option("sqlalchemy.url", settings.resolved_database_url)
             command.upgrade(alembic_cfg, "head")
             logger.info("Database migrations applied successfully")
         except Exception as e:

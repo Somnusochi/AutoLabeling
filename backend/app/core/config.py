@@ -15,7 +15,15 @@ class Settings(BaseSettings):
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     # Database
-    database_url: str = "postgresql+psycopg2://somnusochi:somnusochi@localhost:5432/autolabeling"
+    database_url: str = ""
+
+    @property
+    def resolved_database_url(self) -> str:
+        if self.database_url:
+            return self.database_url
+        # Fallback to local SQLite if no DATABASE_URL is provided in env
+        db_path = self.project_root / "autolabeling.db"
+        return f"sqlite:///{db_path}"
 
     # Model (auto-detect: cuda → mps; CPU is not supported)
     model_dir: str = ""

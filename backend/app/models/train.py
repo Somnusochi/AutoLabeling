@@ -3,8 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, JSON, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..core.database import Base
@@ -14,7 +13,7 @@ class TrainingJob(Base):
     __tablename__ = "training_jobs"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )
@@ -25,12 +24,12 @@ class TrainingJob(Base):
     train_ratio: Mapped[float] = mapped_column(Float, default=0.7)
     val_ratio: Mapped[float] = mapped_column(Float, default=0.2)
     task_type: Mapped[str] = mapped_column(String(16), default="detect")
-    class_map: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    class_map: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(
         String(32),
         default="pending",
     )
-    metrics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     model_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     onnx_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -62,17 +61,17 @@ class TrainingDetection(Base):
     __tablename__ = "training_detections"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )
     training_job_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("training_jobs.id", ondelete="CASCADE"),
         nullable=False,
     )
     detection_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        Uuid(as_uuid=True),
         ForeignKey("detections.id", ondelete="CASCADE"),
         nullable=False,
     )

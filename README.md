@@ -138,9 +138,11 @@ cd frontend
 pnpm install
 cd ..
 
-# Database
-psql -d postgres -c "CREATE DATABASE autolabeling;"
-cp backend/.env.example backend/.env
+# Database (PostgreSQL recommended, but SQLite is supported out of the box)
+# If using PostgreSQL:
+# psql -d postgres -c "CREATE DATABASE autolabeling;"
+# cp backend/.env.example backend/.env
+# If you prefer a zero-setup SQLite database, just skip the two steps above. The system will auto-generate autolabeling.db
 
 # Migrations
 cd backend

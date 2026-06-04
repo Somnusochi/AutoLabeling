@@ -138,9 +138,11 @@ cd frontend
 pnpm install
 cd ..
 
-# 数据库
-psql -d postgres -c "CREATE DATABASE autolabeling;"
-cp backend/.env.example backend/.env
+# 数据库 (PostgreSQL 推荐，但也支持 SQLite)
+# 如果使用 PostgreSQL:
+# psql -d postgres -c "CREATE DATABASE autolabeling;"
+# cp backend/.env.example backend/.env
+# 如果你想使用免安装的 SQLite 本地数据库，直接跳过上方两步，系统会自动生成 autolabeling.db
 
 # 迁移
 cd backend
