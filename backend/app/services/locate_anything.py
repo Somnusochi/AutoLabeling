@@ -52,6 +52,21 @@ _model_state: dict = {
 _state_lock = threading.Lock()
 
 
+def _resolve_attn_impl(device: str) -> str:
+    """Use flash_attention_2 on CUDA when available (saves ~30% attention VRAM).
+
+    Falls back to sdpa on MPS, CPU, or when flash-attn is not installed.
+    """
+    if device == "cuda":
+        try:
+            import flash_attn  # type: ignore[import-not-found]  # noqa: F401
+            logger.info("flash_attention_2 available, using it for attention")
+            return "flash_attention_2"
+        except ImportError:
+            logger.info("flash-attn not installed, falling back to sdpa")
+    return "sdpa"
+
+
 class LocateAnythingWorker:
     def __init__(self, model_path: str, device: str = "mps", progress_cb=None):
         _ensure_decord_stub()
@@ -73,13 +88,14 @@ class LocateAnythingWorker:
 
         # ── Download model weights ──
         self._set_progress(progress_cb, "downloading", "model", 50)
-        logger.info("Loading model to %s...", device)
+        attn_impl = _resolve_attn_impl(device)
+        logger.info("Loading model to %s (attn=%s)...", device, attn_impl)
         self.model = AutoModel.from_pretrained(
             model_path,
             torch_dtype=self.dtype,
             trust_remote_code=True,
-            attn_implementation="sdpa",       # avoid flash_attn memory overhead on Windows
-            low_cpu_mem_usage=True,            # reduce RAM during loading
+            attn_implementation=attn_impl,
+            low_cpu_mem_usage=True,
         )
 
         # ── Move to GPU ──
@@ -125,6 +141,7 @@ class LocateAnythingWorker:
         )
         images, videos = self.processor.process_vision_info(messages)
         inputs = self.processor(text=[text], images=images, videos=videos, return_tensors="pt")
+        del images, videos  # free CPU memory early — no longer needed after processor
         inputs = {k: v.to(self.device) if hasattr(v, "to") else v for k, v in inputs.items()}
 
         response = self.model.generate(
@@ -147,8 +164,13 @@ class LocateAnythingWorker:
 
         # Aggressively free intermediate tensors before returning
         del inputs, response
+        import gc
+        gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.synchronize()
+            torch.mps.empty_cache()
 
         return {"answer": raw_text}
 
@@ -356,37 +378,44 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
     # Free fragmented GPU memory before inference
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+    elif torch.backends.mps.is_available():
+        torch.mps.empty_cache()
 
     img = Image.open(image_path).convert("RGB")
-    orig_w, orig_h = img.size
-    w, h = orig_w, orig_h
-
-    # Downscale large images to avoid GPU OOM (ViT attention is quadratic)
-    longest = max(w, h)
-    if longest > MAX_LONG_SIDE:
-        scale = MAX_LONG_SIDE / longest
-        new_w, new_h = int(w * scale), int(h * scale)
-        logger.info("Resizing image %dx%d -> %dx%d", w, h, new_w, new_h)
-        img = img.resize((new_w, new_h), Image.LANCZOS)
-        w, h = new_w, new_h
-
     try:
-        result = worker.detect(img, categories)
-        raw_text = result["answer"]
-    except Exception as exc:
-        raise InferenceError() from exc
+        orig_w, orig_h = img.size
+        w, h = orig_w, orig_h
 
-    boxes = parse_boxes(raw_text, w, h)
-    logger.info("Detection: %s -> %d boxes for %s", image_path, len(boxes), categories)
+        # Downscale large images to avoid GPU OOM (ViT attention is quadratic)
+        longest = max(w, h)
+        if longest > MAX_LONG_SIDE:
+            scale = MAX_LONG_SIDE / longest
+            new_w, new_h = int(w * scale), int(h * scale)
+            logger.info("Resizing image %dx%d -> %dx%d", w, h, new_w, new_h)
+            img = img.resize((new_w, new_h), Image.LANCZOS)
+            w, h = new_w, new_h
 
-    # Aggressive cleanup to prevent VRAM fragmentation across multiple detects
-    import gc
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
+        try:
+            result = worker.detect(img, categories)
+            raw_text = result["answer"]
+        except Exception as exc:
+            raise InferenceError() from exc
 
-    return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h, "orig_w": orig_w, "orig_h": orig_h}
+        boxes = parse_boxes(raw_text, w, h)
+        logger.info("Detection: %s -> %d boxes for %s", image_path, len(boxes), categories)
+
+        return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h, "orig_w": orig_w, "orig_h": orig_h}
+    finally:
+        img.close()
+        # Aggressive cleanup to prevent VRAM fragmentation across multiple detects
+        import gc
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+        elif torch.backends.mps.is_available():
+            torch.mps.synchronize()
+            torch.mps.empty_cache()
 
 
 def get_model_status() -> dict:

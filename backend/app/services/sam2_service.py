@@ -103,6 +103,15 @@ class SegmentAnythingWorker:
                     continue
             polygons.append([])
 
+        self.predictor.reset_image()
+        # Free MPS/CUDA memory after segmentation
+        import gc
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.synchronize()
+            torch.mps.empty_cache()
         return polygons
 
 
@@ -250,6 +259,9 @@ def segment_image(image: Image.Image, boxes: list[dict]) -> list[list[list[float
     # Free fragmented GPU memory before segmentation
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+    elif torch.backends.mps.is_available():
+        torch.mps.synchronize()
+        torch.mps.empty_cache()
     return worker.segment(image, boxes)
 
 

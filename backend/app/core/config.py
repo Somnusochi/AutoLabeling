@@ -6,8 +6,9 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 
 # ── CUDA memory allocator tuning ───────────────────
-# Reduce fragmentation on smaller GPUs; harmless on macOS/MPS
-os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
+# Use expandable segments (PyTorch 2.1+) for dynamic memory management;
+# much better than the legacy max_split_size_mb for varying tensor sizes
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 
 class Settings(BaseSettings):

@@ -90,7 +90,10 @@ async def create_detection(
         try:
             from PIL import Image
             img = Image.open(filepath).convert("RGB")
-            polygons = segment_image(img, boxes_orig)
+            try:
+                polygons = segment_image(img, boxes_orig)
+            finally:
+                img.close()
         except Exception:
             logger.exception("SAM2 segmentation failed, falling back to bbox-only")
 
