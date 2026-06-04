@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+
 import { ThemeContext } from "../hooks/useTheme";
 import type { ThemeMode } from "../hooks/useTheme";
 

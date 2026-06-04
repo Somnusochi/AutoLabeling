@@ -13,6 +13,7 @@ declare global {
   const CANVAS_MAX_H: typeof import('./lib/constants').CANVAS_MAX_H
   const CANVAS_MAX_W: typeof import('./lib/constants').CANVAS_MAX_W
   const CANVAS_MIN_BOX_SIZE: typeof import('./lib/constants').CANVAS_MIN_BOX_SIZE
+  const CandidateListItem: typeof import('./components/training/CandidateListItem').CandidateListItem
   const CategoryInput: typeof import('./components/CategoryInput').CategoryInput
   const DEFAULT_BATCH: typeof import('./lib/constants').DEFAULT_BATCH
   const DEFAULT_CONF: typeof import('./lib/constants').DEFAULT_CONF
@@ -26,6 +27,7 @@ declare global {
   const FilterPanel: typeof import('./components/FilterPanel').FilterPanel
   const Fragment: typeof import('react').Fragment
   const HistoryList: typeof import('./components/HistoryList').HistoryList
+  const HistoryListItem: typeof import('./components/HistoryListItem').HistoryListItem
   const HistorySkeleton: typeof import('./components/LoadingSkeleton').HistorySkeleton
   const Home: typeof import('./pages/Home').Home
   const ImageUploader: typeof import('./components/ImageUploader').ImageUploader
@@ -37,10 +39,14 @@ declare global {
   const QueryClientProvider: typeof import('@tanstack/react-query').QueryClientProvider
   const ResultTable: typeof import('./components/ResultTable').ResultTable
   const Sidebar: typeof import('./components/Sidebar').Sidebar
+  const StatusBadge: typeof import('./components/training/StatusBadge').StatusBadge
   const Suspense: typeof import('react').Suspense
   const ThemeContext: typeof import('./hooks/useTheme').ThemeContext
   const ThemeProvider: typeof import('./components/ThemeProvider').ThemeProvider
+  const TrainingCandidateList: typeof import('./components/training/TrainingCandidateList').TrainingCandidateList
+  const TrainingJobItem: typeof import('./components/training/TrainingJobItem').TrainingJobItem
   const TrainingPanel: typeof import('./components/TrainingPanel').TrainingPanel
+  const TrainingPreview: typeof import('./components/training/TrainingPreview').TrainingPreview
   const ValidationSettings: typeof import('./components/ValidationSettings').ValidationSettings
   const VideoDetail: typeof import('./components/VideoDetail').VideoDetail
   const VideoPanel: typeof import('./components/VideoPanel').VideoPanel

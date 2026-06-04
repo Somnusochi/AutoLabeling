@@ -15,7 +15,7 @@ export async function detectImage(
 
 export async function listDetections(
   page = 1,
-  pageSize = 20,
+  pageSize = 10000,
 ): Promise<{ items: Detection[]; total: number }> {
   const { data } = await request.get<ListResponse<Detection>>("/detections", {
     params: { page, pageSize },
@@ -80,7 +80,9 @@ export async function startTraining(params: {
 }
 
 export async function fetchTrainingJobs(): Promise<TrainingJob[]> {
-  const { data } = await request.get<ListResponse<TrainingJob>>("/train/jobs");
+  const { data } = await request.get<ListResponse<TrainingJob>>("/train/jobs", {
+    params: { pageSize: 10000 },
+  });
   return data.data ?? [];
 }
 
