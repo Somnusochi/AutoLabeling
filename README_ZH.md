@@ -2,19 +2,20 @@
 
 [English](README.md) | 简体中文
 
-**端到端目标检测自动标注与 YOLO 训练平台。** 基于 NVIDIA LocateAnything-3B 视觉大模型的智能数据标注系统，支持 VLM 自动标注、人工修正、一键 YOLO 训练（v5/v8/v11/v26）、视频关键帧提取与模型验证。
+**端到端目标检测自动标注与 YOLO 训练平台。** 基于 NVIDIA LocateAnything-3B 视觉大模型的智能数据标注系统，支持 VLM 自动标注、SAM2.1 mask 精修、人工修正、一键 YOLO 训练（检测 + 分割）、多格式数据集导出、视频关键帧提取与模型验证。
 
-> 图片扔进去，模型训出来 — VLM 自动标注 → 人工修正 → YOLO 训练 → 模型验证。
+> 图片扔进去，模型训出来 — VLM 自动标注 → SAM2 mask 精修 → 人工修正 → 多格式导出 → YOLO 训练 → 模型验证。
 
-**完整计算机视觉工作流**：VLM 预标注 → 手动修正 → 导出数据集 → YOLO 训练 → 模型验证
+**完整计算机视觉工作流**：VLM 预标注 → SAM2 分割 → 手动修正 → 多格式导出 → YOLO 训练（检测/分割） → 模型验证
 
 **核心功能**：
 - 🤖 **VLM 自动标注**：基于 LocateAnything-3B 的开放词汇目标检测
+- 🎯 **SAM2 分割**：bbox → 像素级 mask 精修（SAM 2.1）
 - 🎥 **视频标注**：智能关键帧提取（场景/运动/间隔检测）
-- ✏️ **人工修正**：Canvas 画布标注，支持 NMS 过滤
-- 🚀 **一键训练**：YOLOv5/v8/v11/v26，实时进度追踪
+- ✏️ **人工修正**：Canvas 画布标注，支持 NMS 过滤，BBox/Mask 独立开关
+- 🚀 **一键训练**：YOLOv8/v11/v26（检测 + 分割），实时 SSE 进度
+- 📦 **多格式导出**：YOLO、YOLO-Seg、COCO JSON、Pascal VOC XML、CreateML JSON
 - ✅ **模型验证**：批量图片/视频测试，实时 MJPEG 与 SSE 视频推理
-- 🔄 **导出部署**：YOLO 格式导出、ONNX 转换、数据集打包
 - 🌐 **国际化**：中英文双语界面
 - 🎨 **主题**：亮色 / 暗色模式，跟随系统偏好
 
@@ -43,7 +44,8 @@
 | 层 | 技术 |
 |---|------|
 | 视觉定位 | NVIDIA LocateAnything-3B（Qwen2.5-3B + MoonViT） |
-| 目标检测 | YOLOv5 / v8 / v11 / v26（Ultralytics） |
+| 分割精修 | SAM 2.1（Segment Anything Model 2） |
+| 目标检测 | YOLOv8 / v11 / v26 — 检测 & 分割（Ultralytics） |
 | 后端 | Python FastAPI + PostgreSQL + SSE |
 | 前端 | React + TypeScript + Vite + Tailwind CSS + antd |
 | 状态管理 | TanStack Query + ahooks |
@@ -110,7 +112,7 @@ backend:
 
 Docker 卷用于：
 - `pgdata`: 数据库数据
-- `model-cache`: 下载的 VLM 模型
+- `model-cache`: 下载的 VLM 和 SAM2 模型
 - `uploads`: 用户上传的图片/视频
 - `training-data`: YOLO 训练任务和输出
 
@@ -227,10 +229,14 @@ VLM-AutoYOLO/
 │   │   │   ├── box_filter.py        # 标注框过滤、NMS 去重
 │   │   │   ├── frame_utils.py       # 帧预测与标注绘制
 │   │   │   ├── locate_anything.py   # VLM 推理引擎
+│   │   │   ├── sam2_service.py      # SAM2 分割服务
 │   │   │   ├── video_service.py     # ffmpeg 关键帧提取 + SSIM 去重
 │   │   │   ├── trainer.py           # YOLO 训练 + 验证
-│   │   │   ├── export.py            # 标注导出
-│   │   │   └── yolo_format.py       # YOLO 格式转换
+│   │   │   ├── export.py            # 多格式标注导出
+│   │   │   ├── yolo_format.py       # YOLO 格式转换（bbox + seg）
+│   │   │   ├── coco_format.py       # COCO JSON 导出
+│   │   │   ├── voc_format.py        # Pascal VOC XML 导出
+│   │   │   └── createml_format.py   # CreateML JSON 导出
 │   │   └── main.py                  # FastAPI 入口
 │   ├── alembic/                     # 数据库迁移
 │   └── requirements.txt
@@ -387,7 +393,7 @@ Canvas 画框模式，自由绘制边界框。
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/v1/detect` | VLM 预标注（multipart） |
+| POST | `/api/v1/detect` | VLM 预标注（multipart，支持 `use_sam2` 参数） |
 | GET | `/api/v1/detections` | 历史列表（分页，返回 `data` + `total` + `page` + `pageSize`） |
 | GET | `/api/v1/detections/{id}` | 检测详情 |
 | GET | `/api/v1/detections/{id}/image` | 检测原图 |
@@ -398,7 +404,7 @@ Canvas 画框模式，自由绘制边界框。
 | PUT | `/api/v1/detections/{id}/filter-settings` | 保存过滤模式与 NMS IoU |
 | POST | `/api/v1/detections/{id}/delete` | 删除检测记录 |
 | GET | `/api/v1/detections/{id}/export` | 导出单图 YOLO 标注 |
-| POST | `/api/v1/detections/export-batch` | 批量导出（zip） |
+| POST | `/api/v1/detections/export-batch` | 多格式批量导出：`yolo`、`yolo-seg`、`coco`、`voc`、`createml`（zip） |
 | GET | `/api/v1/model/status` | VLM 模型加载/卸载状态 |
 | POST | `/api/v1/model/unload` | 从内存中卸载 VLM 模型 |
 

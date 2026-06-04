@@ -2,19 +2,20 @@
 
 [简体中文](README_ZH.md) | English
 
-**End-to-end object detection auto-labeling and YOLO training platform.** VLM-powered data annotation with NVIDIA LocateAnything-3B, manual refinement, one-click YOLO training (v5/v8/v11/v26), video keyframe extraction, and model validation.
+**End-to-end object detection auto-labeling and YOLO training platform.** VLM-powered data annotation with NVIDIA LocateAnything-3B, SAM2.1 mask refinement, manual refinement, one-click YOLO training (detect & segment), multi-format dataset export, video keyframe extraction, and model validation.
 
-> Images in, model out — VLM auto-labeling → manual refinement → YOLO training → validation.
+> Images in, model out — VLM auto-labeling → SAM2 mask refinement → manual refinement → export → YOLO training → validation.
 
-**Complete computer vision pipeline**: VLM Pre-annotation → Manual Refinement → Export Dataset → Train YOLO → Validate Model
+**Complete computer vision pipeline**: VLM Pre-annotation → SAM2 Segmentation → Manual Refinement → Multi-format Export → Train YOLO (Detect / Segment) → Validate Model
 
 **Key features**:
 - 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
+- 🎯 **SAM2 segmentation**: Bbox → pixel-precise mask refinement with SAM 2.1
 - 🎥 **Video annotation**: Intelligent keyframe extraction (scene/motion/interval detection)
-- ✏️ **Manual refinement**: Canvas-based annotation with NMS filtering
-- 🚀 **One-click training**: YOLOv5/v8/v11/v26 with real-time progress tracking
+- ✏️ **Manual refinement**: Canvas-based annotation with NMS filtering, BBox/Mask toggle
+- 🚀 **One-click training**: YOLOv8/v11/v26 (detect & segment), real-time SSE progress
+- 📦 **Multi-format export**: YOLO, YOLO-Seg, COCO JSON, Pascal VOC XML, CreateML JSON
 - ✅ **Model validation**: Batch image/video testing, real-time MJPEG and SSE video inference
-- 🔄 **Export & deploy**: YOLO format export, ONNX conversion, dataset packaging
 - 🌐 **i18n**: English / 简体中文 interface
 - 🎨 **Theme**: Light / dark mode with system preference detection
 
@@ -43,7 +44,8 @@ Comprehensive guides covering:
 | Layer | Technology |
 |-------|-----------|
 | Visual Grounding | NVIDIA LocateAnything-3B (Qwen2.5-3B + MoonViT) |
-| Object Detection | YOLOv5 / v8 / v11 / v26 (Ultralytics) |
+| Segmentation | SAM 2.1 (Segment Anything Model 2) |
+| Object Detection | YOLOv8 / v11 / v26 — Detect & Segment (Ultralytics) |
 | Backend | Python FastAPI + PostgreSQL + SSE |
 | Frontend | React + TypeScript + Vite + Tailwind CSS + antd |
 | State Management | TanStack Query + ahooks |
@@ -110,7 +112,7 @@ backend:
 
 Docker volumes are used for:
 - `pgdata`: Database data
-- `model-cache`: Downloaded VLM models
+- `model-cache`: Downloaded VLM and SAM2 models
 - `uploads`: User uploaded images/videos
 - `training-data`: YOLO training runs and outputs
 
@@ -226,10 +228,14 @@ VLM-AutoYOLO/
 │   │   │   ├── box_filter.py        # Box filtering, NMS dedup
 │   │   │   ├── frame_utils.py       # Frame prediction & annotation drawing
 │   │   │   ├── locate_anything.py   # VLM inference engine
+│   │   │   ├── sam2_service.py      # SAM2 segmentation service
 │   │   │   ├── video_service.py     # ffmpeg keyframe extraction + SSIM dedup
 │   │   │   ├── trainer.py           # YOLO training + validation
-│   │   │   ├── export.py            # Annotation export
-│   │   │   └── yolo_format.py       # YOLO format conversion
+│   │   │   ├── export.py            # Multi-format annotation export
+│   │   │   ├── yolo_format.py       # YOLO format conversion (bbox + seg)
+│   │   │   ├── coco_format.py       # COCO JSON export
+│   │   │   ├── voc_format.py        # Pascal VOC XML export
+│   │   │   └── createml_format.py   # CreateML JSON export
 │   │   └── main.py                  # FastAPI entry point
 │   ├── alembic/                     # Database migrations
 │   └── requirements.txt
@@ -385,7 +391,7 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/detect` | VLM pre-annotation (multipart) |
+| POST | `/api/v1/detect` | VLM pre-annotation (multipart, supports `use_sam2` flag) |
 | GET | `/api/v1/detections` | List detections (paginated, returns `data` + `total` + `page` + `pageSize`) |
 | GET | `/api/v1/detections/{id}` | Detection detail |
 | GET | `/api/v1/detections/{id}/image` | Original image |
@@ -396,7 +402,7 @@ All response fields use camelCase. Error responses carry correct HTTP status cod
 | PUT | `/api/v1/detections/{id}/filter-settings` | Save filter mode and NMS IoU |
 | POST | `/api/v1/detections/{id}/delete` | Delete detection |
 | GET | `/api/v1/detections/{id}/export` | Export single YOLO label |
-| POST | `/api/v1/detections/export-batch` | Batch export (zip) |
+| POST | `/api/v1/detections/export-batch` | Multi-format batch export: `yolo`, `yolo-seg`, `coco`, `voc`, `createml` (zip) |
 | GET | `/api/v1/model/status` | VLM model loaded/unloaded status |
 | POST | `/api/v1/model/unload` | Unload VLM model from memory |
 
