@@ -53,9 +53,10 @@
 
 ## 快速开始
 
-### Docker 部署（Linux + NVIDIA GPU）
+### Docker 部署
 
-> **macOS 用户：** Docker on Mac 不支持 GPU 直通（MPS/CUDA），请使用[手动部署](#手动部署)。
+> **环境要求：** Linux 或 Windows (WSL2) + NVIDIA GPU + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)。
+> **macOS 不支持** — Docker on Mac 无 GPU 直通能力，请使用[手动部署](#手动部署)。
 
 **使用预构建镜像快速启动：**
 
