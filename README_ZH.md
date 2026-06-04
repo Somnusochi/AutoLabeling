@@ -100,7 +100,7 @@ backend:
             count: 1
             capabilities: [gpu]
   environment:
-    DEVICE: cuda  # 从 cpu 改为 cuda
+    DEVICE: cuda
 ```
 
 **持久化存储：**
@@ -145,7 +145,6 @@ docker compose logs -f frontend
 | ffmpeg | 任意版本 |
 | macOS | Apple Silicon 24GB 统一内存 |
 | NVIDIA GPU | 12GB 显存 |
-| CPU 模式 | 16GB 系统内存 |
 
 **安装：**
 
@@ -356,7 +355,7 @@ Canvas 画框模式，自由绘制边界框。
 ### VLM 模型管理
 
 - **状态查询**：查询 VLM 模型是否已加载到内存（`GET /api/v1/model/status`）
-- **卸载释放**：按需卸载 VLM 模型，释放 GPU/CPU 内存（`POST /api/v1/model/unload`）
+- **卸载释放**：按需卸载 VLM 模型，释放 GPU 内存（`POST /api/v1/model/unload`）
 - 模型在首次检测请求时懒加载，常驻内存直至显式卸载
 
 ### 重新训练
@@ -446,9 +445,9 @@ Canvas 画框模式，自由绘制边界框。
 |------|---------|---------|
 | macOS (Apple Silicon) | MPS | MPS |
 | Linux / Windows (NVIDIA) | CUDA | CUDA |
-| 无 GPU | CPU | CPU |
 
-设备自动检测，优先级：CUDA → MPS → CPU。可通过 `DEVICE` 环境变量手动指定。
+设备自动检测，优先级：CUDA → MPS。可通过 `DEVICE` 环境变量手动指定。
+**CPU 推理不被支持** — LocateAnything-3B 需要 GPU 加速。
 
 ## 开发与校验
 
