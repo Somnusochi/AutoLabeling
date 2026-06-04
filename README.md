@@ -471,18 +471,23 @@ Auto-detection priority: CUDA → MPS. Override via `DEVICE` env variable.
 
 ### Inference Benchmarks
 
-Tested with 7 cat images of varying sizes on Windows 11, `max_new_tokens=512`, no SAM2, 3 rounds.
+Tested with 7 cat images, 3 rounds each, on Windows 11 + RTX 3080 10GB, `max_new_tokens=512`.
+Model loaded fresh before first round (first image ~28s includes model loading).
 
-| Platform | GPU / VRAM | Image Size | Avg Time | Range |
-|----------|-----------|-----------|----------|-------|
-| Windows 11 | RTX 3080 10GB | 800×1000 (~100KB) | **11.6s** | 9.6–13.9s |
-| Windows 11 | RTX 3080 10GB | Thumbnails (~5KB) | **345ms** | 300–403ms |
-| Windows 11 | RTX 3080 10GB | All (7 images) | **5.2s** | 0.3–13.9s |
-| macOS | Apple Silicon MPS 24GB | 800×1000 | ~20s | — |
+| Mode | Image Size | Avg Time | Range | Stable Avg* |
+|------|-----------|----------|-------|-------------|
+| VLM only | 800×1000 (~100KB) | 6.3s | 5.1–7.3s | **5.6s** |
+| VLM only | Thumbnails (~5KB) | 368ms | 355–396ms | **373ms** |
+| **VLM only** | **All 7 images** | **3.8s** | 0.4–7.3s | **2.6s** |
+| VLM + SAM2 | 800×1000 (~100KB) | 9.7s | 7.4–10.7s | **9.9s** |
+| VLM + SAM2 | Thumbnails (~5KB) | 710ms | 465–1522ms | **484ms** |
+| **VLM + SAM2** | **All 7 images** | **4.6s** | 0.5–10.7s | **4.5s** |
 
+> *Stable Avg excludes first-round first-image (model loading) outlier.
+>
 > **VRAM usage**: VLM model alone ~5.5GB after loading; peak ~9.2GB during inference. With SAM2 loaded concurrently, ~9.8GB peak. 10GB cards work but leave minimal headroom — close unused GPU apps before running.
 >
-> **Performance note**: LocateAnything-3B generates tokens autoregressively — complex scenes with many objects take longer. Small/simple images complete in sub-second. Image resolution is auto-capped at 800×800 to control VRAM.
+> **Performance note**: LocateAnything-3B generates tokens autoregressively — complex scenes take longer. Small/simple images complete in sub-second. Image resolution is auto-capped at 800×800 to control VRAM. Aggressive GPU memory cleanup (`gc.collect` + `cuda.empty_cache` + `cuda.ipc_collect`) runs after each detection to prevent fragmentation.
 
 ## Development Checks
 
