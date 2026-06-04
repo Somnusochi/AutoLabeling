@@ -148,7 +148,7 @@ If you prefer not to use Docker, follow these steps:
 | Node.js | 22+ | 22+ |
 | PostgreSQL | 16+ | 16+ |
 | ffmpeg | Any version | — |
-| macOS | Apple Silicon 24GB unified memory | 24GB+ |
+| macOS | Apple Silicon 16GB unified memory | 24GB+ |
 | NVIDIA GPU | 10GB VRAM | 12GB+ |
 
 **Setup:**

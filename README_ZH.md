@@ -148,7 +148,7 @@ docker compose logs -f frontend
 | Node.js | 22+ | 22+ |
 | PostgreSQL | 16+ | 16+ |
 | ffmpeg | 任意版本 | — |
-| macOS | Apple Silicon 24GB 统一内存 | 24GB+ |
+| macOS | Apple Silicon 16GB 统一内存 | 24GB+ |
 | NVIDIA GPU | 10GB 显存 | 12GB+ |
 
 **安装：**
