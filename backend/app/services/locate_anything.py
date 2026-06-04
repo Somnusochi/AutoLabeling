@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import enum
 import logging
 import re
@@ -36,7 +37,7 @@ def _ensure_decord_stub():
 
 # ── Model state machine ────────────────────────────
 
-class ModelState(str, enum.Enum):
+class ModelState(enum.StrEnum):
     UNLOADED = "unloaded"
     DOWNLOADING = "downloading"   # fetching model files from HuggingFace
     LOADING = "loading"           # loading into memory / moving to GPU
@@ -96,10 +97,8 @@ class LocateAnythingWorker:
     @staticmethod
     def _set_progress(cb, state: str, stage: str, progress: int):
         if cb:
-            try:
+            with contextlib.suppress(Exception):
                 cb(state, stage, progress)
-            except Exception:
-                pass
 
     @torch.inference_mode()
     def detect(self, image: Image.Image, categories: list[str]) -> dict:
@@ -242,7 +241,9 @@ def _start_watchdog():
     if _watchdog_thread is not None and _watchdog_thread.is_alive():
         return
     _watchdog_stop = threading.Event()
-    _watchdog_thread = threading.Thread(target=_watchdog_loop, daemon=True, name="model-idle-watchdog")
+    _watchdog_thread = threading.Thread(
+        target=_watchdog_loop, daemon=True, name="model-idle-watchdog"
+    )
     _watchdog_thread.start()
     logger.info("Idle watchdog started (timeout=%ds)", settings.model_idle_timeout_seconds)
 
@@ -365,7 +366,10 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
         boxes = parse_boxes(raw_text, w, h)
         logger.info("Detection: %s -> %d boxes for %s", image_path, len(boxes), categories)
 
-        return {"raw_text": raw_text, "boxes": boxes, "img_w": w, "img_h": h, "orig_w": orig_w, "orig_h": orig_h}
+        return {
+            "raw_text": raw_text, "boxes": boxes,
+            "img_w": w, "img_h": h, "orig_w": orig_w, "orig_h": orig_h,
+        }
     finally:
         img.close()
         gpu_mem.full_cleanup()

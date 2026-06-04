@@ -130,7 +130,10 @@ def _build_dataset(
     test_dets = detections[val_end:] if has_test else []
 
     def _write_set(dets: list[Detection], subset: str) -> int:
-        fmt_fn = yolo_format.detection_to_yolo_seg if task_type == "segment" else yolo_format.detection_to_yolo
+        fmt_fn = (
+            yolo_format.detection_to_yolo_seg if task_type == "segment"
+            else yolo_format.detection_to_yolo
+        )
         for det in dets:
             src = Path(det.image_path)
             dst_img = work_dir / "images" / subset / f"{det.id}{src.suffix}"

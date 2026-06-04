@@ -68,7 +68,9 @@ def export_batch(db: Session, detection_ids: list[str], format: str = "yolo") ->
     raise ValueError(f"Unsupported format: {format}. Supported: {list(FORMAT_LABELS)}")
 
 
-def _export_yolo(dets: list[Detection], unified_map: dict[str, int], seg_mode: bool = False) -> bytes:
+def _export_yolo(
+    dets: list[Detection], unified_map: dict[str, int], seg_mode: bool = False
+) -> bytes:
     fmt_fn = detection_to_yolo_seg if seg_mode else detection_to_yolo
     label_dir = "labels"
     buf = io.BytesIO()

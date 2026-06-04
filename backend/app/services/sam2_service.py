@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import enum
 import logging
 import threading
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # ── SAM2 State machine ──────────────────────────────
 
-class Sam2State(str, enum.Enum):
+class Sam2State(enum.StrEnum):
     UNLOADED = "unloaded"
     DOWNLOADING = "downloading"
     LOADING = "loading"
@@ -44,7 +45,12 @@ _load_complete = threading.Event()
 
 
 class SegmentAnythingWorker:
-    def __init__(self, model_id: str = "facebook/sam2.1-hiera-base-plus", device: str | None = None, progress_cb=None):
+    def __init__(
+        self,
+        model_id: str = "facebook/sam2.1-hiera-base-plus",
+        device: str | None = None,
+        progress_cb=None,
+    ):
         from sam2.build_sam import build_sam2_hf
         from sam2.sam2_image_predictor import SAM2ImagePredictor
 
@@ -68,10 +74,8 @@ class SegmentAnythingWorker:
     @staticmethod
     def _set_progress(cb, state: str, stage: str, progress: int):
         if cb:
-            try:
+            with contextlib.suppress(Exception):
                 cb(state, stage, progress)
-            except Exception:
-                pass
 
     @torch.no_grad()
     def segment(self, image: Image.Image, boxes: list[dict]) -> list[list[list[float]]]:
@@ -206,7 +210,9 @@ def _start_watchdog():
     if _watchdog_thread is not None and _watchdog_thread.is_alive():
         return
     _watchdog_stop = threading.Event()
-    _watchdog_thread = threading.Thread(target=_watchdog_loop, daemon=True, name="sam-idle-watchdog")
+    _watchdog_thread = threading.Thread(
+        target=_watchdog_loop, daemon=True, name="sam-idle-watchdog"
+    )
     _watchdog_thread.start()
 
 

@@ -19,9 +19,6 @@ def _build_createml(detections: list[Detection], class_map: dict[str, int]) -> l
     results = []
 
     for det in detections:
-        img_w = det.image_width or 1
-        img_h = det.image_height or 1
-
         annotations = []
         for box in _get_filtered_boxes(det):
             x1, y1, x2, y2 = box["x1"], box["y1"], box["x2"], box["y2"]

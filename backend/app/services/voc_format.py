@@ -17,25 +17,25 @@ def detection_to_voc(detection: Detection, class_map: dict[str, int]) -> str:
     boxes = _get_filtered_boxes(detection)
 
     lines = ['<annotation>', f'  <filename>{detection.image_name}</filename>']
-    lines.append(f"  <size>")
+    lines.append("  <size>")
     lines.append(f"    <width>{img_w}</width>")
     lines.append(f"    <height>{img_h}</height>")
-    lines.append(f"    <depth>3</depth>")
-    lines.append(f"  </size>")
+    lines.append("    <depth>3</depth>")
+    lines.append("  </size>")
 
     for box in boxes:
         x1, y1, x2, y2 = box["x1"], box["y1"], box["x2"], box["y2"]
         lines.append("  <object>")
         lines.append(f"    <name>{box['class_name']}</name>")
-        lines.append(f"    <pose>Unspecified</pose>")
-        lines.append(f"    <truncated>0</truncated>")
-        lines.append(f"    <difficult>0</difficult>")
-        lines.append(f"    <bndbox>")
+        lines.append("    <pose>Unspecified</pose>")
+        lines.append("    <truncated>0</truncated>")
+        lines.append("    <difficult>0</difficult>")
+        lines.append("    <bndbox>")
         lines.append(f"      <xmin>{x1}</xmin>")
         lines.append(f"      <ymin>{y1}</ymin>")
         lines.append(f"      <xmax>{x2}</xmax>")
         lines.append(f"      <ymax>{y2}</ymax>")
-        lines.append(f"    </bndbox>")
+        lines.append("    </bndbox>")
         lines.append("  </object>")
 
     lines.append("</annotation>")

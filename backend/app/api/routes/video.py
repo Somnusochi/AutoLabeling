@@ -76,7 +76,7 @@ async def upload_video(
 @router.get("/videos")
 def list_videos(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100, validation_alias="pageSize"),
+    page_size: int = Query(20, ge=1, le=10000, validation_alias="pageSize"),
     repo: VideoRepository = Depends(_get_video_repo),
 ) -> APIResponse:
     items, total = repo.list_videos(page=page, page_size=page_size)
