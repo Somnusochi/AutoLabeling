@@ -15,7 +15,7 @@ connect_args = {"check_same_thread": False} if is_sqlite else {}
 
 engine = create_engine(
     settings.resolved_database_url,
-    pool_size=5 if not is_sqlite else 0, # pool_size doesn't apply cleanly to SQLite in all configs
+    pool_size=5 if not is_sqlite else 0,  # pool_size doesn't apply cleanly to SQLite in all configs
     max_overflow=10 if not is_sqlite else 0,
     pool_pre_ping=bool(not is_sqlite),
     connect_args=connect_args,

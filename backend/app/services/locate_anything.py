@@ -297,9 +297,7 @@ def _get_worker() -> LocateAnythingWorker:
 _REF_PATTERN = re.compile(r"<ref>([^<]+)</ref>")
 _BOX_PATTERN = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
 _CONF_PATTERN = re.compile(r"<conf>([\d.]+)</conf>")
-_TOKEN_PATTERN = re.compile(
-    r"<ref>[^<]+</ref>|<box><\d+><\d+><\d+><\d+></box>|<conf>[\d.]+</conf>"
-)
+_TOKEN_PATTERN = re.compile(r"<ref>[^<]+</ref>|<box><\d+><\d+><\d+><\d+></box>|<conf>[\d.]+</conf>")
 
 
 def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
