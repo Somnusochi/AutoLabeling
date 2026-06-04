@@ -66,34 +66,31 @@ async def create_detection(
         logger.exception("Inference failed")
         raise HTTPException(exc.status_code, detail=exc.detail) from exc
 
+    # ── Scale boxes from detection space to original image space ──
+    detect_w, detect_h = result["img_w"], result["img_h"]
+    orig_w = result.get("orig_w", detect_w)
+    orig_h = result.get("orig_h", detect_h)
+    scale_x = orig_w / detect_w if detect_w != orig_w else 1.0
+    scale_y = orig_h / detect_h if detect_h != orig_h else 1.0
+
+    boxes_orig: list[dict] = [
+        {
+            **b,
+            "x1": int(b["x1"] * scale_x),
+            "y1": int(b["y1"] * scale_y),
+            "x2": int(b["x2"] * scale_x),
+            "y2": int(b["y2"] * scale_y),
+        }
+        for b in result["boxes"]
+    ]
+
     # ── SAM2 segmentation (optional) ──
     polygons: list[list[list[float]]] = []
-    if use_sam2 and result["boxes"]:
+    if use_sam2 and boxes_orig:
         try:
             from PIL import Image
             img = Image.open(filepath).convert("RGB")
-            orig_w, orig_h = img.size
-            detect_w, detect_h = result["img_w"], result["img_h"]
-
-            # If detect() resized the image, scale boxes back to original dimensions
-            # so SAM2 mask aligns with the original image
-            if (detect_w, detect_h) != (orig_w, orig_h):
-                scale_x = orig_w / detect_w
-                scale_y = orig_h / detect_h
-                scaled_boxes = [
-                    {
-                        **b,
-                        "x1": int(b["x1"] * scale_x),
-                        "y1": int(b["y1"] * scale_y),
-                        "x2": int(b["x2"] * scale_x),
-                        "y2": int(b["y2"] * scale_y),
-                    }
-                    for b in result["boxes"]
-                ]
-            else:
-                scaled_boxes = result["boxes"]
-
-            polygons = segment_image(img, scaled_boxes)
+            polygons = segment_image(img, boxes_orig)
         except Exception:
             logger.exception("SAM2 segmentation failed, falling back to bbox-only")
 
@@ -101,8 +98,8 @@ async def create_detection(
     detection = repo.create(
         image_path=filepath,
         image_name=original_name,
-        image_width=result["img_w"],
-        image_height=result["img_h"],
+        image_width=orig_w,
+        image_height=orig_h,
         categories=cat_list,
     )
     detection.elapsed_ms = int((time.perf_counter() - t0) * 1000)
@@ -115,7 +112,7 @@ async def create_detection(
             "y2": b["y2"],
             "mask_polygon": polygons[i] if i < len(polygons) else None,
         }
-        for i, b in enumerate(result["boxes"])
+        for i, b in enumerate(boxes_orig)
     ]
     repo.add_boxes(detection.id, box_dicts)
     repo.db.commit()
