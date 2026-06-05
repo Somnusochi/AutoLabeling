@@ -286,4 +286,8 @@ python -m compileall app alembic
 
 ## License
 
-本项目代码 [MIT](LICENSE)。LocateAnything-3B 模型遵循 [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE)（非商用）。
+本项目代码：[MIT](LICENSE)。
+
+第三方依赖协议：
+- LocateAnything-3B 模型 — [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE)（非商用）
+- Ultralytics YOLO — [AGPL-3.0](https://github.com/ultralytics/ultralytics/blob/main/LICENSE)（copyleft，训练/部署可能触发开源义务）
