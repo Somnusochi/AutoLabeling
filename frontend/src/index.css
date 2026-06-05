@@ -249,3 +249,8 @@ body {
 .training-params .ant-input-number {
   display: block !important;
 }
+
+@keyframes slideRight {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}

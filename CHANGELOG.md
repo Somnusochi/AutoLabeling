@@ -1,7 +1,28 @@
 # Changelog
 
-## v1.4.9 (2026-06-05)
+## v1.5.2 (2026-06-05)
 
+- Integrate cloud benchmark records (RTX 4080) into local PostgreSQL database
+- UX: Add global loading progress bar for all pending queries and mutations
+- Deployment: Mount frontend static files to root (`/`) for single-container Docker deployments
+- Add `benchmark_script.py` and `decord` dependency
+
+## v1.5.1 (2026-06-05)
+
+- Fix: use base color when confidence is null (was showing red)
+- Feat: expose SAM2 score threshold slider for mask quality filtering
+- CI: restore tag-triggered Docker and Release workflows
+
+## v1.5.0 (2026-06-05)
+
+- Feat: improve CategoryInput — add remove button, dedup, visual polish
+- Docs: bump GPU VRAM minimum from 10GB to 12GB, add throttling warning
+- Docs: add star badge and star-history chart to READMEs (EN/ZH)
+- Docs: add badges and emoji pipeline flow to README headers (EN/ZH)
+- Docs: rewrite CLAUDE.md with architecture overview, commands, and workflow rules
+- CI: Docker and Release workflows now trigger on published Release, not every tag
+
+## v1.4.9 (2026-06-05)
 - Japanese (日本語) i18n — full UI translation
 - Three-button language selector (中 / EN / 日) matching theme toggle style
 - SAM2 status labels — "SAM2 模型" instead of "VLM 模型"
