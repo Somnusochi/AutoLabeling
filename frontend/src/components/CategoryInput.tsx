@@ -11,6 +11,21 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
   const { t } = useTranslation();
   const [input, setInput] = useState("");
 
+  const [hiddenSuggested, setHiddenSuggested] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem("hiddenCategories");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  const hideSuggested = (e: React.MouseEvent, cat: string) => {
+    e.stopPropagation();
+    setHiddenSuggested((prev) => {
+      const next = new Set(prev);
+      next.add(cat);
+      localStorage.setItem("hiddenCategories", JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
   const add = (cat?: string) => {
     const trimmed = (cat ?? input).trim();
     if (trimmed && !categories.includes(trimmed)) {
@@ -33,8 +48,8 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
     onChange(categories.filter((c) => c !== cat));
   };
 
-  // Filter recent tags that aren't already selected
-  const suggested = recentCategories.filter((c) => !categories.includes(c));
+  // Filter recent tags that aren't already selected and aren't hidden
+  const suggested = recentCategories.filter((c) => !categories.includes(c) && !hiddenSuggested.has(c));
 
   return (
     <div>
@@ -61,15 +76,27 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
       {suggested.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
           {suggested.slice(0, 8).map((cat) => (
-            <button
+            <span
               key={cat}
-              type="button"
-              disabled={disabled}
-              onClick={() => add(cat)}
-              className="rounded-sm border border-gray-200 px-1.5 text-xs text-gray-500 hover:border-primary-300 hover:text-primary-600 transition-colors cursor-pointer inline-flex items-center leading-5 h-5"
+              className="group rounded-sm border border-gray-200 px-1.5 text-xs text-gray-500 hover:border-primary-300 transition-colors inline-flex items-center leading-5 h-5 bg-white"
             >
-              + {cat}
-            </button>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => add(cat)}
+                className="hover:text-primary-600 cursor-pointer flex items-center"
+              >
+                + {cat}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => hideSuggested(e, cat)}
+                className="ml-1 text-gray-300 hover:text-red-500 hidden group-hover:flex items-center justify-center cursor-pointer"
+                title={t("common.delete")}
+              >
+                &times;
+              </button>
+            </span>
           ))}
         </div>
       )}
