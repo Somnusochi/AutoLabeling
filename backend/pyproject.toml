@@ -1,6 +1,6 @@
 [project]
 name = "locate-anything-backend"
-version = "0.1.0"
+version = "1.5.3"
 description = "Backend API for VLM-AutoYOLO - VLM-powered auto-labeling and YOLO training platform"
 requires-python = ">=3.12"
 dependencies = [

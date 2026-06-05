@@ -14,6 +14,7 @@ export interface Detection {
   imageName: string;
   categories: string[];
   modelName: string;
+  modelType: string | null;
   imageWidth: number;
   imageHeight: number;
   elapsedMs: number | null;

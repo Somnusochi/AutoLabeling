@@ -13,14 +13,14 @@
 </p>
 
 ```
-🖼️ image/video → 🔍 VLM detection → 🎯 SAM2 mask → ✏️ refine → 📦 export → 🚀 YOLO → ✅ model
+🖼️ image/video → 🔍 VLM / SAM3 detection → 🎯 SAM2/SAM3 mask → ✏️ refine → 📦 export → 🚀 YOLO → ✅ model
 ```
 
-**Images or videos in → YOLO model out**, with VLM auto-labeling (LocateAnything-3B), SAM2.1 mask refinement, and human-in-the-loop correction. Multi-format export, one-click YOLO training (detect & segment), video keyframe extraction, and model validation — all GPU-accelerated on macOS MPS and Windows/Linux CUDA.
+**Images or videos in → YOLO model out**, with VLM auto-labeling (LocateAnything-3B), SAM2.1 / SAM3 mask refinement, and human-in-the-loop correction. Multi-format export, one-click YOLO training (detect & segment), video keyframe extraction, and model validation — all GPU-accelerated on macOS MPS and Windows/Linux CUDA.
 
 ## Key Features
 - 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
-- 🎯 **SAM2 segmentation**: Bbox → pixel-precise mask with SAM 2.1, BBox/Mask toggle on canvas
+- 🎯 **SAM2 / SAM3 segmentation**: Bbox → pixel-precise mask with SAM 2.1 or SAM3 text-driven detection+segmentation in one pass, BBox/Mask toggle on canvas
 - 🎥 **Video annotation**: Intelligent keyframe extraction (scene / motion / interval), SSIM dedup
 - ✏️ **Manual refinement**: Canvas draw mode, NMS filtering, hide/show individual boxes
 - 📦 **Multi-format export**: YOLO, YOLO-Seg, COCO JSON, Pascal VOC XML, CreateML JSON
@@ -50,7 +50,7 @@ Comprehensive guides: quick start, annotation best practices, training parameter
 | Layer | Technology |
 |-------|-----------|
 | Visual Grounding | NVIDIA LocateAnything-3B (Qwen2.5-3B + MoonViT) |
-| Segmentation | SAM 2.1 — Segment Anything Model 2 |
+| Segmentation | SAM 2.1 / SAM3 — Segment Anything Model 2 / 3 |
 | Object Detection | YOLOv8 / v11 / v26 — Detect & Segment (Ultralytics) |
 | Backend | Python FastAPI + PostgreSQL + SSE |
 | Frontend | React + TypeScript + Vite + Tailwind CSS + antd |
@@ -90,6 +90,7 @@ docker compose up -d --build
 |---------|------|-------------|
 | Frontend | 80 | React web UI (Nginx) |
 | Backend | 8000 | FastAPI server |
+| SAM3 | 8002 | SAM3 standalone inference service |
 | Database | 5432 | PostgreSQL |
 
 **GPU Support** — add to `docker-compose.yml`:
@@ -108,7 +109,7 @@ backend:
 ```
 
 **Persistent Storage (Docker volumes):**
-- `pgdata` — Database · `model-cache` — VLM & SAM2 models · `uploads` — User images/videos · `training-data` — YOLO training outputs
+- `pgdata` — Database · `model-cache` — VLM, SAM2 & SAM3 models · `uploads` — User images/videos · `training-data` — YOLO training outputs
 
 **Backup / Restore:**
 
@@ -198,9 +199,26 @@ Enable SAM2 (Segment Anything Model 2) to refine VLM bounding boxes into pixel-p
 
 - Check "Enable SAM2 Segmentation" before detection — runs automatically after VLM
 - SAM 2.1 model (base+), lazy-loaded with idle auto-unload
+- Score threshold slider for mask quality filtering
 - Masks rendered as semi-transparent overlays on canvas
 - BBox and Mask independently toggled on both main canvas and hover preview
 - Result table shows polygon vertex count per box
+
+### SAM3 Detection + Segmentation
+
+Switch to SAM3 mode for text-driven detection and segmentation in a single pass — no VLM required.
+
+- Toggle between VLM+SAM2 and SAM3 via the model selector in the sidebar
+- Enter open-vocabulary text prompts (e.g. `cat`, `red car`) — SAM3 detects and segments all matching instances
+- **Confidence threshold** slider (0.0–1.0, default 0.5) controls detection sensitivity
+- **Mask threshold** slider (0.0–1.0, default 0.5) controls mask tightness
+- Enable/disable segmentation independently — bbox-only mode skips mask extraction for faster results
+- SAM3 runs as a standalone HTTP service on port 8002 with its own venv
+- Auto-starts on first use, idle auto-unload after 10 min
+- Real-time loading status via SSE (`starting` → `loading` → `loaded`)
+- Manual unload button to free GPU memory
+- Backend auto-switches: using SAM3 unloads VLM/SAM2, and vice versa
+- Detection records tagged with `model_type` (VLM / VLM+SAM2 / SAM3) for traceability
 
 ### Video Annotation
 
@@ -251,9 +269,10 @@ Canvas-based annotation with View / Draw modes.
 
 ### Model Management
 
-- **Lazy loading**: VLM and SAM2 load on first use, unload after idle (default 10 min)
-- **Idle watchdog**: configurable via `MODEL_IDLE_TIMEOUT_SECONDS`
-- **Status / unload API**: `GET /api/v1/model/status`, `POST /api/v1/model/unload`
+- **Lazy loading**: VLM, SAM2, and SAM3 load on first use, unload after idle (default 10 min)
+- **Idle watchdog**: all three models auto-unload after `MODEL_IDLE_TIMEOUT_SECONDS` of inactivity
+- **Unified SSE status**: `GET /api/v1/model/events` streams VLM, SAM2, SAM3 status in one connection
+- **Manual unload**: each model has its own unload button and API endpoint
 - **GPU memory**: Strategy Pattern (`gpu_memory.py`) — CUDA `expandable_segments` / MPS `synchronize`+`empty_cache`+`gc`
 
 ## API Reference
@@ -277,11 +296,11 @@ Full benchmarks: **[docs/BENCHMARKS.md](docs/BENCHMARKS.md)**
 
 - **MPS / CUDA full-pipeline GPU acceleration** — VLM, SAM2, and YOLO training all GPU-accelerated
 - **Strategy Pattern GPU memory** — `gpu_memory.py` centralizes CUDA / MPS cleanup; `expandable_segments:True`
-- **SAM2 mask refinement** — pixel-precise polygons from bounding boxes, BBox/Mask independent toggle
+- **SAM2 / SAM3 mask refinement** — SAM2 refines VLM bboxes; SAM3 does text-driven detection+segmentation in one pass
 - **5 export formats** — YOLO, YOLO-Seg, COCO, Pascal VOC, CreateML
 - **Detect & Segment training** — polygon labels auto-used when SAM2 masks are available
 - **Cross-platform** — macOS MPS, Windows / Linux CUDA, unified codebase
-- **Smart model lifecycle** — lazy loading, idle auto-unload, background download with progress
+- **Unified SSE model status** — single EventSource for VLM, SAM2, SAM3 states; no polling
 
 ## Development
 
@@ -305,6 +324,7 @@ Code: [AGPL-3.0](LICENSE).
 
 Third-party dependencies:
 - LocateAnything-3B model — [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE) (non-commercial use only)
+- SAM3 model — [Facebook Research License](https://huggingface.co/facebook/sam3) (gated repository, requires HuggingFace access token)
 - Ultralytics YOLO — [AGPL-3.0](https://github.com/ultralytics/ultralytics/blob/main/LICENSE) (copyleft; training/deployment may trigger obligations)
 
 ---

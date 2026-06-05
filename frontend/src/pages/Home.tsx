@@ -75,7 +75,7 @@ export function Home() {
               previewUrl={previewUrl}
               batchResults={batchResults}
               batchFiles={files}
-              loading={loading}
+              loading={loading && !result}
               elapsedMs={elapsedMs}
               categories={categories}
               canvasMode={canvasMode}

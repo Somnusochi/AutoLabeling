@@ -37,7 +37,8 @@
     "placeholderVideoRunning": "動画推論中です。Conf/IoU を調整して「動画を検証」を再実行してください。",
     "placeholderDefault": "画像/動画をアップロードしてカテゴリを入力し、「検出開始」をクリック",
     "yoloValidation": "YOLO 検証",
-    "useSam2": "SAM2 セグメンテーションを有効化"
+    "useSam2": "SAM2 セグメンテーションを有効化",
+    "useSam3Seg": "SAM3 セグメンテーションを有効化"
   },
   "filter": {
     "filterMode": "フィルターモード",
@@ -270,8 +271,12 @@
     "unloadFailed": "モデルのアンロードに失敗しました",
     "sam2Loaded": "SAM2 モデル読み込み済み",
     "sam2Unloaded": "SAM2 モデル未読み込み",
+    "sam3Loaded": "SAM3 モデル読み込み済み",
+    "sam3Unloaded": "SAM3 モデル未読み込み",
     "sam2UnloadSuccess": "SAM2 モデルをアンロードしました",
     "sam2UnloadFailed": "SAM2 モデルのアンロードに失敗しました",
+    "sam3UnloadSuccess": "SAM3 モデルをアンロードしました",
+    "sam3UnloadFailed": "SAM3 モデルのアンロードに失敗しました",
     "preparing": "準備中...",
     "stageStarting": "開始中...",
     "stageTokenizer": "トークナイザ...",

@@ -61,6 +61,15 @@ export const HistoryListItem = memo(({
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-0.5">
+              {det.modelType && (
+                <span className={`inline-block rounded px-1 py-0.5 mr-1 text-[10px] font-medium ${
+                  det.modelType === "sam3" ? "bg-violet-100 text-violet-700" :
+                  det.modelType === "vlm+sam2" ? "bg-amber-100 text-amber-700" :
+                  "bg-blue-100 text-blue-700"
+                }`}>
+                  {det.modelType === "sam3" ? "SAM3" : det.modelType === "vlm+sam2" ? "VLM+SAM2" : "VLM"}
+                </span>
+              )}
               {t("trainingPanel.targetsCount", { count: det.boxes.length })}
             </p>
             <div className="flex gap-2 mt-1.5">

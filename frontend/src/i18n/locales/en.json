@@ -37,7 +37,8 @@
     "placeholderVideoRunning": "Video inference in progress. Adjust Conf/IoU and click \"Validate Video\" to run again.",
     "placeholderDefault": "Upload image/video and enter target categories, then click \"Start Detection\"",
     "yoloValidation": "YOLO Validation",
-    "useSam2": "Enable SAM2 Segmentation"
+    "useSam2": "Enable SAM2 Segmentation",
+    "useSam3Seg": "Enable SAM3 Segmentation"
   },
   "filter": {
     "filterMode": "Filter Mode",
@@ -270,8 +271,12 @@
     "unloadFailed": "Failed to unload model",
     "sam2Loaded": "SAM2 Model Loaded",
     "sam2Unloaded": "SAM2 Model Unloaded",
+    "sam3Loaded": "SAM3 Model Loaded",
+    "sam3Unloaded": "SAM3 Model Unloaded",
     "sam2UnloadSuccess": "SAM2 model unloaded",
     "sam2UnloadFailed": "Failed to unload SAM2",
+    "sam3UnloadSuccess": "SAM3 model unloaded",
+    "sam3UnloadFailed": "Failed to unload SAM3",
     "preparing": "Preparing...",
     "stageStarting": "Starting...",
     "stageTokenizer": "Tokenizer...",
