@@ -2,11 +2,7 @@
 
 [English](README.md) | 简体中文
 
-**端到端目标检测自动标注与 YOLO 训练平台。** 基于 NVIDIA LocateAnything-3B 视觉大模型，支持 VLM 自动标注、SAM2.1 mask 精修、人工修正、多格式数据集导出、一键 YOLO 训练（检测 + 分割）、视频关键帧提取与模型验证。
-
-> 图片扔进去，模型训出来 — VLM 自动标注 → SAM2 mask 精修 → 人工修正 → 多格式导出 → YOLO 训练 → 模型验证。
-
-**完整工作流**：VLM 预标注 → SAM2 分割 → 手动修正 → 多格式导出 → YOLO 训练（检测/分割） → 模型验证
+**图片/视频扔进去 → YOLO 模型训出来**，基于 LocateAnything-3B 的 VLM 自动标注 + SAM2.1 mask 精修 + 人工闭环修正。多格式导出、一键 YOLO 训练（检测 & 分割）、视频关键帧提取、模型验证——macOS MPS / Windows & Linux CUDA 全链路 GPU 加速。
 
 **核心功能**：
 - 🤖 **VLM 自动标注**：基于 LocateAnything-3B 的开放词汇目标检测

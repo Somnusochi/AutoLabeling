@@ -2,11 +2,7 @@
 
 [简体中文](README_ZH.md) | English
 
-**End-to-end object detection auto-labeling and YOLO training platform.** VLM-powered annotation (NVIDIA LocateAnything-3B), SAM2.1 mask refinement, manual annotation, multi-format dataset export, one-click YOLO training (detect & segment), video keyframe extraction, and model validation.
-
-> Images in, model out — VLM auto-labeling → SAM2 mask refinement → manual refinement → multi-format export → YOLO training → validation.
-
-**Full pipeline**: VLM Pre-annotation → SAM2 Segmentation → Manual Refinement → Multi-format Export → YOLO Training (Detect / Segment) → Model Validation
+**Images or videos in → YOLO model out**, with VLM auto-labeling (LocateAnything-3B), SAM2.1 mask refinement, and human-in-the-loop correction. Multi-format export, one-click YOLO training (detect & segment), video keyframe extraction, and model validation — all GPU-accelerated on macOS MPS and Windows/Linux CUDA.
 
 **Key features**:
 - 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
