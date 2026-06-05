@@ -344,8 +344,15 @@ def parse_boxes(raw_text: str, img_w: int, img_h: int) -> list[dict]:
     return boxes
 
 
-MAX_LONG_SIDE = get_memory_manager().resolve_max_long_side()
-logger.info("Image long-side cap set to %dpx (auto-detected from GPU)", MAX_LONG_SIDE)
+_max_long_side: int | None = None
+
+
+def _get_max_long_side() -> int:
+    global _max_long_side
+    if _max_long_side is None:
+        _max_long_side = get_memory_manager().resolve_max_long_side()
+        logger.info("Image long-side cap set to %dpx (auto-detected from GPU)", _max_long_side)
+    return _max_long_side
 
 
 def detect(image_path: str | Path, categories: list[str]) -> dict:
@@ -365,8 +372,9 @@ def detect(image_path: str | Path, categories: list[str]) -> dict:
 
         # Downscale large images to avoid GPU OOM (ViT attention is quadratic)
         longest = max(w, h)
-        if longest > MAX_LONG_SIDE:
-            scale = MAX_LONG_SIDE / longest
+        cap = _get_max_long_side()
+        if longest > cap:
+            scale = cap / longest
             new_w, new_h = int(w * scale), int(h * scale)
             logger.info("Resizing image %dx%d -> %dx%d", w, h, new_w, new_h)
             img = img.resize((new_w, new_h), Image.LANCZOS)
