@@ -4,11 +4,25 @@ All fields use camelCase. Errors carry correct HTTP status codes.
 
 Base URL: `http://localhost:8000/api/v1`
 
+### POST `/detect` — Form Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `file` | File | *required* | Image file |
+| `categories` | JSON array | *required* | `["cat", "dog"]` |
+| `use_sam2` | bool | `false` | Enable VLM + SAM2 pipeline |
+| `use_sam3` | bool | `false` | Enable SAM3 text-driven pipeline |
+| `sam2_score_threshold` | float | `0.0` | SAM2 mask quality threshold (0–1) |
+| `use_sam3_seg` | bool | `true` | Enable SAM3 mask extraction |
+| `sam3_threshold` | float | `0.5` | SAM3 confidence threshold (0–1) |
+| `sam3_mask_threshold` | float | `0.5` | SAM3 mask binarization threshold (0–1) |
+| `sam3_text` | string | `""` | Override SAM3 text prompt (defaults to categories joined) |
+
 ## Detection & Annotation
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/detect` | VLM pre-annotation (multipart, supports `use_sam2` flag) |
+| POST | `/detect` | Detection (multipart). Strategy: VLM (default), VLM+SAM2 (`use_sam2=true`), or SAM3 (`use_sam3=true`) |
 | GET | `/detections` | List detections (paginated) |
 | GET | `/detections/{id}` | Detection detail |
 | GET | `/detections/{id}/image` | Original image |
@@ -25,9 +39,13 @@ Base URL: `http://localhost:8000/api/v1`
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/model/events` | SSE stream: combined VLM, SAM2, SAM3 status in one connection |
 | GET | `/model/status` | VLM model status (`loaded`, `state`, `progress`) |
 | POST | `/model/unload` | Unload VLM model from memory |
-| GET | `/model/sam2-status` | SAM2 model status |
+| GET | `/model/sam2/status` | SAM2 model status (`loaded`, `state`, `progress`) |
+| POST | `/model/sam2/unload` | Unload SAM2 model from memory |
+| GET | `/model/sam3/status` | SAM3 model status (`loaded`, `status`: `starting`/`loading`/`loaded`) |
+| POST | `/model/sam3/unload` | Stop SAM3 server process |
 
 ## Video
 
@@ -80,7 +98,9 @@ Base URL: `http://localhost:8000/api/v1`
 { "error": { "code": "NotFoundError", "message": "Detection not found: xxx" } }
 ```
 
-### Detection Object
+### Detection Object (Detail / List)
+
+The list endpoint returns lightweight boxes without `maskPolygon`. The detail endpoint includes full mask data.
 
 ```json
 {
@@ -88,6 +108,7 @@ Base URL: `http://localhost:8000/api/v1`
   "imageName": "cat.jpg",
   "categories": ["cat"],
   "modelName": "LocateAnything-3B",
+  "modelType": "sam3",
   "imageWidth": 1024,
   "imageHeight": 768,
   "elapsedMs": 4500,
@@ -105,6 +126,9 @@ Base URL: `http://localhost:8000/api/v1`
     }
   ]
 }
+```
+
+`modelType` values: `"vlm"` (VLM only), `"vlm+sam2"` (VLM with SAM2), `"sam3"` (SAM3 text-driven).
 ```
 
 ### Training Job Object

@@ -214,37 +214,15 @@ export function TrainingPanel({ detections }: Props) {
       />
 
       {/* Global single-instance hover preview popup */}
-      {hoveredDetId && hoveredRect && (() => {
-        const det = filteredDetections.find((d) => d.id === hoveredDetId);
-        if (!det) return null;
-        return (
-          <div
-            className="fixed z-50"
-            style={{
-              left: `${hoveredRect.right + 8}px`,
-              top: `${Math.max(60, hoveredRect.top - 40)}px`,
-            }}
-            onMouseEnter={() => {
-              if (leaveTimerRef.current) {
-                clearTimeout(leaveTimerRef.current);
-                leaveTimerRef.current = null;
-              }
-              if (enterTimerRef.current) {
-                clearTimeout(enterTimerRef.current);
-                enterTimerRef.current = null;
-              }
-            }}
-            onMouseLeave={() => {
-              leaveTimerRef.current = window.setTimeout(() => {
-                setHoveredDetId(null);
-                setHoveredRect(null);
-              }, 150);
-            }}
-          >
-            <TrainingPreview detection={det} />
-          </div>
-        );
-      })()}
+      {hoveredDetId && hoveredRect && (
+        <HoverPreview
+          detId={hoveredDetId}
+          hoveredRect={hoveredRect}
+          setHoveredDetId={setHoveredDetId}
+          setHoveredRect={setHoveredRect}
+          leaveTimerRef={leaveTimerRef}
+        />
+      )}
 
       {/* Training params */}
       <div className="grid grid-cols-2 gap-3 training-params">

@@ -26,19 +26,16 @@ class DetectionBoxOut(BaseSchema):
         return _coerce_uuid(v)
 
 
-class DetectionOut(BaseSchema):
+class DetectionBoxItem(BaseSchema):
+    """Lightweight box without mask_polygon for list views."""
+
     id: str
-    image_name: str
-    categories: list[str] = []
-    model_name: str
-    image_width: int
-    image_height: int
-    elapsed_ms: int | None = None
-    filter_mode: str | None = None
-    filter_nms_iou: float | None = None
-    status: str
-    created_at: datetime
-    boxes: list[DetectionBoxOut] = []
+    class_name: str
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+    confidence: float | None = None
 
     model_config = {"from_attributes": True}
 
@@ -46,6 +43,37 @@ class DetectionOut(BaseSchema):
     @classmethod
     def coerce_id(cls, v: Any) -> str:
         return _coerce_uuid(v)
+
+
+class DetectionListItem(BaseSchema):
+    """Lightweight detection for list endpoint — boxes without mask polygons."""
+
+    id: str
+    image_name: str
+    categories: list[str] = []
+    model_name: str
+    model_type: str | None = None
+    image_width: int
+    image_height: int
+    elapsed_ms: int | None = None
+    filter_mode: str | None = None
+    filter_nms_iou: float | None = None
+    status: str
+    created_at: datetime
+    boxes: list[DetectionBoxItem] = []
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def coerce_id(cls, v: Any) -> str:
+        return _coerce_uuid(v)
+
+
+class DetectionOut(DetectionListItem):
+    """Full detection with mask polygons — for detail endpoint."""
+
+    boxes: list[DetectionBoxOut] = []
 
 
 class ExportBatchIn(BaseSchema):

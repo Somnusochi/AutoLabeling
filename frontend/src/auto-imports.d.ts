@@ -30,14 +30,17 @@ declare global {
   const HistoryListItem: typeof import('./components/HistoryListItem').HistoryListItem
   const HistorySkeleton: typeof import('./components/LoadingSkeleton').HistorySkeleton
   const Home: typeof import('./pages/Home').Home
+  const HoverPreview: typeof import('./components/training/HoverPreview').HoverPreview
   const ImageUploader: typeof import('./components/ImageUploader').ImageUploader
   const KeyframeGrid: typeof import('./components/KeyframeGrid').KeyframeGrid
   const Layout: typeof import('./components/Layout').Layout
   const MAX_UPLOAD_SIZE_MB: typeof import('./lib/constants').MAX_UPLOAD_SIZE_MB
   const ModelSelector: typeof import('./components/ModelSelector').ModelSelector
+  const ModelStatus: typeof import('./components/ModelStatus').ModelStatus
   const QueryClient: typeof import('@tanstack/react-query').QueryClient
   const QueryClientProvider: typeof import('@tanstack/react-query').QueryClientProvider
   const ResultTable: typeof import('./components/ResultTable').ResultTable
+  const Sam3Status: typeof import('./components/Sam3Status').Sam3Status
   const Sidebar: typeof import('./components/Sidebar').Sidebar
   const StatusBadge: typeof import('./components/training/StatusBadge').StatusBadge
   const Suspense: typeof import('react').Suspense
@@ -56,6 +59,7 @@ declare global {
   const cache: typeof import('react').cache
   const cacheSignal: typeof import('react').cacheSignal
   const chartUrl: typeof import('./services/api').chartUrl
+  const checkSam3Health: typeof import('./services/api').checkSam3Health
   const createContext: typeof import('react').createContext
   const createRef: typeof import('react').createRef
   const deleteBox: typeof import('./services/api').deleteBox
@@ -95,6 +99,7 @@ declare global {
   const tokenCache: typeof import('./lib/constants').tokenCache
   const unloadModel: typeof import('./services/api').unloadModel
   const unloadSam2: typeof import('./services/api').unloadSam2
+  const unloadSam3: typeof import('./services/api').unloadSam3
   const uploadCache: typeof import('./lib/constants').uploadCache
   const uploadVideo: typeof import('./services/api').uploadVideo
   const use: typeof import('react').use
@@ -158,6 +163,7 @@ declare global {
   const useMap: typeof import('ahooks').useMap
   const useMemo: typeof import('react').useMemo
   const useMemoizedFn: typeof import('ahooks').useMemoizedFn
+  const useModelEvents: typeof import('./hooks/useModelEvents').useModelEvents
   const useMount: typeof import('ahooks').useMount
   const useMouse: typeof import('ahooks').useMouse
   const useMutation: typeof import('@tanstack/react-query').useMutation
@@ -223,7 +229,7 @@ declare global {
   export type { FilterMode } from './lib/filterBoxes'
   import('./lib/filterBoxes')
   // @ts-ignore
-  export type { YoloSeries, ModelStatus } from './services/api'
+  export type { YoloSeries } from './services/api'
   import('./services/api')
   // @ts-ignore
   export type { BBox, Detection, DetectResponse, TrainingJob, KeyFrame, VideoInfo, VideoList, ListResponse } from './types/index'

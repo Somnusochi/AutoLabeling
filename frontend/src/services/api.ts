@@ -5,11 +5,22 @@ export async function detectImage(
   categories: string[],
   useSam2?: boolean,
   sam2ScoreThreshold?: number,
+  useSam3?: boolean,
+  sam3Text?: string,
+  useSam3Seg?: boolean,
+  sam3Threshold?: number,
+  sam3MaskThreshold?: number,
 ): Promise<DetectResponse> {
   const form = new FormData();
   form.append("file", file);
   form.append("categories", JSON.stringify(categories));
-  if (useSam2) {
+  if (useSam3) {
+    form.append("use_sam3", "true");
+    if (sam3Text) form.append("sam3_text", sam3Text);
+    if (useSam3Seg === false) form.append("use_sam3_seg", "false");
+    if (sam3Threshold != null) form.append("sam3_threshold", String(sam3Threshold));
+    if (sam3MaskThreshold != null) form.append("sam3_mask_threshold", String(sam3MaskThreshold));
+  } else if (useSam2) {
     form.append("use_sam2", "true");
     if (sam2ScoreThreshold != null) form.append("sam2_score_threshold", String(sam2ScoreThreshold));
   }
@@ -198,4 +209,26 @@ export async function getSam2Status(): Promise<ModelStatus> {
 
 export async function unloadSam2(): Promise<void> {
   await request.post("/model/sam2/unload");
+}
+
+export interface Sam3Status {
+  loaded: boolean;
+  status: string; // "starting" | "loading" | "loaded" | "unloaded"
+}
+
+export async function checkSam3Health(): Promise<Sam3Status> {
+  try {
+    const resp = await request.get("/model/sam3/status");
+    const inner = resp.data?.data;
+    return {
+      loaded: inner?.loaded === true,
+      status: inner?.status || "unloaded",
+    };
+  } catch {
+    return { loaded: false, status: "unloaded" };
+  }
+}
+
+export async function unloadSam3(): Promise<void> {
+  await request.post("/model/sam3/unload");
 }

@@ -13,20 +13,20 @@
 </p>
 
 ```
-🖼️ 图片/视频 → 🔍 VLM 检测 → 🎯 SAM2 分割 → ✏️ 修正 → 📦 导出 → 🚀 YOLO → ✅ 模型
+🖼️ 图片/视频 → 🔍 VLM / SAM3 检测 → 🎯 SAM2/SAM3 分割 → ✏️ 修正 → 📦 导出 → 🚀 YOLO → ✅ 模型
 ```
 
-**图片/视频扔进去 → YOLO 模型训出来**，基于 LocateAnything-3B 的 VLM 自动标注 + SAM2.1 mask 精修 + 人工闭环修正。多格式导出、一键 YOLO 训练（检测 & 分割）、视频关键帧提取、模型验证——macOS MPS / Windows & Linux CUDA 全链路 GPU 加速。
+**图片/视频扔进去 → YOLO 模型训出来**，基于 LocateAnything-3B 的 VLM 自动标注 + SAM2.1 / SAM3 mask 精修 + 人工闭环修正。多格式导出、一键 YOLO 训练（检测 & 分割）、视频关键帧提取、模型验证——macOS MPS / Windows & Linux CUDA 全链路 GPU 加速。
 
 ## 核心功能
 - 🤖 **VLM 自动标注**：基于 LocateAnything-3B 的开放词汇目标检测
-- 🎯 **SAM2 分割**：bbox → 像素级 mask（SAM 2.1），BBox/Mask 画布独立开关
+- 🎯 **SAM2 / SAM3 分割**：SAM2 精修 VLM 检测框；SAM3 文本驱动的端到端检测+分割，BBox/Mask 画布独立开关
 - 🎥 **视频标注**：智能关键帧提取（场景/运动/间隔），SSIM 去重
 - ✏️ **人工修正**：Canvas 画框模式，NMS 过滤，单框隐藏
 - 📦 **多格式导出**：YOLO、YOLO-Seg、COCO JSON、Pascal VOC XML、CreateML JSON
 - 🚀 **一键训练**：YOLOv8 / v11 / v26，检测 & 分割，SSE 实时进度
 - ✅ **模型验证**：批量图片/视频测试，MJPEG 实时流，SSE 视频推理
-- 💾 **智能模型管理**：惰性加载，闲置自动卸载，MPS/CUDA 策略模式内存回收
+- 💾 **智能模型管理**：VLM/SAM2/SAM3 惰性加载，闲置自动卸载，统一 SSE 状态推送，MPS/CUDA 策略模式内存回收
 - 🌐 **国际化**：中文 / English / 日本語 · 🎨 **主题**：亮色/暗色模式
 
 ## 文档
@@ -50,7 +50,7 @@
 | 层 | 技术 |
 |---|------|
 | 视觉定位 | NVIDIA LocateAnything-3B（Qwen2.5-3B + MoonViT） |
-| 分割精修 | SAM 2.1 — Segment Anything Model 2 |
+| 分割精修 | SAM 2.1 / SAM3 — Segment Anything Model 2 / 3 |
 | 目标检测 | YOLOv8 / v11 / v26 — 检测 & 分割（Ultralytics） |
 | 后端 | Python FastAPI + PostgreSQL + SSE |
 | 前端 | React + TypeScript + Vite + Tailwind CSS + antd |
@@ -90,6 +90,7 @@ docker compose up -d --build
 |------|------|------|
 | 前端 | 80 | React 界面（Nginx） |
 | 后端 | 8000 | FastAPI 服务器 |
+| SAM3 | 8002 | SAM3 独立推理服务 |
 | 数据库 | 5432 | PostgreSQL |
 
 **GPU 支持** — 编辑 `docker-compose.yml`：
@@ -108,7 +109,7 @@ backend:
 ```
 
 **持久化存储（Docker 卷）：**
-- `pgdata` — 数据库 · `model-cache` — VLM 和 SAM2 模型 · `uploads` — 用户上传 · `training-data` — 训练输出
+- `pgdata` — 数据库 · `model-cache` — VLM、SAM2、SAM3 模型 · `uploads` — 用户上传 · `training-data` — 训练输出
 
 **备份/恢复：**
 
@@ -198,8 +199,25 @@ VLM 检测出 bbox 后，可启用 SAM2 自动生成像素级 mask 轮廓。
 
 - 勾选「启用 SAM2 分割」后自动运行
 - SAM 2.1 模型（base+），惰性加载，闲置自动卸载
+- 评分阈值滑块控制 mask 质量过滤
 - mask 半透明叠加在画布上，bbox 和 mask 独立开关
 - 结果表格显示每个目标的 mask 顶点数，预览浮窗同步渲染
+
+### SAM3 检测 + 分割
+
+切换到 SAM3 模式实现文本驱动的端到端检测与分割——无需 VLM。
+
+- 通过侧边栏模型选择器在 VLM+SAM2 和 SAM3 之间切换
+- 输入开放词汇文本提示（如 `猫`、`红色汽车`），SAM3 自动检测并分割所有匹配实例
+- **置信度阈值**滑块（0.0–1.0，默认 0.5）控制检测灵敏度
+- **Mask 阈值**滑块（0.0–1.0，默认 0.5）控制 mask 紧致度
+- 可独立开关分割：纯检测模式跳过 mask 提取，更快出结果
+- SAM3 作为独立 HTTP 服务运行在 8002 端口，使用独立虚拟环境
+- 首次使用时自动启动，闲置 10 分钟后自动卸载
+- SSE 实时加载状态（`starting` → `loading` → `loaded`）
+- 手动卸载按钮释放 GPU 内存
+- 后端自动互斥：使用 SAM3 时卸载 VLM/SAM2，反之亦然
+- 检测记录标注模型类型（VLM / VLM+SAM2 / SAM3）
 
 ### 视频标注
 
@@ -250,9 +268,10 @@ Canvas 画框模式，查看/标注双模式切换。
 
 ### 模型管理
 
-- **惰性加载**：VLM 和 SAM2 首次使用自动加载，闲置超时自动卸载（默认 10 分钟）
-- **闲置看门狗**：通过 `MODEL_IDLE_TIMEOUT_SECONDS` 可配置
-- **状态/卸载 API**：`GET /api/v1/model/status`、`POST /api/v1/model/unload`
+- **惰性加载**：VLM、SAM2、SAM3 首次使用自动加载，闲置超时自动卸载（默认 10 分钟）
+- **闲置看门狗**：三个模型均有 watchdog，通过 `MODEL_IDLE_TIMEOUT_SECONDS` 配置
+- **统一 SSE 状态**：`GET /api/v1/model/events` 单连接推送三模型状态，前端不再轮询
+- **手动卸载**：每个模型均有独立卸载按钮和 API 端点
 - **GPU 内存**：策略模式（`gpu_memory.py`）— CUDA `expandable_segments` / MPS `synchronize`+`empty_cache`+`gc`
 
 ## API 概览
@@ -276,7 +295,7 @@ Canvas 画框模式，查看/标注双模式切换。
 
 - **MPS / CUDA 全链路 GPU 加速** — VLM 推理、SAM2 分割、YOLO 训练均跑 GPU
 - **策略模式 GPU 内存管理** — `gpu_memory.py` 统一 CUDA / MPS 清理；`expandable_segments:True`
-- **SAM2 mask 精修** — bbox 转像素级 polygon，BBox/Mask 画布独立开关
+- **SAM2 / SAM3 mask 精修** — SAM2 精修 VLM bbox；SAM3 文本驱动端到端检测+分割
 - **5 种导出格式** — YOLO、YOLO-Seg、COCO、Pascal VOC、CreateML
 - **检测 & 分割训练** — SAM2 polygon 标签自动用于分割训练
 - **跨平台** — macOS MPS、Windows / Linux CUDA，统一代码库

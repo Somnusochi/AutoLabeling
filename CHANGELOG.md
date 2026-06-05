@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.5.3 (2026-06-06)
+
+### SAM3 Integration
+- Feat: add SAM3 (facebook/sam3) as third detection strategy — text-driven open-vocabulary detection + segmentation
+- Feat: SAM3 standalone HTTP service on port 8002 with dedicated venv (transformers 5.x, torch 2.12)
+- Feat: model selector toggle in sidebar (VLM+SAM2 / SAM3)
+- Feat: SAM3 confidence threshold slider (0–1, default 0.5) and mask threshold slider (0–1, default 0.5)
+- Feat: SAM3 segmentation on/off checkbox — bbox-only mode skips mask extraction
+- Feat: SAM3 idle watchdog — auto-unload after `MODEL_IDLE_TIMEOUT_SECONDS` (default 10 min)
+- Feat: SAM3 manual unload button with toast feedback
+- Feat: backend auto-unloads competing models on detection (SAM3 ↔ VLM/SAM2)
+- Feat: SAM3 server async startup — HTTP ready immediately, model loads in background, `/health` reports `starting` → `loading` → `loaded`
+
+### Architecture
+- Feat: strategy pattern (`detection_strategy.py`) — `VLMDetection`, `VLMWithSAM2`, `SAM3Detection`
+- Feat: unified SSE endpoint `GET /api/v1/model/events` — VLM/SAM2/SAM3 status in one EventSource, replaces 3 polling intervals
+- Feat: `useModelEvents` hook — single SSE subscriber, all model status components read from it
+- Feat: `Detection.model_type` column — labels each record as `vlm`, `vlm+sam2`, or `sam3`
+- Feat: list endpoint returns lightweight boxes without `maskPolygon`; detail endpoint retains full mask data
+- Feat: `HoverPreview` component — on-demand fetch of detection detail for training hover preview
+- Fix: VLM detection coordinate scaling lost during refactoring — boxes now correctly scaled back to original image space
+- Fix: SAM3 server multipart body construction — fields properly separated with boundary markers
+- Fix: `create_strategy` swallowing kwargs — `use_sam3_seg`, threshold params now passed to `detect()`
+
+### Frontend
+- Feat: model type badges in history list and training candidate list (color-coded: blue=VLM, amber=VLM+SAM2, violet=SAM3)
+- Feat: batch detection loading states — canvas overlay cleared once first result arrives
+- Fix: model status polling now continues when `unloaded` (3s interval), preventing missed loading transitions
+
+### Docs
+- Docs: update README (EN/ZH) — SAM3 architecture, SSE status, strategy pattern, detection parameters
+- Docs: update CLAUDE.md — startup env requirements, SAM3 architecture, SSE, directory conventions
+- Docs: update API.md — `/detect` form parameters, model management SSE endpoint, detection object schema
+
 ## v1.5.2 (2026-06-05)
 
 - Integrate cloud benchmark records (RTX 4080) into local PostgreSQL database

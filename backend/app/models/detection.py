@@ -21,6 +21,7 @@ class Detection(Base):
     image_name: Mapped[str] = mapped_column(String(512), nullable=False)
     categories: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     model_name: Mapped[str] = mapped_column(String(256), default="LocateAnything-3B")
+    model_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     image_width: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     image_height: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     elapsed_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
