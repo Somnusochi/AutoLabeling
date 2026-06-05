@@ -170,8 +170,8 @@ export function DetectionCanvas({
 // ── Helpers ─────────────────────────────────────
 
 function confidenceColor(conf: number | null | undefined, baseColor: string): string {
-  if (conf == null) return "#EF4444";  // red — no confidence
-  if (conf >= 0.8) return baseColor;    // green/blue — high confidence
+  if (conf == null) return baseColor;   // if no confidence, use base color
+  if (conf >= 0.8) return baseColor;    // high confidence
   if (conf >= 0.5) return "#F59E0B";    // amber — medium
   return "#EF4444";                      // red — low
 }
