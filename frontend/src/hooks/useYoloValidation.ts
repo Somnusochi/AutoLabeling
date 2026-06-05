@@ -56,6 +56,7 @@ export function useYoloValidation() {
           imageName: file.name,
           categories: [],
           modelName: token ? t("validationSettings.uploadedModelLabel") : (activeVariant || "YOLO"),
+          modelType: null,
           imageWidth: data.imageWidth,
           imageHeight: data.imageHeight,
           status: "completed",
