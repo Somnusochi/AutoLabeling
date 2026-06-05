@@ -131,7 +131,8 @@ class SAM3Detection(DetectionStrategy):
         threshold = kwargs.get("sam3_threshold", 0.5)
         mask_threshold = kwargs.get("sam3_mask_threshold", 0.5)
         sam3_boxes = segment_sam3(
-            filepath, text,
+            filepath,
+            text,
             segmentation=use_seg,
             threshold=threshold,
             mask_threshold=mask_threshold,
