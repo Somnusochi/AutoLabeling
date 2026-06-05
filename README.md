@@ -17,7 +17,7 @@
 - 🚀 **One-click training**: YOLOv8 / v11 / v26, detect & segment, real-time SSE progress
 - ✅ **Model validation**: Batch image / video testing, MJPEG live stream, SSE video inference
 - 💾 **Smart model management**: Lazy loading, idle auto-unload, MPS/CUDA strategy pattern cleanup
-- 🌐 **i18n**: English / 简体中文 · 🎨 **Theme**: Light / dark mode
+- 🌐 **i18n**: English / 简体中文 / 日本語 · 🎨 **Theme**: Light / dark mode
 
 ## Documentation
 
@@ -46,7 +46,7 @@ Comprehensive guides: quick start, annotation best practices, training parameter
 | Frontend | React + TypeScript + Vite + Tailwind CSS + antd |
 | GPU Memory | Strategy Pattern (`gpu_memory.py`) — CUDA expandable segments / MPS synchronize + empty_cache |
 | State | TanStack Query + ahooks |
-| i18n | i18next (English / 简体中文) |
+| i18n | i18next (English / 简体中文 / 日本語) |
 | Video | ffmpeg (scene / motion / interval extraction) |
 | Tooling | pnpm, ESLint, Prettier |
 

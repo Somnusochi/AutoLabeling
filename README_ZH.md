@@ -17,7 +17,7 @@
 - 🚀 **一键训练**：YOLOv8 / v11 / v26，检测 & 分割，SSE 实时进度
 - ✅ **模型验证**：批量图片/视频测试，MJPEG 实时流，SSE 视频推理
 - 💾 **智能模型管理**：惰性加载，闲置自动卸载，MPS/CUDA 策略模式内存回收
-- 🌐 **国际化**：中英文双语 · 🎨 **主题**：亮色/暗色模式
+- 🌐 **国际化**：中文 / English / 日本語 · 🎨 **主题**：亮色/暗色模式
 
 ## 文档
 
@@ -46,7 +46,7 @@
 | 前端 | React + TypeScript + Vite + Tailwind CSS + antd |
 | GPU 内存 | 策略模式（`gpu_memory.py`）— CUDA expandable segments / MPS synchronize + empty_cache |
 | 状态管理 | TanStack Query + ahooks |
-| 国际化 | i18next（中文 / 英文） |
+| 国际化 | i18next（中文 / 英文 / 日本語） |
 | 视频处理 | ffmpeg（场景检测 / 运动检测 / 间隔提取） |
 | 工程化 | pnpm、ESLint、Prettier |
 
