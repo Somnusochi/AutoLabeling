@@ -28,15 +28,17 @@
 
 ## Linux + RTX 4080 16GB (CUDA)
 
-7 cat images, 6 rounds each, auto long side 1024px.
+13 cat images, 4 rounds each, auto long side 1024px (Large) / 256px (Thumb).
 
-| Mode | Image Size | Cold Start (R1) | Round Details | Stable Avg (R2-R6) | VRAM / RAM Usage |
+| Mode | Image Size | Cold Start (R1 1st) | Round Details (R2/R3/R4) | Stable Avg (Warm) | VRAM / RAM Usage |
 |------|------------|-----------------|---------------|--------------------|------------------|
-| VLM only | Default (1024px) | 40.6s* | - | **2.59s/img** | ~7.7GB (Peak) |
-| VLM + SAM2 | Default (1024px) | 39.3s* | - | **~3.5s/img** | ~8.2GB** (Actual peak) |
+| VLM only | Large (1024px) | 2.14s | 2.76s / 2.75s / 2.75s | **2.75s/img** | ~7.7GB (Peak) |
+| VLM only | Thumb (256px) | 12.37s* | 0.64s / 0.59s / 0.58s | **0.60s/img** | ~7.7GB (Peak) |
+| VLM + SAM2 | Large (1024px) | 2.62s | 3.69s / 3.74s / 3.69s | **3.71s/img** | ~8.2GB (Peak) |
+| VLM + SAM2 | Thumb (256px) | 2.49s | 0.96s / 0.92s / 0.94s | **0.94s/img** | ~8.2GB (Peak) |
 
-> *Cold start includes initial model download and loading time to VRAM.
-> **PyTorch caching allocator may reserve up to 13.3GB during high-concurrency inference, but actual peak demand is ~8.2GB.
+> *Full cold start (12.37s) includes loading weights into VRAM and PyTorch CUDA graph compilation. Other "1st" values represent switching modes while the model is pre-warmed.
+> **Note**: During high-frequency inference, VLM+SAM2 stable times are extremely consistent, flatlining at 3.71s.
 
 ## Configuration
 
