@@ -295,3 +295,7 @@ python -m compileall app alembic
 ---
 
 如果这个项目对你有帮助，欢迎点个 ⭐ [Star on GitHub](https://github.com/Somnusochi/VLM-AutoYOLO)
+
+---
+
+**我正在寻找新的工作机会**，欢迎联系：somnusochi@gmail.com

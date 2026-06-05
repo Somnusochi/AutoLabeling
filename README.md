@@ -296,3 +296,7 @@ Third-party dependencies:
 ---
 
 If this project helps you, please consider giving it a ⭐ [Star on GitHub](https://github.com/Somnusochi/VLM-AutoYOLO)
+
+---
+
+**I'm open to new opportunities** — feel free to reach out: somnusochi@gmail.com
