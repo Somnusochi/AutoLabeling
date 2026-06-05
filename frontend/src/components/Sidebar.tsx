@@ -56,6 +56,10 @@ export interface SidebarProps {
   setUseSam2: (v: boolean) => void;
 }
 
+const LANG_KEYS = ["zh", "en", "ja"] as const;
+const LANG_LABELS: Record<string, string> = { zh: "中", en: "EN", ja: "日" };
+const LANG_TITLES: Record<string, string> = { zh: "中文", en: "English", ja: "日本語" };
+
 export function Sidebar({
   appMode,
   setAppMode,
@@ -111,7 +115,7 @@ export function Sidebar({
       {/* Header: Title + Controls */}
       <div className="flex justify-between items-center mb-1">
         <span className="text-xs font-bold text-gray-400 tracking-wider">VLM-AutoYOLO</span>
-        <div className="flex gap-1 items-center">
+        <div className="flex gap-1.5 items-center">
           {/* Theme Mode Selector - Three buttons side by side */}
           <div className="flex rounded border border-gray-200 bg-gray-50 overflow-hidden h-7">
             <button
@@ -155,16 +159,26 @@ export function Sidebar({
             </button>
           </div>
 
-          {/* Language Toggle */}
-          <button
-            onClick={() => i18n.changeLanguage(i18n.language.startsWith("zh") ? "en" : "zh")}
-            className="flex items-center gap-1 h-7 text-[11px] font-semibold text-gray-500 hover:text-primary-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded px-2 transition-colors cursor-pointer"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-            </svg>
-            {i18n.language.startsWith("zh") ? "English" : "中文"}
-          </button>
+          {/* Language Selector */}
+          <div className="flex rounded border border-gray-200 bg-gray-50 overflow-hidden h-7">
+            {LANG_KEYS.map((lang) => {
+              const active = i18n.language.startsWith(lang);
+              return (
+                <button
+                  key={lang}
+                  onClick={() => i18n.changeLanguage(lang)}
+                  className={`text-[10px] font-semibold px-1.5 transition-colors cursor-pointer ${
+                    active
+                      ? "bg-primary-500 text-white"
+                      : "text-gray-500 hover:text-primary-600 hover:bg-gray-100"
+                  }`}
+                  title={LANG_TITLES[lang]}
+                >
+                  {LANG_LABELS[lang]}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -468,7 +482,6 @@ function ModelStatus() {
               />
             )}
             <span className={`${isError ? "text-red-600" : "text-gray-500"}`}>
-              {"VLM "}
               {isDownloading
                 ? t("modelStatus.downloading")
                 : isLoading
@@ -530,7 +543,6 @@ function ModelStatus() {
               />
             )}
             <span className={`${sam2State === "error" ? "text-red-600" : "text-gray-500"}`}>
-              {"SAM2 "}
               {sam2Downloading
                 ? t("modelStatus.downloading")
                 : sam2Loading
