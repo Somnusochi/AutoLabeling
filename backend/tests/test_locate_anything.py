@@ -13,6 +13,7 @@ def test_parse_boxes_single():
         "y1": 200,
         "x2": 300,
         "y2": 400,
+        "confidence": None,
     }
 
 
@@ -26,6 +27,7 @@ def test_parse_boxes_multiple_boxes_same_ref():
         "y1": 200,
         "x2": 300,
         "y2": 400,
+        "confidence": None,
     }
     assert boxes[1] == {
         "class_name": "dog",
@@ -33,6 +35,7 @@ def test_parse_boxes_multiple_boxes_same_ref():
         "y1": 600,
         "x2": 700,
         "y2": 800,
+        "confidence": None,
     }
 
 
