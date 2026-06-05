@@ -2,9 +2,21 @@
 
 [English](README.md) | 简体中文
 
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
+  <img src="https://img.shields.io/badge/Python-3.12+-blue" alt="Python">
+  <img src="https://img.shields.io/badge/Node.js-22+-green" alt="Node.js">
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/GPU-MPS%20%7C%20CUDA-orange" alt="GPU">
+</p>
+
+```
+🖼️ 图片/视频 → 🔍 VLM 检测 → 🎯 SAM2 分割 → ✏️ 修正 → 📦 导出 → 🚀 YOLO → ✅ 模型
+```
+
 **图片/视频扔进去 → YOLO 模型训出来**，基于 LocateAnything-3B 的 VLM 自动标注 + SAM2.1 mask 精修 + 人工闭环修正。多格式导出、一键 YOLO 训练（检测 & 分割）、视频关键帧提取、模型验证——macOS MPS / Windows & Linux CUDA 全链路 GPU 加速。
 
-**核心功能**：
+## 核心功能
 - 🤖 **VLM 自动标注**：基于 LocateAnything-3B 的开放词汇目标检测
 - 🎯 **SAM2 分割**：bbox → 像素级 mask（SAM 2.1），BBox/Mask 画布独立开关
 - 🎥 **视频标注**：智能关键帧提取（场景/运动/间隔），SSIM 去重

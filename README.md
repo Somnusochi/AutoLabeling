@@ -2,9 +2,21 @@
 
 [简体中文](README_ZH.md) | English
 
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
+  <img src="https://img.shields.io/badge/Python-3.12+-blue" alt="Python">
+  <img src="https://img.shields.io/badge/Node.js-22+-green" alt="Node.js">
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/GPU-MPS%20%7C%20CUDA-orange" alt="GPU">
+</p>
+
+```
+🖼️ image/video → 🔍 VLM detection → 🎯 SAM2 mask → ✏️ refine → 📦 export → 🚀 YOLO → ✅ model
+```
+
 **Images or videos in → YOLO model out**, with VLM auto-labeling (LocateAnything-3B), SAM2.1 mask refinement, and human-in-the-loop correction. Multi-format export, one-click YOLO training (detect & segment), video keyframe extraction, and model validation — all GPU-accelerated on macOS MPS and Windows/Linux CUDA.
 
-**Key features**:
+## Key Features
 - 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
 - 🎯 **SAM2 segmentation**: Bbox → pixel-precise mask with SAM 2.1, BBox/Mask toggle on canvas
 - 🎥 **Video annotation**: Intelligent keyframe extraction (scene / motion / interval), SSIM dedup
