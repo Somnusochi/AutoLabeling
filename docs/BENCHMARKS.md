@@ -13,7 +13,7 @@
 
 > *Excludes first image of Round 1 (model loading ~22s).
 
-**VRAM**: VLM ~5.5GB loaded; peak ~7.5GB during inference. 10GB GPUs are comfortable.
+**VRAM**: VLM ~5.5GB loaded; peak ~7.5GB+. 10GB may hit the limit and throttle; 12GB+ recommended.
 
 ## macOS Apple Silicon 24GB (MPS)
 

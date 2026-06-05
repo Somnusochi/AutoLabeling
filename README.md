@@ -127,7 +127,7 @@ cat backup.sql | docker compose exec -T db psql -U postgres autolabeling
 | PostgreSQL | 16+ | 16+ |
 | ffmpeg | Any | — |
 | macOS | Apple Silicon 16GB | 24GB+ |
-| NVIDIA GPU | 10GB VRAM | 12GB+ |
+| NVIDIA GPU | 12GB VRAM | 16GB+ |
 
 **Setup:**
 
