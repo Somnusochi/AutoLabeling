@@ -4,11 +4,15 @@ export async function detectImage(
   file: File,
   categories: string[],
   useSam2?: boolean,
+  sam2ScoreThreshold?: number,
 ): Promise<DetectResponse> {
   const form = new FormData();
   form.append("file", file);
   form.append("categories", JSON.stringify(categories));
-  if (useSam2) form.append("use_sam2", "true");
+  if (useSam2) {
+    form.append("use_sam2", "true");
+    if (sam2ScoreThreshold != null) form.append("sam2_score_threshold", String(sam2ScoreThreshold));
+  }
   const { data } = await request.post<{ data: DetectResponse }>("/detect", form);
   return data.data;
 }

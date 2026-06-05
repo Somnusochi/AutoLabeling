@@ -8,6 +8,7 @@ export function useBatchDetection() {
       files: File[],
       categories: string[],
       useSam2: boolean,
+      sam2ScoreThreshold: number,
       onEach: (result: Detection, file: File, index: number, elapsed: number) => void,
     ) => {
       const results: Detection[] = [];
@@ -19,7 +20,7 @@ export function useBatchDetection() {
       try {
         for (let i = 0; i < files.length; i++) {
           if (!batchRef.current) break;
-          const data = await detectImage(files[i], categories, useSam2);
+          const data = await detectImage(files[i], categories, useSam2, sam2ScoreThreshold);
           results.push(data);
           setBatchResults([...results]);
           if (i === files.length - 1) {

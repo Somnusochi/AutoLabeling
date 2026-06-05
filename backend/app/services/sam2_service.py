@@ -79,11 +79,13 @@ class SegmentAnythingWorker:
                 cb(state, stage, progress)
 
     @torch.no_grad()
-    def segment(self, image: Image.Image, boxes: list[dict]) -> list[list[list[float]]]:
+    def segment(
+        self, image: Image.Image, boxes: list[dict], score_threshold: float = 0.0
+    ) -> list[list[list[float]]]:
         """Generate polygon masks for each bounding box.
 
-        Returns:
-            List of polygons, one per box. [[x,y], [x,y], ...] or [].
+        Args:
+            score_threshold: Skip masks with SAM2 confidence below this (0.0–1.0).
         """
         np_image = np.array(image.convert("RGB"))
         self.predictor.set_image(np_image)
@@ -98,6 +100,9 @@ class SegmentAnythingWorker:
                 multimask_output=False,
             )
             if masks is None or masks.shape[0] == 0:
+                polygons.append([])
+                continue
+            if scores[0] < score_threshold:
                 polygons.append([])
                 continue
             mask = masks[0].astype(np.uint8)
@@ -258,11 +263,13 @@ def _get_sam_worker() -> SegmentAnythingWorker:
     return _sam_worker
 
 
-def segment_image(image: Image.Image, boxes: list[dict]) -> list[list[list[float]]]:
+def segment_image(
+    image: Image.Image, boxes: list[dict], score_threshold: float = 0.0
+) -> list[list[list[float]]]:
     worker = _get_sam_worker()
     _bump_activity()
     get_memory_manager().empty_cache()
-    return worker.segment(image, boxes)
+    return worker.segment(image, boxes, score_threshold=score_threshold)
 
 
 def get_sam2_status() -> dict:

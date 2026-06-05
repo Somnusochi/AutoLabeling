@@ -37,6 +37,7 @@ async def create_detection(
     file: UploadFile = File(...),
     categories: str = Form(...),
     use_sam2: bool = Form(False),
+    sam2_score_threshold: float = Form(0.0, ge=0.0, le=1.0),
     repo: DetectionRepository = Depends(get_repo),
     request_id: str = Depends(get_request_id),
 ) -> APIResponse:
@@ -92,7 +93,7 @@ async def create_detection(
 
             img = Image.open(filepath).convert("RGB")
             try:
-                polygons = segment_image(img, boxes_orig)
+                polygons = segment_image(img, boxes_orig, score_threshold=sam2_score_threshold)
             finally:
                 img.close()
         except Exception:

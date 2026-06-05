@@ -54,6 +54,8 @@ export interface SidebarProps {
   handleSelectKeyframe: (files: File[]) => void;
   useSam2: boolean;
   setUseSam2: (v: boolean) => void;
+  sam2ScoreThreshold: number;
+  setSam2ScoreThreshold: (v: number) => void;
 }
 
 const LANG_KEYS = ["zh", "en", "ja"] as const;
@@ -103,6 +105,8 @@ export function Sidebar({
   handleSelectKeyframe,
   useSam2,
   setUseSam2,
+  sam2ScoreThreshold,
+  setSam2ScoreThreshold,
 }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
@@ -294,6 +298,20 @@ export function Sidebar({
               />
               {t("home.useSam2")}
             </label>
+          )}
+          {appMode === "annotate" && useSam2 && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span className="flex-shrink-0">{`Score ≥ ${sam2ScoreThreshold.toFixed(1)}`}</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={sam2ScoreThreshold}
+                onChange={(e) => setSam2ScoreThreshold(parseFloat(e.target.value))}
+                className="flex-1 h-1 accent-primary-600 cursor-pointer"
+              />
+            </div>
           )}
 
           <button

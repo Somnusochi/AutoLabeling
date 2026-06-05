@@ -3,6 +3,7 @@ export function useHomeState() {
   // ── Mode ────────────────────────────────────────
   const [appMode, setAppMode] = useState<"annotate" | "validate">("annotate");
   const [useSam2, setUseSam2] = useState(false);
+  const [sam2ScoreThreshold, setSam2ScoreThreshold] = useState(0.0);
   const [validateModelSource, setValidateModelSource] = useState<"trained" | "upload">("trained");
   const [selectedTrainedJobId, setSelectedTrainedJobId] = useState<string | null>(null);
 
@@ -183,7 +184,7 @@ export function useHomeState() {
       }
 
       if (categories.length === 0) return;
-      await runBatch(files, categories, useSam2, (data, file, i) => {
+      await runBatch(files, categories, useSam2, sam2ScoreThreshold, (data, file, i) => {
         batchFileMap.current.set(data.id, file);
         if (i === 0) {
           setResult(data);
@@ -194,7 +195,7 @@ export function useHomeState() {
     } finally {
       stopTimer();
     }
-  }, [files, categories, useSam2, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress, setPreview, t]);
+  }, [files, categories, useSam2, sam2ScoreThreshold, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress, setPreview, t]);
 
   const handleSelectHistory = useCallback((det: Detection) => {
     setFiles([]);
@@ -221,13 +222,13 @@ export function useHomeState() {
         const blob = await fetch(`${API_BASE}/detections/${result.id}/image`).then((r) => r.blob());
         file = new File([blob], result.imageName, { type: blob.type });
       }
-      const data = await detectMut.mutateAsync({ file, categories, useSam2 });
+      const data = await detectMut.mutateAsync({ file, categories, useSam2, sam2ScoreThreshold });
       if (data) batchFileMap.current.set(data.id, file);
       setResult(data);
       setBatchResults((prev) => prev.map((r) => (r.id === result.id ? data : r)));
     } catch { /* handled by mutation */ }
     finally { stopTimer(); }
-  }, [result, categories, useSam2, detectMut, startTimer, stopTimer, setBatchResults]);
+  }, [result, categories, useSam2, sam2ScoreThreshold, detectMut, startTimer, stopTimer, setBatchResults]);
 
   const handleDrawBox = useCallback(async (raw: { x1: number; y1: number; x2: number; y2: number }) => {
     if (!result || !drawCategory.trim()) { toast.error(t("home.drawCategoryRequired")); return; }
@@ -273,7 +274,7 @@ export function useHomeState() {
 
   return {
     appMode, setAppMode,
-    useSam2, setUseSam2,
+    useSam2, setUseSam2, sam2ScoreThreshold, setSam2ScoreThreshold,
     validateModelSource, setValidateModelSource,
     selectedTrainedJobId, setSelectedTrainedJobId,
     inputMode, setInputMode,
