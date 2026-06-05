@@ -9,6 +9,8 @@
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
   <img src="https://img.shields.io/badge/GPU-MPS%20%7C%20CUDA-orange" alt="GPU">
   <img src="https://img.shields.io/github/stars/Somnusochi/VLM-AutoYOLO?style=social" alt="Stars">
+  <br>
+  <a href="mailto:somnusochi@gmail.com"><img src="https://img.shields.io/badge/Open_to_Work-🤝-brightgreen?style=flat" alt="Open to Work"></a>
 </p>
 
 ```
