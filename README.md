@@ -214,7 +214,10 @@ Switch to SAM3 mode for text-driven detection and segmentation in a single pass 
 - **Mask threshold** slider (0.0–1.0, default 0.5) controls mask tightness
 - Enable/disable segmentation independently — bbox-only mode skips mask extraction for faster results
 - SAM3 runs as a standalone HTTP service on port 8002 with its own venv (`backend/sam3-venv/`)
-- **Requires `HF_TOKEN`** — set this env var before starting the backend. Visit [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3) to accept the license and create a token with "Access to public gated repositories" permission. Model cached in `~/.cache/huggingface/hub/` after first download
+- **Requires `HF_TOKEN`** — set this env var before starting the backend. Two steps:
+  1. Open [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3) in browser, click **"Agree and access repository"**
+  2. Create a **Read** token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (no need for Fine-grained — a plain Read token inherits your account's permissions)
+  Model cached in `~/.cache/huggingface/hub/` after first download
 - Auto-starts on first use, idle auto-unload after 10 min
 - Real-time loading status via SSE (`starting` → `loading` → `loaded`)
 - Manual unload button to free GPU memory
