@@ -1,11 +1,10 @@
 """Tests for detection strategy pattern."""
 
-import pytest
 from app.services.detection_strategy import (
+    DetectionResult,
+    SAM3Detection,
     VLMDetection,
     VLMWithSAM2,
-    SAM3Detection,
-    DetectionResult,
     create_strategy,
 )
 
