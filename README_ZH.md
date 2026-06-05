@@ -8,6 +8,7 @@
   <img src="https://img.shields.io/badge/Node.js-22+-green" alt="Node.js">
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
   <img src="https://img.shields.io/badge/GPU-MPS%20%7C%20CUDA-orange" alt="GPU">
+  <img src="https://img.shields.io/github/stars/Somnusochi/VLM-AutoYOLO?style=social" alt="Stars">
 </p>
 
 ```
@@ -291,6 +292,10 @@ cd backend && source .venv/bin/activate
 PYTHONPATH=. alembic upgrade head
 python -m compileall app alembic
 ```
+
+## 加星历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Somnusochi/VLM-AutoYOLO&type=Date)](https://star-history.com/#Somnusochi/VLM-AutoYOLO&Date)
 
 ## License
 
