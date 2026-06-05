@@ -14,7 +14,7 @@
 > *冷启动含第 1 轮第 1 张模型加载时间（~22s）。
 > **注**：10GB 显存可能触顶导致降速，推荐使用 12GB+ 显卡。
 
-## macOS Apple Silicon 24GB (MPS)
+## macOS MacBook Pro (M4 Pro) 24GB (MPS)
 
 13 张猫图，各 4 轮，自动长边 1024px (大图) / 256px (缩略图)。
 

@@ -14,7 +14,7 @@
 > *Cold start includes first image of Round 1 model loading (~22s).
 > **Note**: 10GB may hit the limit and throttle; 12GB+ is recommended.
 
-## macOS Apple Silicon 24GB (MPS)
+## macOS MacBook Pro (M4 Pro) 24GB (MPS)
 
 13 cat images, 4 rounds each, auto long side 1024px (Large) / 256px (Thumb).
 
