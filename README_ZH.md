@@ -212,7 +212,8 @@ VLM 检测出 bbox 后，可启用 SAM2 自动生成像素级 mask 轮廓。
 - **置信度阈值**滑块（0.0–1.0，默认 0.5）控制检测灵敏度
 - **Mask 阈值**滑块（0.0–1.0，默认 0.5）控制 mask 紧致度
 - 可独立开关分割：纯检测模式跳过 mask 提取，更快出结果
-- SAM3 作为独立 HTTP 服务运行在 8002 端口，使用独立虚拟环境
+- SAM3 作为独立 HTTP 服务运行在 8002 端口，使用独立虚拟环境（`backend/sam3-venv/`）
+- **需要 `HF_TOKEN` 环境变量**——启动后端前设置。访问 [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3) 同意许可协议，创建 token 并勾选"Access to public gated repositories"权限。首次下载后模型缓存在 `~/.cache/huggingface/hub/`
 - 首次使用时自动启动，闲置 10 分钟后自动卸载
 - SSE 实时加载状态（`starting` → `loading` → `loaded`）
 - 手动卸载按钮释放 GPU 内存
