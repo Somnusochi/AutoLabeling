@@ -538,8 +538,8 @@ function ModelStatus() {
                   : sam2State === "error"
                     ? t("modelStatus.error")
                     : sam2Loaded
-                      ? t("modelStatus.loaded")
-                      : t("modelStatus.unloaded")}
+                      ? t("modelStatus.sam2Loaded")
+                      : t("modelStatus.sam2Unloaded")}
             </span>
           </span>
           {sam2Loaded && (
