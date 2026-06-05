@@ -32,13 +32,30 @@ After launching, access:
    - **Fixed Interval**: Extracts frames at regular time intervals
 4. Select desired keyframes and click "Load to Labeling Queue"
 
-## 3. VLM Auto-Labeling
+## 3. Choose Detection Model
+
+Use the model selector at the top of the sidebar to switch between:
+
+### VLM + SAM2 (Default)
+- VLM (LocateAnything-3B) generates bounding boxes
+- Optionally enable SAM2 segmentation for pixel-precise masks
+
+### SAM3
+- Text-driven end-to-end detection + segmentation in a single pass
+- Open-vocabulary prompts (e.g. `cat`, `red car`)
+- Adjustable parameters:
+  - **Confidence threshold** (Conf ≥ 0.5): lower = more detections
+  - **Mask threshold** (Mask ≥ 0.5): higher = tighter masks
+  - **Enable SAM3 Segmentation** toggle: disable for bbox-only mode
+- Requires `HF_TOKEN` environment variable on first use; model cached locally after download
+
+## 4. Auto-Labeling
 
 1. Enter target categories in the "Target Categories" input box (English works better)
    - Examples: `person, car, dog`
    - Natural language descriptions supported: `red car`, `person wearing hat`
 2. Click "Start Detection"
-3. VLM will automatically generate bounding box annotations
+3. The selected model generates bounding box annotations
    - First result appears immediately
    - Subsequent results are appended in real-time during batch upload
 
@@ -47,7 +64,7 @@ After launching, access:
 - Avoid overly generic descriptions (like `object`)
 - Use commas to separate multiple categories
 
-## 4. Manual Refinement
+## 5. Manual Refinement
 
 VLM annotations may not be perfect and require manual adjustment:
 
@@ -66,7 +83,7 @@ VLM annotations may not be perfect and require manual adjustment:
 - Adjust NMS IoU threshold to control overlapping box filtering
 - Click "Save Filter Results" to persist settings
 
-## 5. Export Dataset
+## 6. Export Dataset
 
 ### Single Image Export
 - Click "Export YOLO (.txt)" on the results page
@@ -89,7 +106,7 @@ dataset/
 └── data.yaml
 ```
 
-## 6. Train YOLO Model
+## 7. Train YOLO Model
 
 1. Select detection records to train in the "YOLO Training" panel
 2. Choose YOLO series:
@@ -113,7 +130,7 @@ dataset/
    - Loss curves
    - mAP metrics
 
-## 7. Validate Model
+## 8. Validate Model
 
 ### Image Validation
 1. After training completes, click "Validate" in training records
@@ -128,7 +145,7 @@ dataset/
 4. Click "Validate Video (Real-time)"
 5. Watch real-time detection stream, pause/replay supported
 
-## 8. Download Model
+## 9. Download Model
 
 After training completes, you can download:
 - **PT Model**: PyTorch format for continued training or inference
