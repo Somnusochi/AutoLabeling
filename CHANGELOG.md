@@ -1,89 +1,129 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## v1.4.9 (2026-06-05)
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+- Japanese (日本語) i18n — full UI translation
+- Three-button language selector (中 / EN / 日) matching theme toggle style
+- SAM2 status labels — "SAM2 模型" instead of "VLM 模型"
+- Frontend: HistoryList pagination, training component refactor
 
-## [1.0.0] - 2025-01-19
+## v1.4.8 (2026-06-05)
 
-### Added
-- **VLM Auto-Labeling**
-  - NVIDIA LocateAnything-3B integration for automatic object detection
-  - Natural language prompt support (e.g., "person wearing red shirt")
-  - Batch image processing
-  - Video keyframe extraction with 3 modes (scene/motion/interval)
-  
-- **Manual Annotation**
-  - Canvas-based drawing tool for bounding boxes
-  - NMS (Non-Maximum Suppression) filtering
-  - Multi-class annotation support
-  - Keyboard shortcuts for efficient workflow
+- Fix: `MAX_LONG_SIDE` lazy-init so tests can import without GPU (CI on CPU runners)
 
-- **YOLO Training**
-  - One-click training for YOLOv5/v8/v11/v26
-  - Multiple model sizes (n/s/m/l/x)
-  - Real-time training progress via SSE
-  - Training metrics visualization (loss, mAP, precision, recall)
-  - Model comparison dashboard
+## v1.4.7 (2026-06-05)
 
-- **Model Validation**
-  - Image validation with confidence scores
-  - Real-time video validation with MJPEG streaming
-  - Batch validation for multiple images
-  - Model performance metrics (mAP, precision, recall)
+- VLM confidence score infrastructure: `<conf>` parser, DB wiring, canvas color-coding
+- Fix: `parse_boxes` test assertions for new confidence field
 
-- **Export & Deployment**
-  - YOLO format export (.txt annotations)
-  - ONNX model conversion
-  - Dataset packaging (images + labels + data.yaml)
-  - Model download (.pt format)
+## v1.4.6 (2026-06-05)
 
-- **Infrastructure**
-  - FastAPI backend with PostgreSQL
-  - React + TypeScript frontend
-  - Docker multi-stage builds
-  - GitHub Actions CI/CD pipeline
-  - Automated Docker image publishing to GHCR
-  - Automated release workflow with changelog generation
+- Class-based color mapping on canvas (color per category name)
 
-- **Documentation**
-  - Comprehensive user guide (English & Chinese)
-  - Getting started tutorial
-  - Annotation best practices
-  - Training parameter tuning guide
-  - API documentation (auto-generated via FastAPI)
-  - Docker deployment guide with GPU support
+## v1.4.5 (2026-06-05)
 
-- **Testing**
-  - 31 unit tests covering core functionality
-  - 100% test pass rate
-  - Automated testing in CI pipeline
+- Ruff format — 2 files
 
-### Changed
-- N/A (initial release)
+## v1.4.4 (2026-06-05)
 
-### Deprecated
-- N/A (initial release)
+- SQLite support — zero-config local database fallback
 
-### Removed
-- N/A (initial release)
+## v1.4.3 (2026-06-05)
 
-### Fixed
-- N/A (initial release)
+- Docs restructure: API, structure, benchmarks extracted to `docs/`
+- Chinese docs: `API_ZH.md`, `STRUCTURE_ZH.md`, `BENCHMARKS_ZH.md`
+- Frontend restructure: training sub-components, `HistoryListItem`
+- Ruff lint + format all green
 
-### Security
-- Non-root Docker container user
-- Input validation on all API endpoints
-- Secure file upload handling
-- Environment variable-based configuration
+## v1.4.2 (2026-06-05)
 
-## [Unreleased]
+- Fix: remove non-existent `reset_image()` call that broke SAM2 mask generation
+- Full README rewrite (EN + ZH) — cold/warm benchmark separation
 
-### Planned
-- Additional VLM model support (Grounding DINO, SAM)
-- Instance segmentation annotation
-- Active learning for smart sample selection
-- COCO and Pascal VOC export formats
-- Model version management
-- Team collaboration features
+## v1.4.1 (2026-06-05)
+
+- GPU memory strategy pattern (`gpu_memory.py`) — centralized CUDA/MPS cleanup
+- `expandable_segments:True` replaces `max_split_size_mb` for CUDA
+- MPS `synchronize` + `empty_cache` + `gc` after each detection
+- Mac memory stable at 9.8–13GB across 6 rounds
+
+## v1.4.0 (2026-06-04)
+
+- VRAM-aware image long-side cap (auto: 800/1024/1333px)
+- Stable Mac MPS & Windows CUDA benchmarks
+- SAM2 mask coordinate fix (original image space alignment)
+
+## v1.3.4 (2026-06-04)
+
+- Fix: SAM2 mask misalignment when `detect()` resizes large images
+- Unify box/mask coordinates to original image space
+
+## v1.3.3 (2026-06-04)
+
+- Aggressive VRAM cleanup + `max_split_size_mb:128` allocator tuning
+- Sustained inference memory management
+
+## v1.3.2 (2026-06-04)
+
+- VRAM optimizations for 10GB GPUs
+
+## v1.3.1 (2026-06-04)
+
+- Reduce `max_new_tokens` from 2048 to 512 — fix VRAM pressure on 10GB GPUs
+
+## v1.3.0 (2026-06-04)
+
+- **SAM2.1 segmentation** — bbox → pixel-precise mask polygons
+- Multi-format dataset export: YOLO, YOLO-Seg, COCO, Pascal VOC, CreateML
+- Instance segmentation training support (Segment task type)
+- BBox / Mask independent toggle on canvas and hover preview
+- Model idle watchdog — auto-unload after configurable timeout
+- Windows cross-platform support, model download progress, UX improvements
+
+## v1.2.0 (2026-06-04)
+
+- SAM2 integration, multi-format export, instance segmentation training
+
+## v1.1.2 (2026-06-04)
+
+- Restore `MAX_IMAGE_PX` to 1024×1024 for GPU inference
+
+## v1.1.1 (2026-06-04)
+
+- Fix Docker volume config, clarify platform support (Windows WSL2 + NVIDIA GPU)
+
+## v1.1.0 (2026-06-04)
+
+- Video annotation & keyframe extraction (scene/motion/interval)
+- MJPEG / SSE video validation
+- Remove CPU mode — LocateAnything-3B requires GPU
+
+## v1.0.1 (2026-06-04)
+
+- Fix frontend layouts, CI triggers, unify database naming
+
+## v1.0.0 (2026-06-04)
+
+- Initial stable release
+- VLM detection with LocateAnything-3B
+- YOLO training (v5/v8/v11/v26) with SSE real-time progress
+- Model validation (MJPEG live stream, SSE video, batch images)
+- Canvas-based manual annotation with NMS filtering
+- Detection history management
+- Box filter service (best/NMS/all)
+- Cross-platform: macOS MPS + Windows/Linux CUDA
+- English / 中文 README with project structure and API docs
+
+## Pre-v1.0 (2026-06-02)
+
+- Initial commit — YOLO auto-labeling training platform
+- VLM detection pipeline with LocateAnything-3B
+- YOLO training integration (v5/v8/v11/v26) with cascading model variant selector
+- Manual box annotation with canvas drawing mode
+- Detection history with thumbnails, tag filtering, hover preview popover
+- Cross-platform device auto-detect (CUDA / MPS)
+- Box filter service: best / NMS / all modes
+- Database redesign with JSONB types and association tables
+- CI/CD workflows (lint, test, Docker, release)
+- Light/dark/system theme with inline button group
+- i18n: English / 中文 via i18next

@@ -39,3 +39,7 @@ cd backend && PYTHONPATH=. pytest tests/ -v   # 必须全部通过
 ```
 
 以上全部通过后才能打 tag。
+
+打 tag 时还需要同步更新：
+- `README.md` / `README_ZH.md` — 如功能有变化，更新对应的文档
+- `CHANGELOG.md` — 按版本号追加变更记录，格式参考已有条目
