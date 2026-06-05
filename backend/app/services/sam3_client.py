@@ -115,6 +115,19 @@ def stop_sam3_server() -> None:
         _sam3_process.terminate()
         _sam3_process.wait(timeout=5)
         _sam3_process = None
+    elif is_sam3_running():
+        # Process reference lost (e.g. after uvicorn restart) — kill via port
+        import signal
+
+        try:
+            result = subprocess.run(
+                ["lsof", "-ti", f":{SAM3_PORT}"], capture_output=True, text=True
+            )
+            for pid_str in result.stdout.strip().split("\n"):
+                if pid_str:
+                    os.kill(int(pid_str), signal.SIGTERM)
+        except Exception:
+            logger.exception("Failed to kill SAM3 process on port %d", SAM3_PORT)
 
 
 def segment_sam3(
