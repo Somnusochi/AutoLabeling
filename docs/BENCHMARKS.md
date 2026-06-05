@@ -16,15 +16,17 @@
 
 ## macOS Apple Silicon 24GB (MPS)
 
-13 cat images, 3 rounds each, `max_new_tokens=512`, auto long side 1024px.
+13 cat images, 4 rounds each, auto long side 1024px (Large) / 256px (Thumb).
 
-| Mode | Image Size | Cold Start (R1) | Round Details (R2 / R3) | Stable Avg (Warm) | VRAM / RAM Usage |
+| Mode | Image Size | Cold Start (R1 1st) | Round Details (R2/R3/R4) | Stable Avg (Warm) | System RAM Usage |
 |------|------------|-----------------|-------------------------|-------------------|------------------|
-| VLM only | Default (1024px) | 3.7s | 4.3s / 4.3s | **4.3s/img** | 9.8–13GB stable |
-| VLM + SAM2 | Default (1024px) | 13.8s* | 4.9s / 4.9s | **4.9s/img** | 9.8–13GB stable |
+| VLM only | Large (1024px) | 5.14s | 4.39s / 4.33s / 4.33s | **4.35s/img** | ~7.4GB (Peak) |
+| VLM only | Thumb (256px) | 10.58s* | 0.69s / 0.68s / 0.68s | **0.68s/img** | ~7.4GB (Peak) |
+| VLM + SAM2 | Large (1024px) | 5.33s | 4.96s / 5.00s / 4.96s | **4.98s/img** | ~7.8GB (Peak) |
+| VLM + SAM2 | Thumb (256px) | 3.11s | 1.14s / 1.14s / 1.14s | **1.14s/img** | ~7.8GB (Peak) |
 
-> *Cold start includes VLM + SAM2 model loading (~14s). SAM2 overhead: +0.65s (15%). Masks: 13/13.
-> **Note**: Memory remains 9.8–13GB stable across 6 rounds with MPS cleanup after each detection.
+> *Full cold start includes initial model loading and MPS graph compilation. Subsequent "1st" timings are pre-warmed mode switching overhead.
+> **Note**: For pure inference (thumbnails), Apple Silicon unified memory bandwidth provides immense performance (0.68s/img), rivaling high-end desktop GPUs.
 
 ## Linux + RTX 4080 16GB (CUDA)
 
