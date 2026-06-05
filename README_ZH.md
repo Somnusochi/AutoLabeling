@@ -3,7 +3,7 @@
 [English](README.md) | 简体中文
 
 <p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
+  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License">
   <img src="https://img.shields.io/badge/Python-3.12+-blue" alt="Python">
   <img src="https://img.shields.io/badge/Node.js-22+-green" alt="Node.js">
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform">
@@ -300,7 +300,7 @@ python -m compileall app alembic
 
 ## License
 
-本项目代码：[MIT](LICENSE)。
+本项目代码：[AGPL-3.0](LICENSE)。
 
 第三方依赖协议：
 - LocateAnything-3B 模型 — [NVIDIA License](https://huggingface.co/nvidia/LocateAnything-3B/blob/main/LICENSE)（非商用）
