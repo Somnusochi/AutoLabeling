@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -77,13 +78,13 @@ def start_sam3_server() -> None:
 
     server_script = Path(__file__).resolve().parent.parent.parent / "sam3_server.py"
     sam3_venv = Path(__file__).resolve().parent.parent.parent / "sam3-venv"
-    python = (
-        str(sam3_venv / "bin" / "python3")
-        if (sam3_venv / "bin").exists()
-        else (
-            str(sam3_venv / "Scripts" / "python.exe")  # Windows
-        )
-    )
+    if (sam3_venv / "bin" / "python3").exists():
+        python = str(sam3_venv / "bin" / "python3")
+    elif (sam3_venv / "Scripts" / "python.exe").exists():
+        python = str(sam3_venv / "Scripts" / "python.exe")  # Windows
+    else:
+        # Docker / no dedicated venv: use current Python (must have SAM3 deps)
+        python = sys.executable
 
     env = os.environ.copy()
     env["HF_TOKEN"] = hf_token

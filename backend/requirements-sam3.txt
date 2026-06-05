@@ -1,0 +1,8 @@
+# SAM3 standalone server dependencies
+# Install: pip install -r requirements-sam3.txt
+transformers>=5.0
+torch
+Pillow
+numpy
+opencv-python-headless
+torchvision

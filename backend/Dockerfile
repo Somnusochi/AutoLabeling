@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+COPY requirements.txt requirements-sam3.txt ./
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt \
+    && python -m venv /sam3-venv \
+    && /sam3-venv/bin/pip install --no-cache-dir -r requirements-sam3.txt
 
 # Production stage
 FROM python:3.12-slim
@@ -27,6 +29,8 @@ COPY decord_stub.py /usr/local/lib/python3.12/site-packages/decord.py
 
 # Copy Python packages from builder
 COPY --from=builder /install /usr/local
+# Copy SAM3 venv
+COPY --from=builder /sam3-venv /app/sam3-venv
 
 # Create non-root user and data directories
 RUN useradd -m -u 1000 appuser \
@@ -36,6 +40,7 @@ USER appuser
 
 # Copy application code
 COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser sam3_server.py .
 COPY --chown=appuser:appuser alembic.ini .
 
 # Set environment variables
@@ -43,7 +48,7 @@ ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-EXPOSE 8000
+EXPOSE 8000 8002
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
