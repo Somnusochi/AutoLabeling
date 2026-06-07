@@ -78,10 +78,26 @@ Base URL: `http://localhost:8000/api/v1`
 | GET | `/train/jobs/{id}/validate-mjpeg/{video_id}` | Validate video (MJPEG live stream) |
 | POST | `/train/jobs/{id}/predict-video-stream` | Validate video (SSE stream) |
 | POST | `/train/jobs/{id}/predict-video` | Validate video (sync batch) |
+| POST | `/train/jobs/{id}/cancel` | Cancel pending/running training job |
 | POST | `/train/jobs/{id}/delete` | Delete training job |
 | POST | `/train/upload-model` | Upload external YOLO model (.pt) → Token |
 | POST | `/train/validate-image/{token}` | Validate image with external model |
 | GET | `/train/validate-mjpeg/{token}/{video_id}` | Validate video with external model (MJPEG) |
+
+## Dataset Import
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/datasets/import` | Direct upload (≤200MB ZIP), starts import in background |
+| POST | `/datasets/import/chunk/init` | Create/resume chunked upload session (JSON: `{fileName, totalSize, chunkSize, format}`) |
+| POST | `/datasets/import/chunk/{id}/{n}` | Upload chunk `n` (binary body) |
+| GET | `/datasets/import/chunk/{id}` | Check upload status (uploaded chunks list) |
+| POST | `/datasets/import/chunk/{id}/complete` | Assemble chunks → start import |
+| POST | `/datasets/import/chunk/{id}/cancel` | Cancel upload / cleanup chunks |
+| GET | `/datasets/import/{importId}/progress` | Import progress (`{total, completed, status, detectionIds, error}`) |
+| POST | `/datasets/import/{importId}/cancel` | Cancel running import |
+
+Import supports 5 formats: `yolo`, `yolo-seg`, `coco`, `voc`, `createml`. ZIP must contain images + annotation files matching the format.
 
 ## Response Format
 

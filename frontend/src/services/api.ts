@@ -291,7 +291,7 @@ export async function importChunkComplete(uploadId: string, format: string): Pro
 }
 
 export async function importChunkCancel(uploadId: string): Promise<void> {
-  await request.delete(`/datasets/import/chunk/${uploadId}`);
+  await request.post(`/datasets/import/chunk/${uploadId}/cancel`);
 }
 
 export async function importDataset(

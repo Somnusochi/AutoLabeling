@@ -28,7 +28,7 @@ async function uploadChunk(
     try {
       const resp = await fetch(
         `${API_BASE}/datasets/import/chunk/${uploadId}/${index}`,
-        { method: "PUT", body: data },
+        { method: "POST", body: data },
       );
       if (resp.ok) return true;
       if (resp.status === 404) throw new Error("Upload session not found");

@@ -81,7 +81,7 @@ async def chunk_init(request: Request) -> APIResponse:
     )
 
 
-@router.put("/datasets/import/chunk/{upload_id}/{chunk_index}")
+@router.post("/datasets/import/chunk/{upload_id}/{chunk_index}")
 async def chunk_upload(
     upload_id: str,
     chunk_index: int,
@@ -212,7 +212,7 @@ def chunk_complete(
     return APIResponse(data={"importId": import_id, "status": "processing"})
 
 
-@router.delete("/datasets/import/chunk/{upload_id}")
+@router.post("/datasets/import/chunk/{upload_id}/cancel")
 def chunk_cancel(upload_id: str) -> APIResponse:
     """Cancel a chunked upload and clean up."""
     chunk_dir = CHUNK_DIR / upload_id

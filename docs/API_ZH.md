@@ -78,10 +78,26 @@ Base URL: `http://localhost:8000/api/v1`
 | GET | `/train/jobs/{id}/validate-mjpeg/{video_id}` | 视频验证（MJPEG 实时流） |
 | POST | `/train/jobs/{id}/predict-video-stream` | 视频验证（SSE 流） |
 | POST | `/train/jobs/{id}/predict-video` | 视频验证（同步批量） |
+| POST | `/train/jobs/{id}/cancel` | 取消待处理/运行中的训练任务 |
 | POST | `/train/jobs/{id}/delete` | 删除训练任务 |
 | POST | `/train/upload-model` | 上传外部 YOLO 模型 (.pt) → Token |
 | POST | `/train/validate-image/{token}` | 外部模型验证图片 |
 | GET | `/train/validate-mjpeg/{token}/{video_id}` | 外部模型验证视频（MJPEG） |
+
+## 数据集导入
+
+| 方法 | 路径 | 说明 |
+|--------|------|-------------|
+| POST | `/datasets/import` | 直接上传（≤200MB ZIP），后台启动导入 |
+| POST | `/datasets/import/chunk/init` | 创建/续传分片上传会话 |
+| POST | `/datasets/import/chunk/{id}/{n}` | 上传分片 `n`（二进制 body） |
+| GET | `/datasets/import/chunk/{id}` | 查看上传状态（已上传分片列表） |
+| POST | `/datasets/import/chunk/{id}/complete` | 合并分片 → 启动导入 |
+| POST | `/datasets/import/chunk/{id}/cancel` | 取消上传 / 清理分片 |
+| GET | `/datasets/import/{importId}/progress` | 导入进度 |
+| POST | `/datasets/import/{importId}/cancel` | 取消正在进行的导入 |
+
+支持 5 种格式：`yolo`、`yolo-seg`、`coco`、`voc`、`createml`。
 
 ## 响应格式
 
