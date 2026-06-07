@@ -1,6 +1,18 @@
+import { useCallback, useEffect } from "react";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/store/useAppStore";
+import { batchFileMap } from "@/lib/cache";
+import { useDetectionTimer } from "./useDetectionTimer";
+import { useBatchDetection } from "./useBatchDetection";
+import { useYoloValidation } from "./useYoloValidation";
+import { useDetectMutation } from "./useDetection";
+import { optimisticModelLoading } from "./useModelEvents";
+import { API_BASE, tokenCache, uploadCache } from "@/lib/constants";
+import type { Detection } from "@/types";
 
-export function useHomeState() {
+export function useDetectionProcess() {
   const { t } = useTranslation();
   const {
     appMode,
@@ -19,27 +31,17 @@ export function useHomeState() {
     setFiles,
     setPreviewUrl,
     categories,
-    setCategories,
-    filterMode,
-    setFilterMode,
-    nmsIou,
-    setNmsIou,
-    drawCategory,
-    setHiddenIndices,
+    result,
+    setResult,
+    setBatchResults,
   } = useAppStore();
 
-  // ── Composed state hooks ──────────────────────────
   const timer = useDetectionTimer();
-
-  // ── Detection ────────────────────────────────────
   const queryClient = useQueryClient();
   const detectMut = useDetectMutation();
-  const [result, setResult] = useState<Detection | null>(null);
 
-  // ── Batch ────────────────────────────────────────
-  const { batchResults, batchProgress, runBatch, cancelBatch, setBatchResults, setBatchProgress } =
+  const { batchProgress, runBatch, cancelBatch, setBatchProgress } =
     useBatchDetection();
-
   const { validating, runValidation } = useYoloValidation();
 
   // ── YOLO event listener ──────────────────────────
@@ -53,16 +55,6 @@ export function useHomeState() {
     return () => window.removeEventListener("yolo-validate", handler);
   }, [setAppMode]);
 
-  // ── History ──────────────────────────────────────
-  const { data: historyData } = useDetectionListQuery();
-  const recentCategories = Array.from(
-    new Set((historyData?.items ?? []).flatMap((d) => parseCategories(d.categories))),
-  ).sort();
-
-  const batchFileMap = useRef<Map<string, File>>(new Map());
-
-  // ── Handlers ──────────────────────────────────────
-
   const handleFiles = useCallback(
     (fs: File[]) => {
       setFiles(fs);
@@ -70,16 +62,33 @@ export function useHomeState() {
       setResult(null);
       setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
     },
-    [setBatchResults, setFiles, setPreviewUrl],
+    [setBatchResults, setFiles, setPreviewUrl, setResult],
+  );
+
+  const handleSelectKeyframe = useCallback(
+    (fs: File[]) => {
+      setFiles(fs);
+      setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
+      setBatchResults([]);
+      setResult(null);
+    },
+    [setBatchResults, setFiles, setPreviewUrl, setResult],
+  );
+
+  const handleBatchSelect = useCallback(
+    (det: Detection, file?: File) => {
+      setResult(det);
+      if (file) setPreviewUrl(URL.createObjectURL(file));
+    },
+    [setPreviewUrl, setResult],
   );
 
   const handleDetect = useCallback(async () => {
     if (files.length === 0) return;
-    // Optimistically show loading state before SSE catches up
     if (useSam2) optimisticModelLoading("sam2");
     if (!useSam2 && !useSam3) optimisticModelLoading("vlm");
     timer.startTimer();
-    batchFileMap.current.clear();
+    batchFileMap.clear();
 
     try {
       if (appMode === "validate") {
@@ -111,7 +120,8 @@ export function useHomeState() {
             }
             try {
               cachedToken = await promise;
-            } catch {
+            } catch (e) {
+              console.error("Upload model failed:", e);
               tokenCache.delete(externalModelFile);
               uploadCache.delete(externalModelFile);
               toast.error(t("home.uploadModelFailed"));
@@ -154,7 +164,11 @@ export function useHomeState() {
         sam3Threshold,
         sam3MaskThreshold,
         (data, file, i) => {
-          batchFileMap.current.set(data.id, file);
+          batchFileMap.set(data.id, file);
+          setBatchResults((prev) => {
+            const exists = prev.some((p) => p.id === data.id);
+            return exists ? prev : [...prev, data];
+          });
           if (i === 0) {
             setResult(data);
             setPreviewUrl(URL.createObjectURL(file));
@@ -186,39 +200,16 @@ export function useHomeState() {
     setBatchResults,
     setBatchProgress,
     setPreviewUrl,
+    setResult,
     t,
   ]);
-
-  const handleSelectHistory = useCallback(
-    async (det: Detection) => {
-      setFiles([]);
-      batchFileMap.current.clear();
-      setPreviewUrl(`${API_BASE}/detections/${det.id}/image`);
-      const full = await getDetection(det.id);
-      setResult(full);
-      setBatchResults([]);
-      setCategories(parseCategories(full.categories));
-      setFilterMode((full.filterMode as FilterMode) || "all");
-      if (full.filterNmsIou != null) setNmsIou(full.filterNmsIou);
-      setHiddenIndices(new Set());
-    },
-    [
-      setBatchResults,
-      setFiles,
-      setPreviewUrl,
-      setCategories,
-      setFilterMode,
-      setNmsIou,
-      setHiddenIndices,
-    ],
-  );
 
   const handleReDetect = useCallback(async () => {
     if (!result) return;
     timer.startTimer();
     try {
       let file: File;
-      const cached = batchFileMap.current.get(result.id);
+      const cached = batchFileMap.get(result.id);
       if (cached) {
         file = cached;
       } else {
@@ -236,11 +227,12 @@ export function useHomeState() {
         sam3Threshold,
         sam3MaskThreshold,
       });
-      if (data) batchFileMap.current.set(data.id, file);
+      if (data) batchFileMap.set(data.id, file);
       setResult(data);
       setBatchResults((prev) => prev.map((r) => (r.id === result.id ? data : r)));
-    } catch {
-      /* handled by mutation */
+    } catch (e) {
+      console.error("Re-detect failed:", e);
+      toast.error(t("home.redetectFailed") || "Re-detect failed");
     } finally {
       timer.stopTimer();
     }
@@ -257,138 +249,22 @@ export function useHomeState() {
     detectMut,
     timer,
     setBatchResults,
+    setResult,
+    t,
   ]);
-
-  const handleDrawBox = useCallback(
-    async (raw: { x1: number; y1: number; x2: number; y2: number }) => {
-      if (!result || !drawCategory.trim()) {
-        toast.error(t("home.drawCategoryRequired"));
-        return;
-      }
-      try {
-        await addBox(result.id, { ...raw, className: drawCategory.trim() });
-        const newBox: BBox = {
-          id: `manual-${Date.now()}`,
-          className: drawCategory.trim(),
-          ...raw,
-          confidence: null,
-        };
-        const updated = { ...result, boxes: [...result.boxes, newBox] };
-        setResult(updated);
-        setBatchResults((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-      } catch {
-        /* ignore */
-      }
-    },
-    [result, drawCategory, setBatchResults, t],
-  );
-
-  const handleDeleteBox = useCallback(
-    async (boxId: string) => {
-      if (!result) return;
-      const box = result.boxes.find((b) => b.id === boxId);
-      if (!box) return;
-      try {
-        await deleteBox(result.id, box.id);
-        const updated = { ...result, boxes: result.boxes.filter((b) => b.id !== boxId) };
-        setResult(updated);
-        setBatchResults((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-      } catch {
-        /* ignore */
-      }
-    },
-    [result, setBatchResults],
-  );
-
-  const handleSelectKeyframe = useCallback(
-    (fs: File[]) => {
-      setFiles(fs);
-      setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
-      setBatchResults([]);
-      setResult(null);
-    },
-    [setBatchResults, setFiles, setPreviewUrl],
-  );
-
-  const handleBatchSelect = useCallback(
-    (det: Detection, file?: File) => {
-      setResult(det);
-      if (file) setPreviewUrl(URL.createObjectURL(file));
-    },
-    [setPreviewUrl],
-  );
-
-  const handleSaveBoxes = useCallback(async () => {
-    if (!result) return;
-
-    // Create an API call directly here if needed or migrate handleSaveBoxes from old hook
-    // It seems the API was in useAnnotationState. We can just use the underlying fetch here.
-    try {
-      await fetch(`${API_BASE}/detections/${result.id}/filter-settings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filter_mode: filterMode,
-          filter_nms_iou: filterMode === "nms" ? nmsIou : null,
-        }),
-      });
-      toast.success(t("home.savedSuccessfully"));
-    } catch {
-      toast.error(t("home.saveFailed"));
-    }
-    setResult((prev) =>
-      prev
-        ? { ...prev, filterMode: filterMode, filterNmsIou: filterMode === "nms" ? nmsIou : null }
-        : null,
-    );
-  }, [result, filterMode, nmsIou, t]);
 
   const loading = detectMut.isPending || batchProgress.total > 0 || validating;
 
-  const toggleBoxVisibility = useCallback(
-    (id: string) => {
-      setHiddenIndices((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-    },
-    [setHiddenIndices],
-  );
-
-  const displayResult = useMemo(
-    () => (result ? { ...result, boxes: applyFilter(filterMode, result.boxes, nmsIou) } : null),
-    [result, filterMode, nmsIou],
-  );
-
   return {
-    // Timer
     elapsedMs: timer.elapsedMs,
-
-    // Core state
-    result,
-    setResult,
-    batchResults,
-    setBatchResults,
     batchProgress,
     setBatchProgress,
-    historyData,
-    recentCategories,
-
-    // Handlers
     handleFiles,
-    handleDetect,
-    handleSelectHistory,
-    handleReDetect,
-    handleDrawBox,
-    handleDeleteBox,
     handleSelectKeyframe,
     handleBatchSelect,
-    handleSaveBoxes,
+    handleDetect,
+    handleReDetect,
     cancelBatch,
-    toggleBoxVisibility,
     loading,
-    displayResult,
   };
 }

@@ -1,5 +1,5 @@
-import { ThemeContext } from "../hooks/useTheme";
-import type { ThemeMode } from "../hooks/useTheme";
+import { ThemeContext } from "@/hooks/useTheme";
+import type { ThemeMode } from "@/hooks/useTheme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {

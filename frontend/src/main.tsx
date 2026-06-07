@@ -1,11 +1,11 @@
-import {StrictMode} from "react";
-import {createRoot} from "react-dom/client";
-import {BrowserRouter} from "react-router-dom";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import "./i18n/config";
 
-import {ThemeProvider} from "./components/ThemeProvider";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -1,4 +1,5 @@
-import { defineConfig } from "vite";
+/// <reference types="vitest" />
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import AutoImport from "unplugin-auto-import/vite";
@@ -22,6 +23,7 @@ export default defineConfig({
           "@tanstack/react-virtual": ["useVirtualizer"],
         },
       ],
+      ignore: ["useTheme"],
       dts: "./src/auto-imports.d.ts",
       dirs: [
         "./src/hooks/**",
@@ -70,5 +72,11 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["./src/setupTests.ts"],
+    exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**"],
   },
 });

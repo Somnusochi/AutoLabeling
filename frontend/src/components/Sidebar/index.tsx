@@ -91,6 +91,7 @@ export function Sidebar({
     setSam3MaskThreshold,
     sam2ScoreThreshold,
     setSam2ScoreThreshold,
+    isTraining,
   } = useAppStore();
 
   return (
@@ -383,10 +384,16 @@ export function Sidebar({
             </>
           )}
 
+          {isTraining && (
+            <div className="flex items-center gap-2 rounded bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+              <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              {t("trainingPanel.trainingInProgress")}
+            </div>
+          )}
           <button
             type="button"
             disabled={
-              loading || files.length === 0 || (appMode !== "validate" && categories.length === 0)
+              isTraining || loading || files.length === 0 || (appMode !== "validate" && categories.length === 0)
             }
             onClick={handleDetect}
             className="w-full rounded bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"

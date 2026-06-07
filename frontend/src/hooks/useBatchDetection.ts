@@ -1,5 +1,4 @@
 export function useBatchDetection() {
-  const [batchResults, setBatchResults] = useState<Detection[]>([]);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const batchRef = useRef(false);
 
@@ -37,7 +36,6 @@ export function useBatchDetection() {
             sam3MaskThreshold,
           );
           results.push(data);
-          setBatchResults([...results]);
           if (i === files.length - 1) {
             setBatchProgress({ current: 0, total: 0 });
           } else {
@@ -59,5 +57,5 @@ export function useBatchDetection() {
     setBatchProgress({ current: 0, total: 0 });
   }, []);
 
-  return { batchResults, batchProgress, runBatch, cancelBatch, setBatchResults, setBatchProgress };
+  return { batchProgress, runBatch, cancelBatch, setBatchProgress };
 }

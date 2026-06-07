@@ -9,53 +9,54 @@ declare global {
   const API_BASE: typeof import('./lib/constants').API_BASE
   const Activity: typeof import('react').Activity
   const BOX_COLORS: typeof import('./lib/constants').BOX_COLORS
-  const BatchProgress: typeof import('./components/BatchProgress').BatchProgress
+  const BatchProgress: typeof import('./components/BatchProgress/index').BatchProgress
   const CANVAS_MAX_H: typeof import('./lib/constants').CANVAS_MAX_H
   const CANVAS_MAX_W: typeof import('./lib/constants').CANVAS_MAX_W
   const CANVAS_MIN_BOX_SIZE: typeof import('./lib/constants').CANVAS_MIN_BOX_SIZE
-  const CandidateListItem: typeof import('./components/training/CandidateListItem').CandidateListItem
-  const CategoryInput: typeof import('./components/CategoryInput').CategoryInput
+  const CandidateListItem: typeof import('./components/Training/CandidateListItem/index').CandidateListItem
+  const CategoryInput: typeof import('./components/CategoryInput/index').CategoryInput
   const DEFAULT_BATCH: typeof import('./lib/constants').DEFAULT_BATCH
   const DEFAULT_CONF: typeof import('./lib/constants').DEFAULT_CONF
   const DEFAULT_EPOCHS: typeof import('./lib/constants').DEFAULT_EPOCHS
   const DEFAULT_IMGSZ: typeof import('./lib/constants').DEFAULT_IMGSZ
   const DEFAULT_IOU: typeof import('./lib/constants').DEFAULT_IOU
-  const DetectionCanvas: typeof import('./components/DetectionCanvas').DetectionCanvas
-  const DetectionResult: typeof import('./components/DetectionResult').DetectionResult
-  const DetectionSkeleton: typeof import('./components/LoadingSkeleton').DetectionSkeleton
-  const ErrorBoundary: typeof import('./components/ErrorBoundary').ErrorBoundary
-  const FilterPanel: typeof import('./components/FilterPanel').FilterPanel
+  const DetectionCanvas: typeof import('./components/DetectionCanvas/index').DetectionCanvas
+  const DetectionResult: typeof import('./components/DetectionResult/index').DetectionResult
+  const DetectionSkeleton: typeof import('./components/LoadingSkeleton/index').DetectionSkeleton
+  const ErrorBoundary: typeof import('./components/ErrorBoundary/index').ErrorBoundary
+  const FilterPanel: typeof import('./components/FilterPanel/index').FilterPanel
   const Fragment: typeof import('react').Fragment
-  const HistoryList: typeof import('./components/HistoryList').HistoryList
-  const HistoryListItem: typeof import('./components/HistoryListItem').HistoryListItem
-  const HistorySkeleton: typeof import('./components/LoadingSkeleton').HistorySkeleton
+  const HistoryList: typeof import('./components/HistoryList/index').HistoryList
+  const HistoryListItem: typeof import('./components/HistoryListItem/index').HistoryListItem
+  const HistorySkeleton: typeof import('./components/LoadingSkeleton/index').HistorySkeleton
   const Home: typeof import('./pages/Home').Home
-  const HoverPreview: typeof import('./components/training/HoverPreview').HoverPreview
-  const ImageUploader: typeof import('./components/ImageUploader').ImageUploader
-  const KeyframeGrid: typeof import('./components/KeyframeGrid').KeyframeGrid
-  const Layout: typeof import('./components/Layout').Layout
+  const HoverPreview: typeof import('./components/Training/HoverPreview/index').HoverPreview
+  const ImageUploader: typeof import('./components/ImageUploader/index').ImageUploader
+  const KeyframeGrid: typeof import('./components/KeyframeGrid/index').KeyframeGrid
+  const Layout: typeof import('./components/Layout/index').Layout
   const MAX_UPLOAD_SIZE_MB: typeof import('./lib/constants').MAX_UPLOAD_SIZE_MB
-  const ModelSelector: typeof import('./components/ModelSelector').ModelSelector
-  const ModelStatus: typeof import('./components/ModelStatus').ModelStatus
+  const ModelSelector: typeof import('./components/ModelSelector/index').ModelSelector
+  const ModelStatus: typeof import('./components/ModelStatus/index').ModelStatus
   const QueryClient: typeof import('@tanstack/react-query').QueryClient
   const QueryClientProvider: typeof import('@tanstack/react-query').QueryClientProvider
-  const ResultTable: typeof import('./components/ResultTable').ResultTable
-  const Sam3Status: typeof import('./components/Sam3Status').Sam3Status
-  const Sidebar: typeof import('./components/Sidebar').Sidebar
-  const StatusBadge: typeof import('./components/training/StatusBadge').StatusBadge
+  const ResultTable: typeof import('./components/ResultTable/index').ResultTable
+  const Sam3Status: typeof import('./components/Sam3Status/index').Sam3Status
+  const Sidebar: typeof import('./components/Sidebar/index').Sidebar
+  const StatusBadge: typeof import('./components/Training/StatusBadge/index').StatusBadge
   const Suspense: typeof import('react').Suspense
   const ThemeContext: typeof import('./hooks/useTheme').ThemeContext
-  const ThemeProvider: typeof import('./components/ThemeProvider').ThemeProvider
-  const TrainingCandidateList: typeof import('./components/training/TrainingCandidateList').TrainingCandidateList
-  const TrainingJobItem: typeof import('./components/training/TrainingJobItem').TrainingJobItem
-  const TrainingPanel: typeof import('./components/TrainingPanel').TrainingPanel
-  const TrainingPreview: typeof import('./components/training/TrainingPreview').TrainingPreview
-  const ValidationSettings: typeof import('./components/ValidationSettings').ValidationSettings
-  const VideoDetail: typeof import('./components/VideoDetail').VideoDetail
-  const VideoPanel: typeof import('./components/VideoPanel').VideoPanel
-  const VideoValidator: typeof import('./components/VideoValidator').VideoValidator
+  const ThemeProvider: typeof import('./components/ThemeProvider/index').ThemeProvider
+  const TrainingCandidateList: typeof import('./components/Training/TrainingCandidateList/index').TrainingCandidateList
+  const TrainingJobItem: typeof import('./components/Training/TrainingJobItem/index').TrainingJobItem
+  const TrainingPanel: typeof import('./components/TrainingPanel/index').TrainingPanel
+  const TrainingPreview: typeof import('./components/Training/TrainingPreview/index').TrainingPreview
+  const ValidationSettings: typeof import('./components/ValidationSettings/index').ValidationSettings
+  const VideoDetail: typeof import('./components/VideoDetail/index').VideoDetail
+  const VideoPanel: typeof import('./components/VideoPanel/index').VideoPanel
+  const VideoValidator: typeof import('./components/VideoValidator/index').VideoValidator
   const addBox: typeof import('./services/api').addBox
   const applyFilter: typeof import('./lib/filterBoxes').applyFilter
+  const batchFileMap: typeof import('./lib/cache').batchFileMap
   const cache: typeof import('react').cache
   const cacheSignal: typeof import('react').cacheSignal
   const chartUrl: typeof import('./services/api').chartUrl
@@ -68,7 +69,6 @@ declare global {
   const deleteVideo: typeof import('./services/api').deleteVideo
   const detectImage: typeof import('./services/api').detectImage
   const downloadBlob: typeof import('./services/api').downloadBlob
-  const downloadDatasetBatch: typeof import('./services/api').downloadDatasetBatch
   const downloadDatasetUrl: typeof import('./services/api').downloadDatasetUrl
   const downloadModelUrl: typeof import('./services/api').downloadModelUrl
   const downloadOnnxUrl: typeof import('./services/api').downloadOnnxUrl
@@ -106,7 +106,6 @@ declare global {
   const uploadVideo: typeof import('./services/api').uploadVideo
   const use: typeof import('react').use
   const useActionState: typeof import('react').useActionState
-  const useAnnotationState: typeof import('./hooks/useAnnotationState').useAnnotationState
   const useAntdTable: typeof import('ahooks').useAntdTable
   const useAsyncEffect: typeof import('ahooks').useAsyncEffect
   const useBatchDetection: typeof import('./hooks/useBatchDetection').useBatchDetection
@@ -128,8 +127,10 @@ declare global {
   const useDeferredValue: typeof import('react').useDeferredValue
   const useDeleteDetectionMutation: typeof import('./hooks/useDetection').useDeleteDetectionMutation
   const useDetectMutation: typeof import('./hooks/useDetection').useDetectMutation
-  const useDetectionDetailQuery: typeof import('./hooks/useDetection').useDetectionDetailQuery
+  const useDetectionAnnotation: typeof import('./hooks/useDetectionAnnotation').useDetectionAnnotation
+  const useDetectionHistory: typeof import('./hooks/useDetectionHistory').useDetectionHistory
   const useDetectionListQuery: typeof import('./hooks/useDetection').useDetectionListQuery
+  const useDetectionProcess: typeof import('./hooks/useDetectionProcess').useDetectionProcess
   const useDetectionTimer: typeof import('./hooks/useDetectionTimer').useDetectionTimer
   const useDocumentVisibility: typeof import('ahooks').useDocumentVisibility
   const useDrag: typeof import('ahooks').useDrag
@@ -148,7 +149,6 @@ declare global {
   const useFusionTable: typeof import('ahooks').useFusionTable
   const useGetState: typeof import('ahooks').useGetState
   const useHistoryTravel: typeof import('ahooks').useHistoryTravel
-  const useHomeState: typeof import('./hooks/useHomeState').useHomeState
   const useHover: typeof import('ahooks').useHover
   const useId: typeof import('react').useId
   const useImperativeHandle: typeof import('react').useImperativeHandle
@@ -167,7 +167,6 @@ declare global {
   const useMap: typeof import('ahooks').useMap
   const useMemo: typeof import('react').useMemo
   const useMemoizedFn: typeof import('ahooks').useMemoizedFn
-  const useModelConfig: typeof import('./hooks/useModelConfig').useModelConfig
   const useModelEvents: typeof import('./hooks/useModelEvents').useModelEvents
   const useMount: typeof import('ahooks').useMount
   const useMouse: typeof import('ahooks').useMouse
@@ -213,7 +212,6 @@ declare global {
   const useUpdate: typeof import('ahooks').useUpdate
   const useUpdateEffect: typeof import('ahooks').useUpdateEffect
   const useUpdateLayoutEffect: typeof import('ahooks').useUpdateLayoutEffect
-  const useUploadState: typeof import('./hooks/useUploadState').useUploadState
   const useVirtualList: typeof import('ahooks').useVirtualList
   const useVirtualizer: typeof import('@tanstack/react-virtual').useVirtualizer
   const useWebSocket: typeof import('ahooks').useWebSocket
@@ -226,11 +224,11 @@ declare global {
   export type { ThemeMode, ThemeContextValue } from './hooks/useTheme'
   import('./hooks/useTheme')
   // @ts-ignore
-  export type { ErrorBoundary } from './components/ErrorBoundary'
-  import('./components/ErrorBoundary')
+  export type { ErrorBoundary } from './components/ErrorBoundary/index'
+  import('./components/ErrorBoundary/index')
   // @ts-ignore
-  export type { SidebarProps } from './components/Sidebar'
-  import('./components/Sidebar')
+  export type { SidebarProps } from './components/Sidebar/index'
+  import('./components/Sidebar/index')
   // @ts-ignore
   export type { FilterMode } from './lib/filterBoxes'
   import('./lib/filterBoxes')

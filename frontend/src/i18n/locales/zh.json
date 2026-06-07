@@ -196,6 +196,8 @@
     "currentMetrics": "当前指标",
     "chartTitle": "训练曲线与指标",
     "trainStarted": "训练任务已启动",
+    "trainingRunning": "训练进行中…",
+    "trainingInProgress": "训练进行中，检测功能暂不可用",
     "selectRecordRequired": "请至少选择一条检测记录",
     "selectedCountTotal": "已选 {{current}}{{filtered}} / {{total}} 条",
     "selectAll": "全选",

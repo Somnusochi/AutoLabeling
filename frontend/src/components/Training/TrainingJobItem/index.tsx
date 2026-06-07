@@ -1,5 +1,5 @@
 import { Modal } from "antd";
-import { StatusBadge } from "./StatusBadge";
+import { StatusBadge } from "../StatusBadge";
 
 export function TrainingJobItem({ job }: { job: TrainingJob }) {
   const { t, i18n } = useTranslation();

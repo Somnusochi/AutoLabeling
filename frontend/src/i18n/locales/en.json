@@ -196,6 +196,8 @@
     "currentMetrics": "Current Metrics",
     "chartTitle": "Training Curves & Metrics",
     "trainStarted": "Training job started",
+    "trainingRunning": "Training in progress…",
+    "trainingInProgress": "Training in progress, detection is unavailable",
     "selectRecordRequired": "Please select at least one detection record",
     "selectedCountTotal": "Selected {{current}}{{filtered}} / {{total}} records",
     "selectAll": "Select All",

@@ -1,15 +1,17 @@
+import { useEffect } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Sidebar } from "@/components/Sidebar";
 import { VideoValidator } from "@/components/VideoValidator";
 import { DetectionSkeleton } from "@/components/LoadingSkeleton";
 import { DetectionResult } from "@/components/DetectionResult";
 import { useTranslation } from "react-i18next";
-import { useHomeState } from "@/hooks/useHomeState";
 import { useAppStore } from "@/store/useAppStore";
+import { useDetectionProcess } from "@/hooks/useDetectionProcess";
+import { useDetectionHistory } from "@/hooks/useDetectionHistory";
+import { useDetectionAnnotation } from "@/hooks/useDetectionAnnotation";
 
 export function Home() {
   const { t } = useTranslation();
-  const homeState = useHomeState();
   const {
     appMode,
     validateModelSource,
@@ -27,22 +29,33 @@ export function Home() {
     hiddenIndices,
     setCanvasMode,
     setDrawCategory,
+    result,
+    setResult,
+    batchResults,
+    setBatchResults,
   } = useAppStore();
 
   const {
-    result,
-    loading,
-    displayResult,
-    batchResults,
     elapsedMs,
-    recentCategories,
-    toggleBoxVisibility,
-    handleDeleteBox,
+    batchProgress,
+    handleFiles,
+    handleSelectKeyframe,
     handleBatchSelect,
+    handleDetect,
     handleReDetect,
-    handleSaveBoxes,
+    cancelBatch,
+    loading,
+  } = useDetectionProcess();
+
+  const { historyData, recentCategories, handleSelectHistory } = useDetectionHistory();
+
+  const {
     handleDrawBox,
-  } = homeState;
+    handleDeleteBox,
+    handleSaveBoxes,
+    toggleBoxVisibility,
+    displayResult,
+  } = useDetectionAnnotation();
 
   // Keyboard navigation for batch results
   useEffect(() => {
@@ -59,9 +72,25 @@ export function Home() {
     return () => window.removeEventListener("keydown", handler);
   }, [batchResults, result, files, handleBatchSelect]);
 
+  const sidebarProps = {
+    recentCategories,
+    handleFiles,
+    handleDetect,
+    handleSelectHistory,
+    loading,
+    batchProgress,
+    batchResults,
+    setBatchResults,
+    cancelBatch,
+    historyData,
+    result,
+    setResult,
+    handleSelectKeyframe,
+  };
+
   return (
     <>
-      <Sidebar {...homeState} />
+      <Sidebar {...sidebarProps} />
 
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
         {validateVideoId && appMode === "validate" && (
@@ -92,7 +121,7 @@ export function Home() {
               previewUrl={previewUrl}
               batchResults={batchResults}
               batchFiles={files}
-              loading={loading && !result}
+              loading={loading}
               elapsedMs={elapsedMs}
               categories={categories}
               canvasMode={canvasMode}

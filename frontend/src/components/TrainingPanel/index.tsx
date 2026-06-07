@@ -1,4 +1,5 @@
 import { Select, InputNumber, Dropdown } from "antd";
+import { useAppStore } from "@/store/useAppStore";
 
 // ── Component ───────────────────────────────────────
 
@@ -8,6 +9,8 @@ interface Props {
 
 export function TrainingPanel({ detections }: Props) {
   const { t } = useTranslation();
+  const isTraining = useAppStore((s) => s.isTraining);
+  const setIsTraining = useAppStore((s) => s.setIsTraining);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [series, setSeries] = useState("yolo26");
   const [variant, setVariant] = useState("yolo26n");
@@ -49,6 +52,12 @@ export function TrainingPanel({ detections }: Props) {
     staleTime: 5_000,
   });
 
+  useEffect(() => {
+    const jobs = jobsQuery.data;
+    if (!jobs) return;
+    setIsTraining(jobs.some((j) => j.status === "running" || j.status === "pending"));
+  }, [jobsQuery.data, setIsTraining]);
+
   const trainMut = useMutation({
     mutationFn: startTraining,
     onSuccess: () => {
@@ -84,6 +93,7 @@ export function TrainingPanel({ detections }: Props) {
       toast.error(t("trainingPanel.selectRecordRequired"));
       return;
     }
+    setIsTraining(true);
     const p = splitPresets[splitPreset] ?? { train: 0.7, val: 0.2 };
     trainMut.mutate({
       detectionIds: [...selected],
@@ -336,13 +346,15 @@ export function TrainingPanel({ detections }: Props) {
       {/* Train button */}
       <button
         type="button"
-        disabled={trainMut.isPending || selectedCount === 0}
+        disabled={isTraining || trainMut.isPending || selectedCount === 0}
         onClick={handleTrain}
         className="w-full rounded bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
       >
-        {trainMut.isPending
-          ? t("trainingPanel.starting")
-          : t("trainingPanel.startTrainCount", { count: selectedCount })}
+        {isTraining
+          ? t("trainingPanel.trainingRunning")
+          : trainMut.isPending
+            ? t("trainingPanel.starting")
+            : t("trainingPanel.startTrainCount", { count: selectedCount })}
       </button>
 
       {/* Job history */}

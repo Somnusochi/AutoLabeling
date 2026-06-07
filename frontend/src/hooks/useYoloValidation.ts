@@ -1,3 +1,5 @@
+import { useAppStore } from "@/store/useAppStore";
+
 interface ValidateMode {
   jobId: string;
   modelVariant: string;
@@ -5,9 +7,9 @@ interface ValidateMode {
 
 export function useYoloValidation() {
   const { t } = useTranslation();
+  const validateConf = useAppStore((s) => s.validateConf);
+  const validateIou = useAppStore((s) => s.validateIou);
   const [validateMode, setValidateMode] = useState<ValidateMode | null>(null);
-  const [validateConf, setValidateConf] = useState(DEFAULT_CONF);
-  const [validateIou, setValidateIou] = useState(DEFAULT_IOU);
   const [validating, setValidating] = useState(false);
 
   useEffect(() => {
@@ -93,11 +95,7 @@ export function useYoloValidation() {
 
   return {
     validateMode,
-    validateConf,
-    validateIou,
     validating,
-    setValidateConf,
-    setValidateIou,
     exitValidation,
     runValidation,
   };

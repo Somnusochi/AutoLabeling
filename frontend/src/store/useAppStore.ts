@@ -57,6 +57,16 @@ interface AppState {
   setValidateConf: (conf: number) => void;
   validateIou: number;
   setValidateIou: (iou: number) => void;
+
+  // Shared Detection State
+  result: import("@/types").Detection | null;
+  setResult: (result: import("@/types").Detection | null) => void;
+  batchResults: import("@/types").Detection[];
+  setBatchResults: (results: import("@/types").Detection[] | ((prev: import("@/types").Detection[]) => import("@/types").Detection[])) => void;
+
+  // Training State
+  isTraining: boolean;
+  setIsTraining: (v: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -125,4 +135,17 @@ export const useAppStore = create<AppState>((set) => ({
   setValidateConf: (validateConf) => set({ validateConf }),
   validateIou: 0.7,
   setValidateIou: (validateIou) => set({ validateIou }),
+
+  // Shared Detection State
+  result: null,
+  setResult: (result) => set({ result }),
+  batchResults: [],
+  setBatchResults: (updater) =>
+    set((state) => ({
+      batchResults: typeof updater === "function" ? updater(state.batchResults) : updater,
+    })),
+
+  // Training State
+  isTraining: false,
+  setIsTraining: (isTraining) => set({ isTraining }),
 }));

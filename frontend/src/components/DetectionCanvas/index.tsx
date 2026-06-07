@@ -36,6 +36,8 @@ export function DetectionCanvas({
   const [showBBox, setShowBBox] = useState(true);
   const [showMask, setShowMask] = useState(true);
 
+  const loadIdRef = useRef(0);
+
   // ── Draw image + boxes ──────────────────────────
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -48,10 +50,12 @@ export function DetectionCanvas({
     canvas.width = displayW;
     canvas.height = displayH;
 
-    // Image
+    // Image — increment load ID to cancel stale image loads
+    const loadId = ++loadIdRef.current;
     const img = new Image();
     img.src = imageUrl;
     img.onload = () => {
+      if (loadId !== loadIdRef.current) return; // stale load, skip
       ctx.clearRect(0, 0, displayW, displayH);
       ctx.drawImage(img, 0, 0, displayW, displayH);
 
@@ -159,7 +163,7 @@ export function DetectionCanvas({
             onChange={(e) => setShowBBox(e.target.checked)}
             className="h-3 w-3 rounded"
           />
-          BBox
+          {t("common.bbox")}
         </label>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
           <input
@@ -168,7 +172,7 @@ export function DetectionCanvas({
             onChange={(e) => setShowMask(e.target.checked)}
             className="h-3 w-3 rounded"
           />
-          Mask
+          {t("common.mask")}
         </label>
         {mode === "draw" && (
           <span className="text-xs text-orange-500">{t("detectionCanvas.dragTip")}</span>
