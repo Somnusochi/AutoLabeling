@@ -97,6 +97,8 @@
     "extractFailed": "关键帧提取失败",
     "deleteSuccess": "已删除",
     "deleteFailed": "删除失败",
+    "deleteConfirm": "确定删除此视频吗？",
+    "deleteAllConfirm": "确定删除全部 {{count}} 个视频吗？",
     "selectFrameRequired": "请先选择关键帧",
     "loadSuccess": "已加载 {{count}} 个关键帧到标注队列",
     "loadFailed": "加载失败",
@@ -173,7 +175,8 @@
     "confidence": "置信度",
     "showBox": "显示标注框",
     "hideBox": "隐藏标注框",
-    "deleteBox": "删除此检测框"
+    "deleteBox": "删除此检测框",
+    "deleteBoxConfirm": "确定删除此检测框吗？"
   },
   "trainingPanel": {
     "variant": "模型变体",

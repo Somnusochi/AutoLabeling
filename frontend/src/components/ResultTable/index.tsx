@@ -96,7 +96,7 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
               {onDelete && (
                 <td className="px-2 py-2">
                   <button
-                    onClick={() => onDelete(box.id)}
+                    onClick={() => { if (confirm(t("resultTable.deleteBoxConfirm"))) onDelete(box.id); }}
                     className="text-xs text-red-400 hover:text-red-600 transition-colors"
                     title={t("resultTable.deleteBox")}
                   >

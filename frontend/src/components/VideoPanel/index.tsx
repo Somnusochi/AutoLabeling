@@ -78,9 +78,10 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
 
   const handleClearAllVideos = useCallback(() => {
     const allIds = (videoList?.items ?? []).map((v) => v.id);
+    if (!confirm(t("videoPanel.deleteAllConfirm", { count: allIds.length }))) return;
     for (const id of allIds) deleteMut.mutate(id);
     setSelectedVideoId(null);
-  }, [videoList, deleteMut]);
+  }, [videoList, deleteMut, t]);
 
   const handleDrop = useCallback(
     async (e: DragEvent) => {
@@ -214,7 +215,7 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteMut.mutate(v.id);
+                      if (confirm(t("videoPanel.deleteConfirm"))) deleteMut.mutate(v.id);
                     }}
                     className="text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 px-0.5"
                   >

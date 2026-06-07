@@ -97,6 +97,8 @@
     "extractFailed": "Failed to extract keyframes",
     "deleteSuccess": "Deleted successfully",
     "deleteFailed": "Failed to delete",
+    "deleteConfirm": "Delete this video?",
+    "deleteAllConfirm": "Delete all {{count}} videos?",
     "selectFrameRequired": "Please select keyframes first",
     "loadSuccess": "Loaded {{count}} keyframes to annotation queue",
     "loadFailed": "Failed to load",
@@ -173,7 +175,8 @@
     "confidence": "Confidence",
     "showBox": "Show box",
     "hideBox": "Hide box",
-    "deleteBox": "Delete this bounding box"
+    "deleteBox": "Delete this bounding box",
+    "deleteBoxConfirm": "Delete this bounding box?"
   },
   "trainingPanel": {
     "variant": "Model Variant",

@@ -128,7 +128,7 @@ export const HistoryListItem = memo(
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete(det.id);
+                    if (confirm(t("historyList.deleteConfirm"))) onDelete(det.id);
                   }}
                   disabled={isDeleting}
                   className="text-xs text-red-500 hover:underline disabled:opacity-50"
