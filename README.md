@@ -20,7 +20,7 @@
 
 ![Architecture](docs/architecture_en.png)
 
-> See [Architecture & Workflow Documentation](docs/architecture_diagram.md) for detailed Mermaid diagrams.
+> See [Architecture & Workflow Documentation](docs/architecture_diagram_en.md) for detailed Mermaid diagrams.
 
 ## Key Features
 - 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
