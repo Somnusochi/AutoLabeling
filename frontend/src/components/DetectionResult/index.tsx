@@ -217,6 +217,7 @@ export function DetectionResult({
           {batchFiles.map((file, i) => {
             const res = batchResults[i];
             const done = !!res;
+            const pending = !done && loading;
             const isActive = done && result.id === res.id;
             return (
               <button
@@ -228,7 +229,7 @@ export function DetectionResult({
                     ? "border-primary-500"
                     : done
                       ? "border-transparent hover:border-gray-200"
-                      : "border-gray-200 opacity-60"
+                      : "border-gray-200 opacity-40"
                 }`}
               >
                 <img
@@ -240,14 +241,14 @@ export function DetectionResult({
                   <span className="absolute -top-1 -right-1 bg-primary-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
                     {res.boxes.length}
                   </span>
-                ) : (
+                ) : pending ? (
                   <div className="absolute inset-0 bg-white/50 rounded flex items-center justify-center">
                     <svg className="animate-spin h-4 w-4 text-primary-500" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   </div>
-                )}
+                ) : null}
               </button>
             );
           })}
