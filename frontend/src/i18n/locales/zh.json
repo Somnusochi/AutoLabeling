@@ -249,6 +249,8 @@
     "format": "标注格式",
     "dropZip": "拖拽 .zip 文件到此处，或点击浏览",
     "import": "开始导入",
+    "uploading": "正在上传分片…",
+    "assembling": "正在合并文件…",
     "importing": "正在导入…",
     "importSuccess": "成功导入 {{count}} 张图片",
     "importFailed": "导入失败",

@@ -249,6 +249,8 @@
     "format": "标注形式",
     "dropZip": ".zip 文件投入選択",
     "import": "導入開始",
+    "uploading": "分割転送中…",
+    "assembling": "結合中…",
     "importing": "導入中…",
     "importSuccess": "{{count}} 枚画像導入完了",
     "importFailed": "導入失敗",

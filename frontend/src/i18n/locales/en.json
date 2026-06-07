@@ -249,6 +249,8 @@
     "format": "Annotation Format",
     "dropZip": "Drag a .zip file here or click to browse",
     "import": "Import",
+    "uploading": "Uploading chunks…",
+    "assembling": "Assembling file…",
     "importing": "Importing…",
     "importSuccess": "Successfully imported {{count}} images",
     "importFailed": "Import failed",

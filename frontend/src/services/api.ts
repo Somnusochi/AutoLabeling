@@ -263,6 +263,38 @@ export interface ImportProgress {
   error?: string | null;
 }
 
+export interface ChunkInitResult {
+  uploadId: string;
+  totalChunks: number;
+  uploadedChunks: number[];
+}
+
+export async function importChunkInit(
+  fileName: string,
+  totalSize: number,
+  format: string,
+): Promise<ChunkInitResult> {
+  const { data } = await request.post<{ data: ChunkInitResult }>(
+    "/datasets/import/chunk/init",
+    { fileName, totalSize, chunkSize: 5 * 1024 * 1024 },
+    { params: { format } },
+  );
+  return data.data;
+}
+
+export async function importChunkComplete(uploadId: string, format: string): Promise<ImportResult> {
+  const { data } = await request.post<{ data: ImportResult }>(
+    `/datasets/import/chunk/${uploadId}/complete`,
+    null,
+    { params: { format } },
+  );
+  return data.data;
+}
+
+export async function importChunkCancel(uploadId: string): Promise<void> {
+  await request.delete(`/datasets/import/chunk/${uploadId}`);
+}
+
 export async function importDataset(
   file: File,
   format: string,
