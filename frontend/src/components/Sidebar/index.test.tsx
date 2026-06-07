@@ -15,7 +15,7 @@ describe("Sidebar", () => {
       batchProgress: { current: 0, total: 0 },
       batchResults: [],
       setBatchResults: vi.fn(),
-      cancelBatch: vi.fn(),
+      cancel: vi.fn(),
       historyData: undefined,
       result: null,
       setResult: vi.fn(),

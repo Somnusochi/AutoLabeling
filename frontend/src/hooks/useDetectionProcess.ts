@@ -39,10 +39,24 @@ export function useDetectionProcess() {
   const timer = useDetectionTimer();
   const queryClient = useQueryClient();
   const detectMut = useDetectMutation();
+  const abortRef = useRef<AbortController | null>(null);
 
   const { batchProgress, runBatch, cancelBatch, setBatchProgress } =
     useBatchDetection();
   const { validating, runValidation } = useYoloValidation();
+
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+    cancelBatch();
+  }, [cancelBatch]);
+
+  // Create fresh AbortController for each operation
+  const newAbortController = useCallback(() => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    return ctrl;
+  }, []);
 
   // ── YOLO event listener ──────────────────────────
   useEffect(() => {
@@ -89,6 +103,7 @@ export function useDetectionProcess() {
     if (!useSam2 && !useSam3) optimisticModelLoading("vlm");
     timer.startTimer();
     batchFileMap.clear();
+    const ctrl = newAbortController();
 
     try {
       if (appMode === "validate") {
@@ -108,6 +123,7 @@ export function useDetectionProcess() {
                 const resp = await fetch(`${API_BASE}/train/upload-model`, {
                   method: "POST",
                   body: form,
+                  signal: ctrl.signal,
                 });
                 const json = await resp.json();
                 if (json.data?.token) {
@@ -121,6 +137,7 @@ export function useDetectionProcess() {
             try {
               cachedToken = await promise;
             } catch (e) {
+              if (e instanceof DOMException && e.name === "AbortError") return;
               console.error("Upload model failed:", e);
               tokenCache.delete(externalModelFile);
               uploadCache.delete(externalModelFile);
@@ -137,7 +154,8 @@ export function useDetectionProcess() {
         const results: Detection[] = [];
         setBatchProgress({ current: 0, total: files.length });
         for (let i = 0; i < files.length; i++) {
-          const data = await runValidation(files[i], selectedTrainedJobId || undefined, token);
+          if (ctrl.signal.aborted) break;
+          const data = await runValidation(files[i], selectedTrainedJobId || undefined, token, ctrl.signal);
           if (data) {
             results.push(data);
             setBatchResults([...results]);
@@ -174,6 +192,7 @@ export function useDetectionProcess() {
             setPreviewUrl(URL.createObjectURL(file));
           }
         },
+        ctrl.signal,
       );
       queryClient.invalidateQueries({ queryKey: ["detections"] });
     } finally {
@@ -206,6 +225,7 @@ export function useDetectionProcess() {
 
   const handleReDetect = useCallback(async () => {
     if (!result) return;
+    const ctrl = newAbortController();
     timer.startTimer();
     try {
       let file: File;
@@ -213,7 +233,7 @@ export function useDetectionProcess() {
       if (cached) {
         file = cached;
       } else {
-        const blob = await fetch(`${API_BASE}/detections/${result.id}/image`).then((r) => r.blob());
+        const blob = await fetch(`${API_BASE}/detections/${result.id}/image`, { signal: ctrl.signal }).then((r) => r.blob());
         file = new File([blob], result.imageName, { type: blob.type });
       }
       const data = await detectMut.mutateAsync({
@@ -226,6 +246,7 @@ export function useDetectionProcess() {
         useSam3Seg,
         sam3Threshold,
         sam3MaskThreshold,
+        signal: ctrl.signal,
       });
       if (data) batchFileMap.set(data.id, file);
       setResult(data);
@@ -264,7 +285,7 @@ export function useDetectionProcess() {
     handleBatchSelect,
     handleDetect,
     handleReDetect,
-    cancelBatch,
+    cancel,
     loading,
   };
 }

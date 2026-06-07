@@ -30,6 +30,7 @@ export function useDetectMutation() {
       useSam3Seg?: boolean;
       sam3Threshold?: number;
       sam3MaskThreshold?: number;
+      signal?: AbortSignal;
     }) =>
       detectImage(
         file,
@@ -41,6 +42,7 @@ export function useDetectMutation() {
         useSam3Seg,
         sam3Threshold,
         sam3MaskThreshold,
+        signal,
       ),
     onMutate: ({ useSam2 }) => {
       qc.invalidateQueries({ queryKey: ["model-status"] });

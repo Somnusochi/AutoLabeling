@@ -14,6 +14,7 @@ export function useBatchDetection() {
       sam3Threshold: number,
       sam3MaskThreshold: number,
       onEach: (result: Detection, file: File, index: number, elapsed: number) => void,
+      signal?: AbortSignal,
     ) => {
       const results: Detection[] = [];
       setBatchProgress({ current: 0, total: files.length });
@@ -23,7 +24,7 @@ export function useBatchDetection() {
 
       try {
         for (let i = 0; i < files.length; i++) {
-          if (!batchRef.current) break;
+          if (!batchRef.current || signal?.aborted) break;
           const data = await detectImage(
             files[i],
             categories,
@@ -34,6 +35,7 @@ export function useBatchDetection() {
             useSam3Seg,
             sam3Threshold,
             sam3MaskThreshold,
+            signal,
           );
           results.push(data);
           if (i === files.length - 1) {
@@ -44,7 +46,10 @@ export function useBatchDetection() {
           elapsed = Math.round(performance.now() - t0);
           onEach(data, files[i], i, elapsed);
         }
-      } catch {
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          // silently handle abort
+        }
         setBatchProgress({ current: 0, total: 0 });
       }
       return { results, elapsed };

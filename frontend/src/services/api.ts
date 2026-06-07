@@ -10,6 +10,7 @@ export async function detectImage(
   useSam3Seg?: boolean,
   sam3Threshold?: number,
   sam3MaskThreshold?: number,
+  signal?: AbortSignal,
 ): Promise<DetectResponse> {
   const form = new FormData();
   form.append("file", file);
@@ -24,7 +25,7 @@ export async function detectImage(
     form.append("use_sam2", "true");
     if (sam2ScoreThreshold != null) form.append("sam2_score_threshold", String(sam2ScoreThreshold));
   }
-  const { data } = await request.post<{ data: DetectResponse }>("/detect", form);
+  const { data } = await request.post<{ data: DetectResponse }>("/detect", form, { signal });
   return data.data;
 }
 

@@ -34,6 +34,7 @@ export function useYoloValidation() {
       file: File,
       jobId?: string,
       token?: string,
+      signal?: AbortSignal,
       modelVariant?: string,
     ): Promise<Detection | null> => {
       const activeJobId = jobId || validateMode?.jobId;
@@ -53,7 +54,7 @@ export function useYoloValidation() {
           ? `${API_BASE}/train/validate-image/${token}`
           : `${API_BASE}/train/jobs/${activeJobId}/predict`;
 
-        const res = await fetch(url, { method: "POST", body: form });
+        const res = await fetch(url, { method: "POST", body: form, signal });
         const json = await res.json();
         if (!res.ok) {
           toast.error(json.error?.message ?? t("validationSettings.validationFailed"));

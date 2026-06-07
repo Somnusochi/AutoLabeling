@@ -43,7 +43,7 @@ export function Home() {
     handleBatchSelect,
     handleDetect,
     handleReDetect,
-    cancelBatch,
+    cancel,
     loading,
   } = useDetectionProcess();
 
@@ -81,7 +81,7 @@ export function Home() {
     batchProgress,
     batchResults,
     setBatchResults,
-    cancelBatch,
+    cancel,
     historyData,
     result,
     setResult,

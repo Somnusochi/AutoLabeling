@@ -22,7 +22,7 @@ export interface SidebarProps {
   batchProgress: { current: number; total: number };
   batchResults: Detection[];
   setBatchResults: React.Dispatch<React.SetStateAction<Detection[]>>;
-  cancelBatch: () => void;
+  cancel: () => void;
   historyData?: { items: Detection[]; total: number };
   result: Detection | null;
   setResult: (result: Detection | null) => void;
@@ -42,7 +42,7 @@ export function Sidebar({
   batchProgress,
   batchResults,
   setBatchResults,
-  cancelBatch,
+  cancel,
   historyData,
   result,
   setResult,
@@ -444,7 +444,7 @@ export function Sidebar({
         current={batchProgress.current}
         total={batchProgress.total}
         completed={batchResults.length}
-        onCancel={cancelBatch}
+        onCancel={cancel}
       />
 
       {result && (
