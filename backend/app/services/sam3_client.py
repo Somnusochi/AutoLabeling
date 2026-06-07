@@ -63,9 +63,24 @@ def is_sam3_running() -> bool:
         return False
 
 
+def _is_sam3_loaded() -> bool:
+    """Check both that the server is alive AND the model has finished loading."""
+    import json
+    import urllib.request
+
+    try:
+        resp = urllib.request.urlopen(f"{SAM3_URL}/health", timeout=2)
+        if resp.status != 200:
+            return False
+        data = json.loads(resp.read())
+        return data.get("status") == "loaded"
+    except Exception:
+        return False
+
+
 def start_sam3_server() -> None:
     global _sam3_process
-    if is_sam3_running():
+    if _is_sam3_loaded():
         return
 
     hf_token = os.environ.get("HF_TOKEN", "")
@@ -98,13 +113,13 @@ def start_sam3_server() -> None:
         stderr=sam3_log,
         env=env,
     )
-    # Wait for it to be ready
-    for _ in range(30):
+    # Wait for model to be fully loaded (not just server alive)
+    for _ in range(60):
         time.sleep(1)
-        if is_sam3_running():
+        if _is_sam3_loaded():
             logger.info("SAM3 server ready")
             return
-    raise RuntimeError("SAM3 server did not start within 30s")
+    raise RuntimeError("SAM3 model did not load within 60s")
 
 
 def stop_sam3_server() -> None:
@@ -145,7 +160,7 @@ def segment_sam3(
     _bump_activity()
     _ensure_watchdog()
 
-    if not is_sam3_running():
+    if not _is_sam3_loaded():
         start_sam3_server()
 
     boundary = "----FormBoundary" + os.urandom(8).hex()

@@ -108,7 +108,13 @@ class TestDetectionFlow:
         _validate_detection_response(data)
         assert len(data["boxes"]) > 0
 
-    @pytest.mark.skipif(not os.environ.get("HF_TOKEN"), reason="SAM3 requires HF_TOKEN")
+    @pytest.mark.skipif(
+        not os.environ.get("HF_TOKEN")
+        and not os.path.isdir(
+            os.path.expanduser("~/.cache/huggingface/hub/models--facebook--sam3")
+        ),
+        reason="SAM3 requires HF_TOKEN or cached model",
+    )
     def test_detect_sam3(self):
         """SAM3 detection returns valid response."""
         resp = _post_detect(use_sam3=True)
