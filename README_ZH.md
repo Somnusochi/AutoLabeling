@@ -18,6 +18,14 @@
 
 **图片/视频扔进去 → YOLO 模型训出来**，基于 LocateAnything-3B 的 VLM 自动标注 + SAM2.1 / SAM3 mask 精修 + 人工闭环修正。多格式导出、一键 YOLO 训练（检测 & 分割）、视频关键帧提取、模型验证——macOS MPS / Windows & Linux CUDA 全链路 GPU 加速。
 
+### 系统架构
+
+![系统架构](docs/architecture.png)
+
+### 业务流程
+
+![业务流程](docs/workflow.png)
+
 ## 核心功能
 - 🤖 **VLM 自动标注**：基于 LocateAnything-3B 的开放词汇目标检测
 - 🎯 **SAM2 / SAM3 分割**：SAM2 精修 VLM 检测框；SAM3 文本驱动的端到端检测+分割，BBox/Mask 画布独立开关
