@@ -22,6 +22,7 @@ export function Home() {
     validateVideoId,
     validateRunKey,
     previewUrl,
+    setPreviewUrl,
     files,
     categories,
     canvasMode,
