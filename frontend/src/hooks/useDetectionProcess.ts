@@ -104,6 +104,10 @@ export function useDetectionProcess() {
     timer.startTimer();
     batchFileMap.clear();
     const ctrl = newAbortController();
+    // Clear old result, show first new image immediately
+    setResult(null);
+    setBatchResults([]);
+    setPreviewUrl(URL.createObjectURL(files[0]));
 
     try {
       if (appMode === "validate") {
