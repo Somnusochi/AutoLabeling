@@ -27,6 +27,7 @@ class DetectionRepository:
         image_height: int,
         categories: list,  # JSONB stores Python list directly
         model_name: str = "LocateAnything-3B",
+        commit: bool = False,
     ) -> Detection:
         det = Detection(
             image_path=image_path,
@@ -37,10 +38,16 @@ class DetectionRepository:
             model_name=model_name,
         )
         self.db.add(det)
-        self.db.flush()  # get id without committing
+        if commit:
+            self.db.commit()
+            self.db.refresh(det)
+        else:
+            self.db.flush()  # get id without committing
         return det
 
-    def add_boxes(self, detection_id: str, boxes: list[dict]) -> list[DetectionBox]:
+    def add_boxes(
+        self, detection_id: str, boxes: list[dict], commit: bool = False
+    ) -> list[DetectionBox]:
         """boxes: [{"x1","y1","x2","y2","class_name","confidence","mask_polygon"}, ...]"""
         entities = [
             DetectionBox(
@@ -56,16 +63,39 @@ class DetectionRepository:
             for b in boxes
         ]
         self.db.add_all(entities)
-        self.db.flush()
+        if commit:
+            self.db.commit()
+        else:
+            self.db.flush()
         return entities
 
-    def replace_boxes(self, detection_id: str, boxes: list[dict]) -> list[DetectionBox]:
+    def replace_boxes(
+        self, detection_id: str, boxes: list[dict], commit: bool = False
+    ) -> list[DetectionBox]:
         """Delete all existing boxes for a detection and insert new ones."""
         self.db.query(DetectionBox).filter(
             DetectionBox.detection_id == detection_id,
         ).delete()
-        self.db.flush()
-        return self.add_boxes(detection_id, boxes)
+        # Note: If commit=True, the flush on delete is skipped, and the subsequent
+        # add_boxes(commit=True) will commit both the delete and the inserts
+        # in a single transaction.
+        if not commit:
+            self.db.flush()
+        return self.add_boxes(detection_id, boxes, commit=commit)
+
+    def update_detection(self, detection: Detection, commit: bool = False) -> None:
+        if commit:
+            self.db.commit()
+            self.db.refresh(detection)
+        else:
+            self.db.flush()
+
+    def update_box(self, box: DetectionBox, commit: bool = False) -> None:
+        if commit:
+            self.db.commit()
+            self.db.refresh(box)
+        else:
+            self.db.flush()
 
     # ── read ───────────────────────────────────────────
 
@@ -90,9 +120,12 @@ class DetectionRepository:
 
     # ── delete ─────────────────────────────────────────
 
-    def delete(self, detection: Detection) -> None:
+    def delete(self, detection: Detection, commit: bool = False) -> None:
         self.db.delete(detection)
-        self.db.flush()
+        if commit:
+            self.db.commit()
+        else:
+            self.db.flush()
 
     def get_box(self, detection_id: str, box_id: str) -> DetectionBox | None:
         return (
@@ -104,6 +137,9 @@ class DetectionRepository:
             .first()
         )
 
-    def delete_box(self, box: DetectionBox) -> None:
+    def delete_box(self, box: DetectionBox, commit: bool = False) -> None:
         self.db.delete(box)
-        self.db.flush()
+        if commit:
+            self.db.commit()
+        else:
+            self.db.flush()

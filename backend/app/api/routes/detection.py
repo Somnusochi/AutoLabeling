@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 import shutil
-import time
 import uuid
 from pathlib import Path
 
@@ -13,14 +12,15 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from ...core.config import settings
 from ...core.exceptions import AppError, NotFoundError
+from ...models.detection import FilterMode
 from ...repositories.detection import DetectionRepository
 from ...schemas.common import APIResponse, BaseSchema
-from ...schemas.detection import DetectionListItem, DetectionOut
-from ...services.detection_strategy import create_strategy
+from ...schemas.detection import DetectionListItem, DetectionOut, DetectionParams
+from ...services.detection_service import process_detection
 from ...services.locate_anything import get_model_status, is_model_loaded, unload_model
 from ...services.sam2_service import get_sam2_status, is_sam_loaded, unload_sam
 from ...services.sam3_client import is_sam3_running, stop_sam3_server
-from ..deps import get_repo, get_request_id
+from ..deps import get_repo
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["detection"])
@@ -46,7 +46,6 @@ async def create_detection(
     sam3_threshold: float = Form(0.5, ge=0.0, le=1.0),
     sam3_mask_threshold: float = Form(0.5, ge=0.0, le=1.0),
     repo: DetectionRepository = Depends(get_repo),
-    request_id: str = Depends(get_request_id),
 ) -> APIResponse:
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(400, detail="File must be an image")
@@ -67,64 +66,24 @@ async def create_detection(
     filepath, safe_name = _save_upload(file)
     original_name = Path(file.filename).name  # type: ignore[arg-type]
 
-    # Unload the competing model to free GPU memory
-    if use_sam3:
-        if is_model_loaded():
-            unload_model()
-        if is_sam_loaded():
-            unload_sam()
-    else:
-        if is_sam3_running():
-            stop_sam3_server()
-
-    t0 = time.perf_counter()
-
-    strategy = create_strategy(use_sam2=use_sam2, use_sam3=use_sam3)
-    strategy_kwargs = {
-        "sam2_score_threshold": sam2_score_threshold,
-        "use_sam3_seg": use_sam3_seg,
-        "sam3_threshold": sam3_threshold,
-        "sam3_mask_threshold": sam3_mask_threshold,
-    }
     try:
-        result = await asyncio.to_thread(strategy.detect, filepath, cat_list, **strategy_kwargs)
+        detection = await process_detection(
+            filepath=filepath,
+            original_name=original_name,
+            categories=cat_list,
+            params=DetectionParams(
+                use_sam2=use_sam2,
+                use_sam3=use_sam3,
+                sam2_score_threshold=sam2_score_threshold,
+                sam3_text=sam3_text,
+                use_sam3_seg=use_sam3_seg,
+                sam3_threshold=sam3_threshold,
+                sam3_mask_threshold=sam3_mask_threshold,
+            ),
+            repo=repo,
+        )
     except AppError as exc:
-        logger.exception("Inference failed")
         raise HTTPException(exc.status_code, detail=exc.detail) from exc
-
-    # ── persistence via repository ──
-    if use_sam3:
-        model_type = "sam3"
-    elif use_sam2:
-        model_type = "vlm+sam2"
-    else:
-        model_type = "vlm"
-
-    detection = repo.create(
-        image_path=filepath,
-        image_name=original_name,
-        image_width=result.img_w,
-        image_height=result.img_h,
-        categories=cat_list,
-    )
-    detection.model_type = model_type
-    detection.elapsed_ms = int((time.perf_counter() - t0) * 1000)
-    polys = result.polygons
-    box_dicts: list[dict] = [
-        {
-            "class_name": b.get("class_name") or cat_list[0] or "object",
-            "x1": b["x1"],
-            "y1": b["y1"],
-            "x2": b["x2"],
-            "y2": b["y2"],
-            "confidence": b.get("confidence"),
-            "mask_polygon": polys[i] if i < len(polys) else None,
-        }
-        for i, b in enumerate(result.boxes)
-    ]
-    repo.add_boxes(detection.id, box_dicts)
-    repo.db.commit()
-    repo.db.refresh(detection)
 
     return APIResponse(
         data=DetectionOut.model_validate(detection).model_dump(by_alias=True),
@@ -136,7 +95,6 @@ def list_detections(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=10000, validation_alias="pageSize"),
     repo: DetectionRepository = Depends(get_repo),
-    request_id: str = Depends(get_request_id),
 ) -> APIResponse:
     items, total = repo.list(page=page, page_size=page_size)
     return APIResponse(
@@ -151,7 +109,6 @@ def list_detections(
 def get_detection(
     detection_id: str,
     repo: DetectionRepository = Depends(get_repo),
-    request_id: str = Depends(get_request_id),
 ) -> APIResponse:
     det = repo.get_by_id(detection_id)
     if not det:
@@ -173,8 +130,7 @@ def delete_detection(
         Path(det.image_path).unlink(missing_ok=True)
     except OSError:
         logger.warning("Could not delete image file: %s", det.image_path)
-    repo.delete(det)
-    repo.db.commit()
+    repo.delete(det, commit=True)
 
 
 @router.post("/detections/{detection_id}/boxes/{box_id}/delete", status_code=204)
@@ -186,8 +142,7 @@ def delete_box(
     box = repo.get_box(detection_id, box_id)
     if not box:
         raise NotFoundError("DetectionBox", box_id)
-    repo.delete_box(box)
-    repo.db.commit()
+    repo.delete_box(box, commit=True)
 
 
 class AddBoxBody(BaseSchema):
@@ -225,13 +180,21 @@ def add_box(
                 "y2": body.y2,
             }
         ],
+        commit=True,
     )
-    repo.db.commit()
     return APIResponse(data={"ok": True})
 
 
+class ReplaceBoxItem(BaseSchema):
+    class_name: str
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+
+
 class ReplaceBoxesBody(BaseSchema):
-    boxes: list[dict]  # [{"x1","y1","x2","y2","class_name"}, ...]
+    boxes: list[ReplaceBoxItem]
 
 
 @router.put("/detections/{detection_id}/boxes")
@@ -243,13 +206,12 @@ def replace_boxes(
     det = repo.get_by_id(detection_id)
     if not det:
         raise NotFoundError("Detection", detection_id)
-    repo.replace_boxes(detection_id, body.boxes)
-    repo.db.commit()
+    repo.replace_boxes(detection_id, [b.model_dump() for b in body.boxes], commit=True)
     return APIResponse(data={"ok": True, "count": len(body.boxes)})
 
 
 class FilterSettingsBody(BaseSchema):
-    filter_mode: str  # best | nms | all
+    filter_mode: FilterMode
     filter_nms_iou: float | None = None
 
 
@@ -264,7 +226,7 @@ def save_filter_settings(
         raise NotFoundError("Detection", detection_id)
     det.filter_mode = body.filter_mode
     det.filter_nms_iou = body.filter_nms_iou
-    repo.db.commit()
+    repo.update_detection(det, commit=True)
     return APIResponse(data={"ok": True})
 
 
@@ -279,7 +241,7 @@ def update_box(
     if not box:
         raise NotFoundError("DetectionBox", box_id)
     box.x1, box.y1, box.x2, box.y2 = body.x1, body.y1, body.x2, body.y2
-    repo.db.commit()
+    repo.update_box(box, commit=True)
     return APIResponse(data={"ok": True})
 
 
@@ -364,6 +326,7 @@ async def model_events():
         fast_interval = 1.5
         slow_interval = 10.0
         stable_count = 0
+        prev_sam3: dict = {"loaded": False, "status": "unloaded"}
 
         while True:
             # VLM status
@@ -372,8 +335,9 @@ async def model_events():
             # SAM2 status
             sam2 = get_sam2_status()
 
-            # SAM3 status
-            sam3_data: dict = {"loaded": False, "status": "unloaded"}
+            # SAM3 status — keep previous value on transient health check failure
+            # (SAM3's WSGI server is single-threaded; /health times out during inference)
+            sam3_data = prev_sam3
             try:
                 resp = urllib.request.urlopen("http://127.0.0.1:8002/health", timeout=1)
                 import json as _json
@@ -383,6 +347,7 @@ async def model_events():
                     "loaded": data.get("status") == "loaded",
                     "status": data.get("status", "unloaded"),
                 }
+                prev_sam3 = sam3_data
             except Exception:
                 pass
 

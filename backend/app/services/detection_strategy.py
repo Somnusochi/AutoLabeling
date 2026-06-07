@@ -37,10 +37,11 @@ class DetectionStrategy(ABC):
 class VLMDetection(DetectionStrategy):
     """LocateAnything-3B only, no segmentation."""
 
-    def detect(self, filepath: str, categories: list[str], **kwargs) -> DetectionResult:
-        from .locate_anything import detect as vlm_detect
+    def __init__(self, vlm_detect_fn):
+        self._vlm_detect = vlm_detect_fn
 
-        result = vlm_detect(filepath, categories)
+    def detect(self, filepath: str, categories: list[str], **kwargs) -> DetectionResult:
+        result = self._vlm_detect(filepath, categories)
         boxes = result["boxes"]
         detect_w, detect_h = result["img_w"], result["img_h"]
         orig_w = result.get("orig_w", detect_w)
@@ -72,13 +73,14 @@ class VLMDetection(DetectionStrategy):
 class VLMWithSAM2(DetectionStrategy):
     """VLM detection + SAM2 mask refinement."""
 
-    def detect(self, filepath: str, categories: list[str], **kwargs) -> DetectionResult:
-        from .locate_anything import detect as vlm_detect
-        from .sam2_service import segment_image
+    def __init__(self, vlm_detect_fn, sam2_segment_fn):
+        self._vlm_detect = vlm_detect_fn
+        self._sam2_segment = sam2_segment_fn
 
+    def detect(self, filepath: str, categories: list[str], **kwargs) -> DetectionResult:
         score_threshold = kwargs.get("sam2_score_threshold", 0.0)
 
-        result = vlm_detect(filepath, categories)
+        result = self._vlm_detect(filepath, categories)
         boxes = result["boxes"]
         detect_w, detect_h = result["img_w"], result["img_h"]
         orig_w = result.get("orig_w", detect_w)
@@ -105,7 +107,7 @@ class VLMWithSAM2(DetectionStrategy):
             try:
                 img = Image.open(filepath).convert("RGB")
                 try:
-                    polygons = segment_image(img, boxes, score_threshold=score_threshold)
+                    polygons = self._sam2_segment(img, boxes, score_threshold=score_threshold)
                 finally:
                     img.close()
             except Exception:
@@ -123,14 +125,16 @@ class VLMWithSAM2(DetectionStrategy):
 class SAM3Detection(DetectionStrategy):
     """SAM3 via standalone HTTP server — detection + segmentation in one call."""
 
-    def detect(self, filepath: str, categories: list[str], **kwargs) -> DetectionResult:
-        from .sam3_client import segment_sam3
+    def __init__(self, sam3_segment_fn):
+        self._sam3_segment = sam3_segment_fn
 
+    def detect(self, filepath: str, categories: list[str], **kwargs) -> DetectionResult:
         text = " ".join(categories) if categories else ""
         use_seg = kwargs.get("use_sam3_seg", True)
         threshold = kwargs.get("sam3_threshold", 0.5)
         mask_threshold = kwargs.get("sam3_mask_threshold", 0.5)
-        sam3_boxes = segment_sam3(
+
+        sam3_boxes = self._sam3_segment(
             filepath,
             text,
             segmentation=use_seg,
@@ -154,7 +158,15 @@ class SAM3Detection(DetectionStrategy):
 
 def create_strategy(use_sam2: bool = False, use_sam3: bool = False) -> DetectionStrategy:
     if use_sam3:
-        return SAM3Detection()
+        from .sam3_client import segment_sam3
+
+        return SAM3Detection(segment_sam3)
     if use_sam2:
-        return VLMWithSAM2()
-    return VLMDetection()
+        from .locate_anything import detect as vlm_detect
+        from .sam2_service import segment_image
+
+        return VLMWithSAM2(vlm_detect, segment_image)
+
+    from .locate_anything import detect as vlm_detect
+
+    return VLMDetection(vlm_detect)

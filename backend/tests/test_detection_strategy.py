@@ -47,9 +47,9 @@ class TestDetectionResult:
 
 class TestStrategyKwargs:
     def test_sam3_strategy_accepts_use_sam3_seg(self):
-        s = SAM3Detection()
+        s = SAM3Detection(lambda *a, **kw: [])
         assert s is not None  # SAM3 requires running server, skip actual detect
 
     def test_vlm_strategy_has_detect_method(self):
-        s = VLMDetection()
+        s = VLMDetection(lambda *a, **kw: {})
         assert hasattr(s, "detect")

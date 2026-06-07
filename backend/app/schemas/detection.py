@@ -5,7 +5,18 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
+from ..models.detection import DetectionStatus, FilterMode
 from .common import BaseSchema, _coerce_uuid
+
+
+class DetectionParams(BaseSchema):
+    use_sam2: bool = False
+    use_sam3: bool = False
+    sam2_score_threshold: float = 0.0
+    sam3_text: str = ""
+    use_sam3_seg: bool = True
+    sam3_threshold: float = 0.5
+    sam3_mask_threshold: float = 0.5
 
 
 class DetectionBoxOut(BaseSchema):
@@ -56,9 +67,9 @@ class DetectionListItem(BaseSchema):
     image_width: int
     image_height: int
     elapsed_ms: int | None = None
-    filter_mode: str | None = None
+    filter_mode: FilterMode | None = None
     filter_nms_iou: float | None = None
-    status: str
+    status: DetectionStatus
     created_at: datetime
     boxes: list[DetectionBoxItem] = []
 

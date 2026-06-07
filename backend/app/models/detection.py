@@ -1,12 +1,30 @@
 from __future__ import annotations
 
+import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Index, Integer, String, Text, Uuid
+from sqlalchemy import JSON, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..core.database import Base
+
+
+class ModelType(enum.StrEnum):
+    vlm = "vlm"
+    vlm_sam2 = "vlm+sam2"
+    sam3 = "sam3"
+
+
+class FilterMode(enum.StrEnum):
+    best = "best"
+    nms = "nms"
+    all = "all"
+
+
+class DetectionStatus(enum.StrEnum):
+    completed = "completed"
+    failed = "failed"
 
 
 class Detection(Base):
@@ -19,18 +37,19 @@ class Detection(Base):
     )
     image_path: Mapped[str] = mapped_column(Text, nullable=False)
     image_name: Mapped[str] = mapped_column(String(512), nullable=False)
-    categories: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    categories: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     model_name: Mapped[str] = mapped_column(String(256), default="LocateAnything-3B")
-    model_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    model_type: Mapped[ModelType | None] = mapped_column(
+        Enum(ModelType, values_callable=lambda x: [e.value for e in x]), nullable=True
+    )
     image_width: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     image_height: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     elapsed_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    filter_mode: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    filter_mode: Mapped[FilterMode | None] = mapped_column(Enum(FilterMode), nullable=True)
     filter_nms_iou: Mapped[float | None] = mapped_column(Float, nullable=True)
-    status: Mapped[str] = mapped_column(
-        String(32),
-        default="completed",
-        # check constraint added via migration
+    status: Mapped[DetectionStatus] = mapped_column(
+        Enum(DetectionStatus),
+        default=DetectionStatus.completed,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
