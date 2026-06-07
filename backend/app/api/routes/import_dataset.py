@@ -52,18 +52,14 @@ async def chunk_init(request: Request) -> APIResponse:
     total_chunks = max(1, (total_size + chunk_size - 1) // chunk_size)
 
     # Derive stable uploadId from file identity
-    upload_id = hashlib.md5(
-        f"{file_name}:{total_size}".encode()
-    ).hexdigest()[:16]
+    upload_id = hashlib.md5(f"{file_name}:{total_size}".encode()).hexdigest()[:16]
 
     chunk_dir = CHUNK_DIR / upload_id
     chunk_dir.mkdir(parents=True, exist_ok=True)
 
     # Check which chunks are already uploaded
     uploaded = sorted(
-        int(p.name.replace("chunk_", ""))
-        for p in chunk_dir.glob("chunk_*")
-        if p.stat().st_size > 0
+        int(p.name.replace("chunk_", "")) for p in chunk_dir.glob("chunk_*") if p.stat().st_size > 0
     )
 
     # Write/update meta
@@ -76,11 +72,13 @@ async def chunk_init(request: Request) -> APIResponse:
     }
     (chunk_dir / "meta.json").write_text(json.dumps(meta))
 
-    return APIResponse(data={
-        "uploadId": upload_id,
-        "totalChunks": total_chunks,
-        "uploadedChunks": uploaded,
-    })
+    return APIResponse(
+        data={
+            "uploadId": upload_id,
+            "totalChunks": total_chunks,
+            "uploadedChunks": uploaded,
+        }
+    )
 
 
 @router.put("/datasets/import/chunk/{upload_id}/{chunk_index}")
@@ -122,16 +120,16 @@ def chunk_status(upload_id: str) -> APIResponse:
         meta = json.loads(meta_path.read_text())
 
     uploaded = sorted(
-        int(p.name.replace("chunk_", ""))
-        for p in chunk_dir.glob("chunk_*")
-        if p.stat().st_size > 0
+        int(p.name.replace("chunk_", "")) for p in chunk_dir.glob("chunk_*") if p.stat().st_size > 0
     )
 
-    return APIResponse(data={
-        "uploadId": upload_id,
-        "totalChunks": meta.get("totalChunks", 0),
-        "uploadedChunks": uploaded,
-    })
+    return APIResponse(
+        data={
+            "uploadId": upload_id,
+            "totalChunks": meta.get("totalChunks", 0),
+            "uploadedChunks": uploaded,
+        }
+    )
 
 
 @router.post("/datasets/import/chunk/{upload_id}/complete")
@@ -185,9 +183,7 @@ def chunk_complete(
         db = SessionLocal()
         local_repo = DetectionRepository(db)
         try:
-            detection_ids = do_import(
-                db, local_repo, str(zip_path), meta["format"], cancel_event
-            )
+            detection_ids = do_import(db, local_repo, str(zip_path), meta["format"], cancel_event)
             _write_progress(
                 import_id,
                 {
