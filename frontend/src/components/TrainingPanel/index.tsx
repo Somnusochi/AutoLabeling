@@ -346,14 +346,14 @@ export function TrainingPanel({ detections }: Props) {
       {/* Train button */}
       <button
         type="button"
-        disabled={isTraining || trainMut.isPending || selectedCount === 0}
+        disabled={trainMut.isPending || selectedCount === 0}
         onClick={handleTrain}
         className="w-full rounded bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
       >
-        {isTraining
-          ? t("trainingPanel.trainingRunning")
-          : trainMut.isPending
-            ? t("trainingPanel.starting")
+        {trainMut.isPending
+          ? t("trainingPanel.starting")
+          : isTraining
+            ? t("trainingPanel.addToQueue", { count: selectedCount })
             : t("trainingPanel.startTrainCount", { count: selectedCount })}
       </button>
 
