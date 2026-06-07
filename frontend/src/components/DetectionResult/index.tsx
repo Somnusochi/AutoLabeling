@@ -17,6 +17,7 @@ interface Props {
   onDrawCategoryChange: (cat: string) => void;
   onDeleteBox: (boxId: string) => void;
   onSelectBatch: (det: Detection, file?: File) => void;
+  onSelectPending?: (url: string) => void;
   onReDetect: () => void;
   onSaveBoxes: () => void;
   onDrawBox: (box: { x1: number; y1: number; x2: number; y2: number }) => void;
@@ -40,6 +41,7 @@ export function DetectionResult({
   onDrawCategoryChange,
   onDeleteBox,
   onSelectBatch,
+  onSelectPending,
   onReDetect,
   onSaveBoxes,
   onDrawBox,
@@ -224,7 +226,13 @@ export function DetectionResult({
             return (
               <button
                 key={i}
-                onClick={() => onSelectBatch(res || null, file)}
+                onClick={() => {
+                  if (res) {
+                    onSelectBatch(res, file);
+                  } else {
+                    onSelectPending?.(blobUrls[i]);
+                  }
+                }}
                 disabled={false}
                 className={`relative flex-shrink-0 rounded border-2 p-1 transition-colors ${
                   isActive

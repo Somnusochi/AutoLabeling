@@ -182,7 +182,7 @@ export function DatasetImportModal({ open, onClose }: Props) {
       onCancel={handleClose}
       footer={null}
       title={t("datasetImport.title")}
-      maskClosable={!isBusy}
+      mask={{ closable: !isBusy }}
     >
       <div className="space-y-4 py-2">
         {/* Format selector */}

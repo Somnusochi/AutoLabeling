@@ -134,6 +134,7 @@ export function Home() {
               onDrawCategoryChange={setDrawCategory}
               onDeleteBox={handleDeleteBox}
               onSelectBatch={handleBatchSelect}
+              onSelectPending={setPreviewUrl}
               onReDetect={handleReDetect}
               onSaveBoxes={handleSaveBoxes}
               onDrawBox={handleDrawBox}

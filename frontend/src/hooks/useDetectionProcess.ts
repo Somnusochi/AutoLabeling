@@ -90,8 +90,8 @@ export function useDetectionProcess() {
   );
 
   const handleBatchSelect = useCallback(
-    (det: Detection | null, file?: File) => {
-      if (det) setResult(det);
+    (det: Detection, file?: File) => {
+      setResult(det);
       if (file) setPreviewUrl(URL.createObjectURL(file));
     },
     [setPreviewUrl, setResult],
