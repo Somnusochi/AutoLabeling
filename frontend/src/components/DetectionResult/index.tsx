@@ -218,12 +218,14 @@ export function DetectionResult({
             const res = batchResults[i];
             const done = !!res;
             const pending = !done && loading;
-            const isActive = done && result.id === res.id;
+            const isActive = done
+              ? result.id === res.id
+              : previewUrl === blobUrls[i];
             return (
               <button
                 key={i}
-                onClick={() => done && onSelectBatch(res, file)}
-                disabled={!done}
+                onClick={() => onSelectBatch(res || null, file)}
+                disabled={false}
                 className={`relative flex-shrink-0 rounded border-2 p-1 transition-colors ${
                   isActive
                     ? "border-primary-500"
