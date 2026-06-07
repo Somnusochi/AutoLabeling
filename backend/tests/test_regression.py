@@ -20,6 +20,17 @@ SNAPSHOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "snapsho
 CAT_DIR = os.path.join(_PROJECT_ROOT, "test_images", "cat")
 IMAGES = sorted(glob.glob(os.path.join(CAT_DIR, "*.jpg")))[:5] if os.path.isdir(CAT_DIR) else []
 
+
+def _backend_reachable():
+    try:
+        requests.get(f"{BASE}/model/status", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+backend_required = pytest.mark.skipif(not _backend_reachable(), reason="Backend not running")
+
 # Tolerance: box coordinates ±5px, confidence ±0.1
 POS_TOLERANCE = 5
 CONF_TOLERANCE = 0.15
@@ -65,6 +76,7 @@ def regenerate_snapshots():
         print(f"  Saved {snapshot_path} ({snapshot['boxCount']} boxes)")
 
 
+@backend_required
 @pytest.mark.skipif(not IMAGES, reason="no test images")
 class TestRegressionSnapshots:
     def test_snapshots_exist(self):

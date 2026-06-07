@@ -20,6 +20,17 @@ CAT_DIR = os.path.join(_PROJECT_ROOT, "test_images", "cat")
 TEST_IMAGE = os.path.join(CAT_DIR, "pexels-helen1-30002394.jpg") if os.path.isdir(CAT_DIR) else None
 
 
+def _backend_reachable():
+    try:
+        requests.get(f"{BASE}/model/status", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+backend_required = pytest.mark.skipif(not _backend_reachable(), reason="Backend not running")
+
+
 def _validate_boxes(boxes, img_w, img_h):
     """Assert box data integrity — not just shape, but bounds correctness."""
     for b in boxes:
@@ -80,6 +91,7 @@ def _post_detect(use_sam3=False):
         )
 
 
+@backend_required
 @pytest.mark.skipif(not (TEST_IMAGE and os.path.exists(TEST_IMAGE)), reason="no test images")
 class TestDetectionFlow:
     def test_detect_vlm(self):
@@ -149,6 +161,7 @@ class TestDetectionFlow:
         assert len(detail["boxes"]) == len(item["boxes"])
 
 
+@backend_required
 class TestModelManagement:
     def test_model_events_sse(self):
         """SSE endpoint streams model status events."""
@@ -180,6 +193,7 @@ class TestModelManagement:
         assert resp.status_code in (204, 500)
 
 
+@backend_required
 class TestTrainingFlow:
     def test_list_training_jobs(self):
         """Training jobs list endpoint works."""
