@@ -66,8 +66,15 @@ function subscribe(fn: (s: ModelStates) => void) {
   };
 }
 
-/** Immediately mark a model as loading — SSE will correct it on next poll. */
+/** Immediately mark a model as loading — SSE will correct it on next poll.
+    Skips if the model is already loaded to avoid flickering. */
 export function optimisticModelLoading(model: "vlm" | "sam2" | "sam3") {
+  const alreadyLoaded =
+    model === "vlm" ? cached.vlm.state === "loaded"
+    : model === "sam2" ? cached.sam2.state === "loaded"
+    : cached.sam3.status === "loaded";
+  if (alreadyLoaded) return;
+
   if (model === "vlm") cached = { ...cached, vlm: { ...cached.vlm, state: "loading" } };
   else if (model === "sam2") cached = { ...cached, sam2: { ...cached.sam2, state: "loading" } };
   else cached = { ...cached, sam3: { ...cached.sam3, status: "loading" } };
