@@ -47,18 +47,14 @@ export function DetectionResult({
 }: Props) {
   const { t } = useTranslation();
 
-  // Preview blob URLs for batch files — keyed by index
-  const blobUrls = useMemo(
-    () => batchFiles.map((f) => URL.createObjectURL(f)),
-    [batchFiles],
-  );
-  useEffect(() => () => blobUrls.forEach((u) => URL.revokeObjectURL(u)), [blobUrls]);
-
-  // Map result ID → index in batchResults for quick lookup
-  const resultIdx = useMemo(
-    () => new Map(batchResults.map((r, i) => [r.id, i])),
-    [batchResults],
-  );
+  // Stable blob URLs — only recreate when batchFiles identity changes
+  const blobCache = useRef<{ files: File[]; urls: string[] } | null>(null);
+  if (blobCache.current?.files !== batchFiles) {
+    blobCache.current?.urls.forEach((u) => URL.revokeObjectURL(u));
+    blobCache.current = { files: batchFiles, urls: batchFiles.map((f) => URL.createObjectURL(f)) };
+  }
+  const blobUrls = blobCache.current.urls;
+  useEffect(() => () => blobCache.current?.urls.forEach((u) => URL.revokeObjectURL(u)), []);
 
   return (
     <div className="space-y-4">
