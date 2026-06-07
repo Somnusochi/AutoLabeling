@@ -20,6 +20,7 @@ export function useDetectMutation() {
       useSam3Seg,
       sam3Threshold,
       sam3MaskThreshold,
+      signal,
     }: {
       file: File;
       categories: string[];
