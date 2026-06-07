@@ -276,8 +276,7 @@ export async function importChunkInit(
 ): Promise<ChunkInitResult> {
   const { data } = await request.post<{ data: ChunkInitResult }>(
     "/datasets/import/chunk/init",
-    { fileName, totalSize, chunkSize: 5 * 1024 * 1024 },
-    { params: { format } },
+    { fileName, totalSize, chunkSize: 5 * 1024 * 1024, format },
   );
   return data.data;
 }

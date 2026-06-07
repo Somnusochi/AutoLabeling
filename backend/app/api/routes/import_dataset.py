@@ -30,22 +30,21 @@ CHUNK_DIR = Path(settings.project_root) / "import_chunks"
 
 
 @router.post("/datasets/import/chunk/init")
-def chunk_init(
-    request: Request,
-    fmt: str = Form("yolo", alias="format"),
-) -> APIResponse:
+async def chunk_init(request: Request) -> APIResponse:
     """Create or resume a chunked upload session.
 
-    The client sends fileName, totalSize, chunkSize. We derive an uploadId
-    from these so re-uploads of the same file resume automatically.
+    The client sends JSON: {fileName, totalSize, chunkSize, format}.
+    We derive an uploadId from fileName+totalSize so re-uploads
+    of the same file resume automatically.
     """
-    body = {}
+    body: dict = {}
     with suppress(json.JSONDecodeError):
-        body = json.loads((request.body() or b"{}").decode())
+        body = json.loads((await request.body() or b"{}").decode())
 
     file_name = body.get("fileName", "dataset.zip")
     total_size = body.get("totalSize", 0)
     chunk_size = body.get("chunkSize", 5 * 1024 * 1024)
+    fmt = body.get("format", "yolo")
 
     if not total_size or not file_name:
         raise HTTPException(400, "fileName and totalSize are required")

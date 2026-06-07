@@ -20,6 +20,8 @@
     "collapse": "收起",
     "view": "查看",
     "draw": "标注",
+    "bbox": "BBox",
+    "mask": "Mask",
     "themeLight": "切换到亮色模式",
     "themeDark": "切换到暗色模式",
     "themeSystem": "跟随系统主题"

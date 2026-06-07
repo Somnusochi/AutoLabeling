@@ -20,6 +20,8 @@
     "collapse": "Collapse",
     "view": "View",
     "draw": "Draw",
+    "bbox": "BBox",
+    "mask": "Mask",
     "themeLight": "Switch to light mode",
     "themeDark": "Switch to dark mode",
     "themeSystem": "Follow system theme"

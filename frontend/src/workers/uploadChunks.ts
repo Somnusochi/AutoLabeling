@@ -45,16 +45,15 @@ async function doUpload(file: File, format: string, uploadId?: string) {
   _cancelled = false;
 
   // 1. Init or resume upload session
-  const initBody = JSON.stringify({
-    fileName: file.name,
-    totalSize: file.size,
-    chunkSize: CHUNK_SIZE,
-  });
-
   const initResp = await fetch(`${API_BASE}/datasets/import/chunk/init`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fileName: file.name, totalSize: file.size, chunkSize: CHUNK_SIZE }),
+    body: JSON.stringify({
+      fileName: file.name,
+      totalSize: file.size,
+      chunkSize: CHUNK_SIZE,
+      format,
+    }),
   });
 
   if (!initResp.ok) {

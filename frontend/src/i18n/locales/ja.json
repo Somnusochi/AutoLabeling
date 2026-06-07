@@ -20,6 +20,8 @@
     "collapse": "折畳",
     "view": "表示",
     "draw": "描画",
+    "bbox": "検出枠",
+    "mask": "領域",
     "themeLight": "明色模式",
     "themeDark": "暗色模式",
     "themeSystem": "系統設定"
