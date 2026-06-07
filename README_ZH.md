@@ -16,7 +16,7 @@
 🖼️ 图片/视频 → 🔍 VLM / SAM3 检测 → 🎯 SAM2/SAM3 分割 → ✏️ 修正 → 📦 导出 → 🚀 YOLO → ✅ 模型
 ```
 
-**图片/视频扔进去 → YOLO 模型训出来**，基于 LocateAnything-3B 的 VLM 自动标注 + SAM2.1 / SAM3 mask 精修 + 人工闭环修正。多格式导出、一键 YOLO 训练（检测 & 分割）、视频关键帧提取、模型验证——macOS MPS / Windows & Linux CUDA 全链路 GPU 加速。
+**图片/视频扔进去 → YOLO 模型训出来**，基于 LocateAnything-3B 的 VLM 自动标注 + SAM2.1 / SAM3 mask 精修 + 人工闭环修正。多格式数据集导入导出、训练任务队列、一键 YOLO 训练（检测 & 分割）、视频关键帧提取、模型验证——macOS MPS / Windows & Linux CUDA 全链路 GPU 加速。
 
 ![业务流程](docs/architecture_zh.png)
 
@@ -27,8 +27,8 @@
 - 🎯 **SAM2 / SAM3 分割**：SAM2 精修 VLM 检测框；SAM3 文本驱动的端到端检测+分割，BBox/Mask 画布独立开关
 - 🎥 **视频标注**：智能关键帧提取（场景/运动/间隔），SSIM 去重
 - ✏️ **人工修正**：Canvas 画框模式，NMS 过滤，单框隐藏
-- 📦 **多格式导出**：YOLO、YOLO-Seg、COCO JSON、Pascal VOC XML、CreateML JSON
-- 🚀 **一键训练**：YOLOv8 / v11 / v26，检测 & 分割，SSE 实时进度
+- 📦 **多格式导入/导出**：YOLO、YOLO-Seg、COCO JSON、Pascal VOC XML、CreateML JSON — 支持已有数据集 ZIP 导入
+- 🚀 **训练队列**：任务排队串行执行，支持取消，一键 YOLO 训练（v8 / v11 / v26）SSE 实时进度
 - ✅ **模型验证**：批量图片/视频测试，MJPEG 实时流，SSE 视频推理
 - 💾 **智能模型管理**：VLM/SAM2/SAM3 惰性加载，闲置自动卸载，统一 SSE 状态推送，MPS/CUDA 策略模式内存回收
 - 🌐 **国际化**：中文 / English / 日本語 · 🎨 **主题**：亮色/暗色模式

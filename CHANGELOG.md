@@ -1,5 +1,60 @@
 # Changelog
 
+## v1.5.7 (2026-06-08)
+
+### Backend Refactoring
+- Refactor: extract `detection_service.py` — orchestrates GPU offload → inference → persistence
+- Refactor: replace raw strings with `StrEnum` (ModelType, FilterMode, DetectionStatus)
+- Refactor: add `DetectionParams` schema to group 7 scattered detection parameters
+- Refactor: repository methods gain optional `commit=` param, removing ad-hoc `repo.db.commit()` calls
+- Refactor: strategies receive dependencies via constructor DI instead of lazy imports
+
+### Dataset Import
+- Feat: import datasets from ZIP archives in 5 formats: YOLO, YOLO Seg, COCO, Pascal VOC, CreateML
+- Feat: chunked upload with Web Worker — 5MB chunks, 3 retries, progress bar
+- Feat: resume support — deterministic uploadId from fileName+size, skip already-uploaded chunks
+- Feat: backend parsers for all 5 formats with proper coordinate conversion and edge case handling
+- Feat: `DatasetImportModal` with format selector, drag-drop zone, progress tracking, cancel
+- Test: 21 unit tests for format parsers (YOLO line, names, polygon, COCO, VOC, CreateML)
+
+### Training Queue
+- Feat: background worker picks up pending training jobs, runs one at a time via multiprocessing
+- Feat: cancel training — `POST /train/jobs/{id}/cancel` terminates running process, sets "cancelled"
+- Feat: training button disabled when job running; detection disabled with amber warning
+- Feat: `Popconfirm` replaces `window.confirm()` for all delete/cancel actions
+- Feat: "Import Dataset" button in TrainingPanel
+
+### Detection Improvements
+- Feat: cancel in-flight detection with AbortController — truly aborts HTTP requests
+- Fix: SAM3 health check race condition — wait for `status=="loaded"`, not just HTTP 200
+- Fix: Enum `values_callable` to match existing DB data (e.g. `'vlm+sam2'` not `'vlm_sam2'`)
+- Fix: validation conf/iou parameters now read from Zustand (were stale local state)
+- Fix: canvas image load race condition with `loadId` counter
+- Fix: model status flicker — skip `optimisticModelLoading` when already loaded
+- Fix: batch thumbnails show loading only for actively-processing images
+- Fix: batch detection `result` cleanup → thumbnails visible immediately
+
+### Frontend Architecture
+- Refactor: migrate components from flat `.tsx` to directory structure (`ComponentName/index.tsx`)
+- Refactor: decompose `useHomeState` (394 lines) into `useDetectionProcess`, `useDetectionHistory`,
+  `useDetectionAnnotation`, `useDetectionTimer`, `useDetection`
+- Refactor: move `result`/`batchResults` from hook local state to Zustand `useAppStore`
+- Test: add vitest + `@testing-library/react` + `jsdom` with 28 test files (34 tests)
+- Test: add `setupTests.ts` with i18n mock, axios mock, EventSource mock, matchMedia mock
+
+### i18n
+- Chore: rewrite `ja.json` with kanji-heavy Japanese (取消, 登録, 導入, 出力, 一括, etc.)
+- Chore: sync all i18n keys across zh/en/ja (cancel, bbox, mask, dataset import, delete confirm)
+
+### Fixes
+- Fix: `setPreviewUrl` no longer auto-revokes blob URLs (caused broken thumbnails)
+- Fix: blob URL lifecycle with `useRef`-based caching to prevent URL churn
+- Fix: `maskClosable` → `mask.closable` (antd deprecation)
+- Fix: `_read_yolo_names` unbound `names` variable when `data.yaml` missing
+- Fix: strategy test constructor calls (DI requires mock functions)
+- Fix: test SAM3 skip condition also checks local model cache
+- Fix: `test-results/` added to `.gitignore`
+
 ## v1.5.6 (2026-06-07)
 
 ### State Management Refactoring
