@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -24,13 +25,15 @@ def _bump_activity() -> None:
     _last_activity = time.monotonic()
 
 
-def _start_watchdog() -> None:
-    global _watchdog_thread, _watchdog_stop
+def _ensure_watchdog() -> None:
+    """Start idle watchdog if not already running. Works regardless of how SAM3 was started."""
+    global _watchdog_thread, _watchdog_stop, _last_activity
     if _watchdog_thread is not None:
         return
 
     from app.core.config import settings
 
+    _last_activity = time.monotonic()
     _watchdog_stop = threading.Event()
 
     def _loop():
@@ -38,6 +41,8 @@ def _start_watchdog() -> None:
             _watchdog_stop.wait(timeout=30)
             if _watchdog_stop.is_set():
                 return
+            if not is_sam3_running():
+                continue
             idle = time.monotonic() - _last_activity
             if idle >= settings.model_idle_timeout_seconds:
                 logger.info("SAM3 idle for %.0fs, auto-unloading...", idle)
@@ -45,10 +50,7 @@ def _start_watchdog() -> None:
 
     _watchdog_thread = threading.Thread(target=_loop, daemon=True, name="sam3-idle-watchdog")
     _watchdog_thread.start()
-    logger.info(
-        "SAM3 idle watchdog started (timeout=%ds)",
-        settings.model_idle_timeout_seconds,
-    )
+    logger.info("SAM3 idle watchdog started (timeout=%ds)", settings.model_idle_timeout_seconds)
 
 
 def is_sam3_running() -> bool:
@@ -67,32 +69,33 @@ def start_sam3_server() -> None:
         return
 
     hf_token = os.environ.get("HF_TOKEN", "")
-    if not hf_token:
+    # Only require HF_TOKEN if the model hasn't been cached yet
+    model_cache = Path.home() / ".cache" / "huggingface" / "hub" / "models--facebook--sam3"
+    if not hf_token and not model_cache.exists():
         raise RuntimeError(
-            "HF_TOKEN environment variable is not set. "
-            "SAM3 requires HuggingFace authentication. "
+            "HF_TOKEN environment variable is not set and SAM3 model is not cached. "
             "Visit https://huggingface.co/facebook/sam3 to accept the license, "
             "then set HF_TOKEN with your access token."
         )
 
     server_script = Path(__file__).resolve().parent.parent.parent / "sam3_server.py"
     sam3_venv = Path(__file__).resolve().parent.parent.parent / "sam3-venv"
-    python = (
-        str(sam3_venv / "bin" / "python3")
-        if (sam3_venv / "bin").exists()
-        else (
-            str(sam3_venv / "Scripts" / "python.exe")  # Windows
-        )
-    )
+    venv_python = sam3_venv / "bin" / "python3"
+    if venv_python.exists():
+        python = str(venv_python)
+    else:
+        python = sys.executable
+        logger.warning("sam3-venv not found at %s, falling back to %s", venv_python, python)
 
     env = os.environ.copy()
     env["HF_TOKEN"] = hf_token
 
-    logger.info("Starting SAM3 server on port %d...", SAM3_PORT)
+    sam3_log = open(Path(__file__).resolve().parent.parent.parent / "sam3_server.log", "a")  # noqa: SIM115
+    logger.info("Starting SAM3 server on port %d (logging to sam3_server.log)...", SAM3_PORT)
     _sam3_process = subprocess.Popen(
         [python, str(server_script), "--port", str(SAM3_PORT)],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=sam3_log,
+        stderr=sam3_log,
         env=env,
     )
     # Wait for it to be ready
@@ -100,7 +103,6 @@ def start_sam3_server() -> None:
         time.sleep(1)
         if is_sam3_running():
             logger.info("SAM3 server ready")
-            _start_watchdog()
             return
     raise RuntimeError("SAM3 server did not start within 30s")
 
@@ -115,6 +117,19 @@ def stop_sam3_server() -> None:
         _sam3_process.terminate()
         _sam3_process.wait(timeout=5)
         _sam3_process = None
+    elif is_sam3_running():
+        # Process reference lost (e.g. after uvicorn restart) — kill via port
+        import signal
+
+        try:
+            result = subprocess.run(
+                ["lsof", "-ti", f":{SAM3_PORT}"], capture_output=True, text=True
+            )
+            for pid_str in result.stdout.strip().split("\n"):
+                if pid_str:
+                    os.kill(int(pid_str), signal.SIGTERM)
+        except Exception:
+            logger.exception("Failed to kill SAM3 process on port %d", SAM3_PORT)
 
 
 def segment_sam3(
@@ -128,6 +143,7 @@ def segment_sam3(
     import urllib.request
 
     _bump_activity()
+    _ensure_watchdog()
 
     if not is_sam3_running():
         start_sam3_server()

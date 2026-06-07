@@ -132,7 +132,7 @@ export function Sidebar({
   return (
     <aside
       className="flex-shrink-0 border-r border-gray-200 bg-white flex flex-col gap-4 overflow-y-auto relative"
-      style={{ width: 420, padding: '1rem' }}
+      style={{ width: 440, padding: '1.25rem' }}
     >
       {/* Header: Title + Controls */}
       <div className="flex justify-between items-center mb-1">

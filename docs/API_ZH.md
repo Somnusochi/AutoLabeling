@@ -4,11 +4,25 @@
 
 Base URL: `http://localhost:8000/api/v1`
 
+### POST `/detect` — 表单参数
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `file` | File | 必填 | 图片文件 |
+| `categories` | JSON 数组 | 必填 | `["猫", "狗"]` |
+| `use_sam2` | bool | `false` | 启用 VLM + SAM2 流程 |
+| `use_sam3` | bool | `false` | 启用 SAM3 文本驱动流程 |
+| `sam2_score_threshold` | float | `0.0` | SAM2 mask 质量阈值（0–1） |
+| `use_sam3_seg` | bool | `true` | 启用 SAM3 mask 提取 |
+| `sam3_threshold` | float | `0.5` | SAM3 置信度阈值（0–1） |
+| `sam3_mask_threshold` | float | `0.5` | SAM3 mask 二值化阈值（0–1） |
+| `sam3_text` | string | `""` | 覆盖 SAM3 文本提示（默认使用分类名拼接） |
+
 ## 检测与标注
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/detect` | VLM 预标注（multipart，支持 `use_sam2` 参数） |
+| POST | `/detect` | 检测标注（multipart）。策略：VLM（默认）、VLM+SAM2（`use_sam2=true`）、SAM3（`use_sam3=true`） |
 | GET | `/detections` | 历史列表（分页） |
 | GET | `/detections/{id}` | 检测详情 |
 | GET | `/detections/{id}/image` | 检测原图 |
@@ -25,9 +39,13 @@ Base URL: `http://localhost:8000/api/v1`
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| GET | `/model/events` | SSE 流：VLM、SAM2、SAM3 三模型状态统一推送 |
 | GET | `/model/status` | VLM 模型状态（`loaded`、`state`、`progress`） |
 | POST | `/model/unload` | 卸载 VLM 模型释放内存 |
-| GET | `/model/sam2-status` | SAM2 模型状态 |
+| GET | `/model/sam2/status` | SAM2 模型状态（`loaded`、`state`、`progress`） |
+| POST | `/model/sam2/unload` | 卸载 SAM2 模型释放内存 |
+| GET | `/model/sam3/status` | SAM3 模型状态（`loaded`、`status`：`starting`/`loading`/`loaded`） |
+| POST | `/model/sam3/unload` | 停止 SAM3 服务进程 |
 
 ## 视频
 
@@ -82,12 +100,16 @@ Base URL: `http://localhost:8000/api/v1`
 
 ### 检测对象
 
+列表接口返回轻量 boxes（不含 `maskPolygon`），详情接口包含完整 mask 数据。
+`modelType`：`"vlm"` / `"vlm+sam2"` / `"sam3"`。
+
 ```json
 {
   "id": "uuid",
   "imageName": "cat.jpg",
   "categories": ["cat"],
   "modelName": "LocateAnything-3B",
+  "modelType": "sam3",
   "imageWidth": 1024,
   "imageHeight": 768,
   "elapsedMs": 4500,

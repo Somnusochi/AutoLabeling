@@ -26,11 +26,11 @@ Welcome to VLM-AutoYOLO! This guide will help you get started and make the most 
 ## Core Workflow
 
 ```
-Upload Images/Video → VLM Auto-Labeling → Manual Refinement → Export Dataset → Train YOLO → Validate Model
+Upload Images/Video → VLM / SAM3 Auto-Labeling → Manual Refinement → Export Dataset → Train YOLO → Validate Model
 ```
 
-1. **VLM Pre-Labeling**: Use LocateAnything-3B vision-language model to automatically generate bounding boxes
-2. **Manual Refinement**: Adjust, delete, and add annotation boxes on the canvas
+1. **Choose Model**: VLM+SAM2 (detection + segmentation) or SAM3 (text-driven end-to-end)
+2. **Auto-Labeling**: VLM or SAM3 generates bounding boxes and masks automatically
 3. **Data Export**: Export YOLO format annotation files (single image and batch supported)
 4. **Model Training**: One-click training for YOLOv5/v8/v11/v26 with real-time progress monitoring
 5. **Model Validation**: Validate training results on test images/videos

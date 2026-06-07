@@ -32,3 +32,4 @@ backend/yolo26n.pt
 *.pt
 backend/data.db
 docs/src/
+.playwright-mcp/

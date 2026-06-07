@@ -29,9 +29,11 @@ VLM-AutoYOLO/
 │   │   │   ├── detection.py         # DetectionOut、DetectionBoxOut、ExportBatchIn
 │   │   │   └── train.py             # TrainingJobOut、TrainRequest
 │   │   ├── services/
+│   │   │   ├── detection_strategy.py # 策略模式（VLM / VLM+SAM2 / SAM3）
 │   │   │   ├── box_filter.py        # 标注框过滤、NMS 去重
 │   │   │   ├── locate_anything.py   # VLM 推理引擎
 │   │   │   ├── sam2_service.py      # SAM2 分割服务
+│   │   │   ├── sam3_client.py       # SAM3 HTTP 客户端 + 闲置看门狗
 │   │   │   ├── trainer.py           # YOLO 训练 + 验证
 │   │   │   ├── export.py            # 多格式导出分发器
 │   │   │   ├── yolo_format.py       # YOLO 标签转换（bbox + seg）
@@ -44,6 +46,8 @@ VLM-AutoYOLO/
 │   ├── alembic/                     # 数据库迁移
 │   │   ├── env.py
 │   │   └── versions/
+│   ├── sam3_server.py              # SAM3 独立 WSGI 服务（端口 8002）
+│   ├── sam3-venv/                   # SAM3 专用虚拟环境
 │   ├── requirements.txt
 │   └── pyproject.toml
 ├── frontend/
@@ -51,17 +55,20 @@ VLM-AutoYOLO/
 │       ├── components/              # React UI 组件
 │       │   ├── DetectionCanvas.tsx  # 图片标注画布（bbox + mask）
 │       │   ├── DetectionResult.tsx  # 检测结果（多格式导出）
-│       │   ├── TrainingPanel.tsx    # YOLO 训练面板（检测 & 分割，数据集下载）
+│       │   ├── TrainingPanel.tsx    # YOLO 训练面板
 │       │   ├── HistoryList.tsx      # 检测历史（分页 + 导出下拉菜单）
 │       │   ├── HistoryListItem.tsx  # 历史记录单项卡片
 │       │   ├── ResultTable.tsx      # 结果表格（含 Mask 列）
+│       │   ├── ModelStatus.tsx      # VLM + SAM2 模型状态显示
+│       │   ├── Sam3Status.tsx       # SAM3 模型状态显示
 │       │   ├── training/            # YOLO 训练子组件
 │       │   │   ├── TrainingCandidateList.tsx
 │       │   │   ├── CandidateListItem.tsx
 │       │   │   ├── TrainingJobItem.tsx
 │       │   │   ├── TrainingPreview.tsx
+│       │   │   ├── HoverPreview.tsx # hover 按需请求检测详情
 │       │   │   └── StatusBadge.tsx
-│       │   ├── Sidebar.tsx          # 主侧边栏（SAM2 开关、检测、训练）
+│       │   ├── Sidebar.tsx          # 主侧边栏（模型选择器、SAM2/SAM3 开关）
 │       │   ├── VideoPanel.tsx       # 视频上传与关键帧时间轴
 │       │   ├── VideoValidator.tsx   # 视频验证
 │       │   ├── ModelSelector.tsx    # YOLO 模型选择器
@@ -75,8 +82,8 @@ VLM-AutoYOLO/
 │       │   ├── Layout.tsx           # 应用布局
 │       │   └── ...
 │       ├── pages/Home.tsx           # 主页面
-│       ├── hooks/                   # 自定义 Hooks（useHomeState, useBatchDetection, ...）
-│       ├── i18n/locales/            # en.json、zh.json
+│       ├── hooks/                   # 自定义 Hooks（useHomeState, useModelEvents, useBatchDetection, ...）
+│       ├── i18n/locales/            # en.json、zh.json、ja.json
 │       ├── services/api.ts          # 统一 API 层
 │       ├── lib/                     # 常量、过滤器、解析器、yoloExport
 │       └── types/index.ts           # TypeScript 类型（BBox, Detection, TrainingJob）

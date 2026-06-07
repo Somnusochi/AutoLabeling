@@ -99,7 +99,9 @@ backend/sam3-venv/              ← SAM3 专用虚拟环境（Python 3.14, torch
 backend/app/services/sam3_client.py ← HTTP 客户端，自动启停 SAM3 服务，闲置 watchdog
 ```
 
-- SAM3 模型是 HuggingFace gated 仓库，需要 `HF_TOKEN` 环境变量
+- SAM3 模型是 HuggingFace gated 仓库，需要 `HF_TOKEN` 环境变量：
+  1. 浏览器打开 https://huggingface.co/facebook/sam3 点击 "Agree and access repository"
+  2. 创建 Read 类型 Token（无需 Fine-grained），设为 `HF_TOKEN` 环境变量
 - 模型已缓存在 `~/.cache/huggingface/hub/`，后续启动不需下载
 - Server 启动时先开 HTTP 再异步加载模型，`/health` 返回 `starting` → `loading` → `loaded`
 - 闲置 `model_idle_timeout_seconds`（默认 600s）后自动卸载

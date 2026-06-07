@@ -190,7 +190,7 @@ export function DetectionResult({
             <button
               key={res.id}
               onClick={() => onSelectBatch(res, batchFiles[i])}
-              className={`flex-shrink-0 rounded border-2 p-1 transition-colors ${
+              className={`relative flex-shrink-0 rounded border-2 p-1 transition-colors ${
                 result.id === res.id ? "border-primary-500" : "border-transparent hover:border-gray-200"
               }`}
             >
@@ -199,6 +199,9 @@ export function DetectionResult({
                 alt={res.imageName}
                 className="h-14 w-14 rounded object-cover"
               />
+              <span className="absolute -top-1 -right-1 bg-primary-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                {res.boxes.length}
+              </span>
             </button>
           ))}
         </div>

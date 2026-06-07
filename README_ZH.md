@@ -212,7 +212,11 @@ VLM 检测出 bbox 后，可启用 SAM2 自动生成像素级 mask 轮廓。
 - **置信度阈值**滑块（0.0–1.0，默认 0.5）控制检测灵敏度
 - **Mask 阈值**滑块（0.0–1.0，默认 0.5）控制 mask 紧致度
 - 可独立开关分割：纯检测模式跳过 mask 提取，更快出结果
-- SAM3 作为独立 HTTP 服务运行在 8002 端口，使用独立虚拟环境
+- SAM3 作为独立 HTTP 服务运行在 8002 端口，使用独立虚拟环境（`backend/sam3-venv/`）
+- **需要 `HF_TOKEN` 环境变量**——启动后端前设置，分两步：
+  1. 浏览器打开 [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3)，点击 **"Agree and access repository"** 同意协议
+  2. 在 [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) 创建一个 **Read** 类型 Token（无需 Fine-grained，普通 Read Token 自动继承账号权限）
+  首次下载后模型缓存在 `~/.cache/huggingface/hub/`
 - 首次使用时自动启动，闲置 10 分钟后自动卸载
 - SSE 实时加载状态（`starting` → `loading` → `loaded`）
 - 手动卸载按钮释放 GPU 内存
@@ -289,7 +293,14 @@ Canvas 画框模式，查看/标注双模式切换。
 
 ## 推理性能基准
 
-完整基准测试：**[docs/BENCHMARKS_ZH.md](docs/BENCHMARKS_ZH.md)**
+以下是在 **Apple MacBook Pro (M4 Pro, 24GB 统一内存)** 上开启 Apple MPS 硬件加速后的本地实测数据：
+
+| 图像分辨率 (长边最大值) | 推理耗时 (Latency) | 真实总内存占用 (活动监视器) |
+| :--- | :--- | :--- |
+| **缩略图 (256px)** | `~0.68s` | 稳压在 `~11.8GB` |
+| **高清大图 (1024px)** | `~4.35s` | 稳压在 `~11.8GB` |
+
+完整且更详细的多硬件环境基准测试请查阅：**[docs/BENCHMARKS_ZH.md](docs/BENCHMARKS_ZH.md)**
 
 ## 项目亮点
 

@@ -202,16 +202,18 @@ export function useHomeState() {
     }
   }, [files, categories, useSam2, sam2ScoreThreshold, useSam3, sam3Text, useSam3Seg, sam3Threshold, sam3MaskThreshold, appMode, validateModelSource, externalModelFile, selectedTrainedJobId, runValidation, runBatch, startTimer, stopTimer, queryClient, setBatchResults, setBatchProgress, setPreview, t]);
 
-  const handleSelectHistory = useCallback((det: Detection) => {
+  const handleSelectHistory = useCallback(async (det: Detection) => {
     setFiles([]);
     batchFileMap.current.clear();
     setPreview(`${API_BASE}/detections/${det.id}/image`);
-    setResult(det);
+    // Fetch full detail to get mask polygon data
+    const full = await getDetection(det.id);
+    setResult(full);
     setBatchResults([]);
-    setCategories(parseCategories(det.categories));
-    if (det.filterMode) setFilterMode(det.filterMode as FilterMode);
+    setCategories(parseCategories(full.categories));
+    if (full.filterMode) setFilterMode(full.filterMode as FilterMode);
     else setFilterMode("all");
-    if (det.filterNmsIou != null) setNmsIou(det.filterNmsIou);
+    if (full.filterNmsIou != null) setNmsIou(full.filterNmsIou);
     setHiddenIndices(new Set());
   }, [setBatchResults, setPreview]);
 

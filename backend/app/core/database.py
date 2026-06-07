@@ -41,11 +41,23 @@ def init_db() -> None:
 
     if os.path.exists(ini_path):
         try:
-            logger.info("Running database migrations via Alembic...")
+            from alembic.runtime.migration import MigrationContext
+            from alembic.script import ScriptDirectory
+
             alembic_cfg = Config(ini_path)
             alembic_cfg.set_main_option("sqlalchemy.url", settings.resolved_database_url)
-            command.upgrade(alembic_cfg, "head")
-            logger.info("Database migrations applied successfully")
+
+            script = ScriptDirectory.from_config(alembic_cfg)
+            with engine.connect() as conn:
+                ctx = MigrationContext.configure(conn)
+                current = ctx.get_current_revision()
+            head = script.get_current_head()
+            if current == head:
+                logger.info("Database migrations are up to date")
+            else:
+                logger.info("Running database migrations via Alembic...")
+                command.upgrade(alembic_cfg, "head")
+                logger.info("Database migrations applied successfully")
         except Exception as e:
             logger.error("Failed to run database migrations: %s. Falling back to create_all()", e)
             Base.metadata.create_all(bind=engine)

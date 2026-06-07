@@ -29,9 +29,11 @@ VLM-AutoYOLO/
 │   │   │   ├── detection.py         # DetectionOut, DetectionBoxOut, ExportBatchIn
 │   │   │   └── train.py             # TrainingJobOut, TrainRequest
 │   │   ├── services/
+│   │   │   ├── detection_strategy.py # Strategy pattern (VLM / VLM+SAM2 / SAM3)
 │   │   │   ├── box_filter.py        # Box filtering, NMS dedup
 │   │   │   ├── locate_anything.py   # VLM inference engine
 │   │   │   ├── sam2_service.py      # SAM2 segmentation service
+│   │   │   ├── sam3_client.py       # SAM3 HTTP client + watchdog
 │   │   │   ├── trainer.py           # YOLO training + validation
 │   │   │   ├── export.py            # Multi-format export dispatcher
 │   │   │   ├── yolo_format.py       # YOLO label conversion (bbox + seg)
@@ -44,6 +46,8 @@ VLM-AutoYOLO/
 │   ├── alembic/                     # Database migrations
 │   │   ├── env.py
 │   │   └── versions/
+│   ├── sam3_server.py              # SAM3 standalone WSGI server (port 8002)
+│   ├── sam3-venv/                   # SAM3 dedicated virtual environment
 │   ├── requirements.txt
 │   └── pyproject.toml
 ├── frontend/
@@ -55,13 +59,16 @@ VLM-AutoYOLO/
 │       │   ├── HistoryList.tsx      # Detection history (paginated, export)
 │       │   ├── HistoryListItem.tsx  # Individual history item card
 │       │   ├── ResultTable.tsx      # Results table with mask column
+│       │   ├── ModelStatus.tsx      # VLM + SAM2 model status display
+│       │   ├── Sam3Status.tsx       # SAM3 model status display
 │       │   ├── training/            # YOLO training sub-components
 │       │   │   ├── TrainingCandidateList.tsx
 │       │   │   ├── CandidateListItem.tsx
 │       │   │   ├── TrainingJobItem.tsx
 │       │   │   ├── TrainingPreview.tsx
+│       │   │   ├── HoverPreview.tsx # On-demand detection detail for hover
 │       │   │   └── StatusBadge.tsx
-│       │   ├── Sidebar.tsx          # Main sidebar (SAM2 toggle, detect, train)
+│       │   ├── Sidebar.tsx          # Main sidebar (model selector, SAM2/SAM3 toggle)
 │       │   ├── VideoPanel.tsx       # Video upload & keyframe timeline
 │       │   ├── VideoValidator.tsx   # Video validation
 │       │   ├── ModelSelector.tsx    # YOLO model variant selector
@@ -75,8 +82,8 @@ VLM-AutoYOLO/
 │       │   ├── Layout.tsx           # App layout
 │       │   └── ...
 │       ├── pages/Home.tsx           # Main page
-│       ├── hooks/                   # Custom hooks (useHomeState, useBatchDetection, ...)
-│       ├── i18n/locales/            # en.json, zh.json
+│       ├── hooks/                   # Custom hooks (useHomeState, useModelEvents, useBatchDetection, ...)
+│       ├── i18n/locales/            # en.json, zh.json, ja.json
 │       ├── services/api.ts          # Unified API layer
 │       ├── lib/                     # Constants, filters, parsers, yoloExport
 │       └── types/index.ts           # TypeScript types (BBox, Detection, TrainingJob)

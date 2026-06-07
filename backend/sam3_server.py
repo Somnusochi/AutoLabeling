@@ -39,17 +39,27 @@ def load_model(state: dict):
     state["status"] = "loading"
     state["device"] = DEVICE
 
-    model = Sam3Model.from_pretrained(
-        "facebook/sam3",
-        torch_dtype=torch.bfloat16,
-    ).to(DEVICE).eval()
-    processor = Sam3Processor.from_pretrained("facebook/sam3")
-    model.eval()
+    try:
+        # Use local_files_only when HF_TOKEN is not set (model already cached)
+        local_only = not os.environ.get("HF_TOKEN")
+        model = Sam3Model.from_pretrained(
+            "facebook/sam3",
+            torch_dtype=torch.bfloat16,
+            local_files_only=local_only,
+        ).to(DEVICE).eval()
+        processor = Sam3Processor.from_pretrained(
+            "facebook/sam3", local_files_only=local_only
+        )
+        model.eval()
 
-    state["model"] = model
-    state["processor"] = processor
-    state["status"] = "loaded"
-    logger.info("SAM3 ready on %s", DEVICE)
+        state["model"] = model
+        state["processor"] = processor
+        state["status"] = "loaded"
+        logger.info("SAM3 ready on %s", DEVICE)
+    except Exception:
+        logger.exception("Failed to load SAM3 model")
+        state["status"] = "error"
+        state["error"] = str(sys.exc_info()[1])
 
 
 def segment(model, processor, image_bytes, text="", segmentation=True, threshold=0.5, mask_threshold=0.5):
@@ -156,7 +166,11 @@ def application(environ, start_response):
 
     if path == "/health":
         status = server_state.get("status", "unloaded")
-        body = json.dumps({"status": status, "device": server_state.get("device", "")})
+        body = json.dumps({
+            "status": status,
+            "device": server_state.get("device", ""),
+            "error": server_state.get("error", ""),
+        })
         start_response("200 OK", [("Content-Type", "application/json")] + _CORS_HEADERS)
         return [body.encode()]
     if path == "/segment" and environ.get("REQUEST_METHOD") == "POST":

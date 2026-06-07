@@ -22,11 +22,14 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+      - "8002:8002"
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/autolabeling
       PYTHONPATH: /app
+      HF_TOKEN: ${HF_TOKEN:-}
     volumes:
       - model-cache:/app/model
+      - sam3-cache:/root/.cache/huggingface
       - uploads:/app/uploads
       - training-data:/app/training_runs
     depends_on:
@@ -48,5 +51,6 @@ services:
 volumes:
   pgdata:
   model-cache:
+  sam3-cache:
   uploads:
   training-data:

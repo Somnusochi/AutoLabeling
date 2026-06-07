@@ -38,6 +38,21 @@ export function Home() {
     handleDrawBox,
   } = homeState;
 
+  // Keyboard navigation for batch results
+  useEffect(() => {
+    if (batchResults.length <= 1) return;
+    const handler = (e: KeyboardEvent) => {
+      const idx = result ? batchResults.findIndex((r) => r.id === result.id) : -1;
+      if (e.key === "ArrowLeft" && idx > 0) {
+        handleBatchSelect(batchResults[idx - 1], files[idx - 1]);
+      } else if (e.key === "ArrowRight" && idx < batchResults.length - 1) {
+        handleBatchSelect(batchResults[idx + 1], files[idx + 1]);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [batchResults, result, files, handleBatchSelect]);
+
   return (
     <>
       <Sidebar {...homeState} />

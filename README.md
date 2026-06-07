@@ -213,7 +213,11 @@ Switch to SAM3 mode for text-driven detection and segmentation in a single pass 
 - **Confidence threshold** slider (0.0–1.0, default 0.5) controls detection sensitivity
 - **Mask threshold** slider (0.0–1.0, default 0.5) controls mask tightness
 - Enable/disable segmentation independently — bbox-only mode skips mask extraction for faster results
-- SAM3 runs as a standalone HTTP service on port 8002 with its own venv
+- SAM3 runs as a standalone HTTP service on port 8002 with its own venv (`backend/sam3-venv/`)
+- **Requires `HF_TOKEN`** — set this env var before starting the backend. Two steps:
+  1. Open [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3) in browser, click **"Agree and access repository"**
+  2. Create a **Read** token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (no need for Fine-grained — a plain Read token inherits your account's permissions)
+  Model cached in `~/.cache/huggingface/hub/` after first download
 - Auto-starts on first use, idle auto-unload after 10 min
 - Real-time loading status via SSE (`starting` → `loading` → `loaded`)
 - Manual unload button to free GPU memory
@@ -290,7 +294,14 @@ Auto-detection: CUDA → MPS. Override via `DEVICE` env. **CPU not supported.**
 
 ## Inference Benchmarks
 
-Full benchmarks: **[docs/BENCHMARKS.md](docs/BENCHMARKS.md)**
+Tested locally on an **Apple MacBook Pro (M4 Pro, 24GB Unified Memory)** using Apple MPS hardware acceleration.
+
+| Image Resolution (Max Side) | Inference Latency | Actual Memory Footprint |
+| :--- | :--- | :--- |
+| **Thumbnail (256px)** | `~0.68s` | Stable around `~11.8GB` |
+| **High-Res (1024px)** | `~4.35s` | Stable around `~11.8GB` |
+
+Full detailed benchmarks across different hardware configurations: **[docs/BENCHMARKS.md](docs/BENCHMARKS.md)**
 
 ## Highlights
 

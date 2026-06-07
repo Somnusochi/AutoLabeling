@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.5.4 (2026-06-07)
+
+### SAM3 Stability & Performance
+- Fix: SAM3 stuck at "loading" when HF_TOKEN not set — fall back to `local_files_only=True` for cached models
+- Fix: SAM3 load errors silently swallowed — wrap `load_model` in try/except, report errors via `/health`
+- Fix: HF_TOKEN required even when model cached — only check token when cache missing
+- Fix: SAM3 stdout/stderr redirected to log file instead of DEVNULL for debugging
+- Fix: SAM3 server using wrong Python interpreter — always prefer `sam3-venv/bin/python3` when available
+- Opt: skip alembic migration check when database already at head revision, reducing startup time
+
+### Bug Fixes
+- Fix: history detail view not showing mask polygons — `handleSelectHistory` now fetches full detection detail
+- Fix: frontend CI build failure — add missing `modelType` field in `useYoloValidation`
+- Fix: `ruff format` violation in `detection_strategy.py`
+- Fix: remove `.playwright-mcp` debug artifacts from git tracking and add to `.gitignore`
+
+### UX
+- Batch thumbnails show box count badge
+- Keyboard arrow keys (← →) navigate between batch results
+
+### Docker
+- SAM3 service in `docker-compose.yml` (port 8002, `sam3-cache` volume, `HF_TOKEN` env)
+- Dockerfile creates dedicated `sam3-venv` for dependency isolation
+- `requirements-sam3.txt` for SAM3 server dependencies
+
+### Tests & Docs
+- Add `test_detection_strategy.py` (9 tests: strategy creation, DetectionResult, SAM3 priority)
+- Add macOS MPS SAM3 benchmarks to `docs/BENCHMARKS.md`
+- Update `docs/STRUCTURE.md` and user guides with SAM3 content
+
 ## v1.5.3 (2026-06-06)
 
 ### SAM3 Integration
