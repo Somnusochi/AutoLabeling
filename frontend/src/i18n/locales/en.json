@@ -255,7 +255,6 @@
     "invalidZip": "Only .zip files are supported",
     "fileTooLarge": "File exceeds size limit"
   },
-  },
   "videoValidator": {
     "playerCompleted": "Playback completed. Click to replay",
     "rerunValidation": "Replay",
