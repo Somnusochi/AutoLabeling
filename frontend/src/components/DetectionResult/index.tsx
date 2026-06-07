@@ -46,6 +46,20 @@ export function DetectionResult({
   isValidation = false,
 }: Props) {
   const { t } = useTranslation();
+
+  // Preview blob URLs for batch files — keyed by index
+  const blobUrls = useMemo(
+    () => batchFiles.map((f) => URL.createObjectURL(f)),
+    [batchFiles],
+  );
+  useEffect(() => () => blobUrls.forEach((u) => URL.revokeObjectURL(u)), [blobUrls]);
+
+  // Map result ID → index in batchResults for quick lookup
+  const resultIdx = useMemo(
+    () => new Map(batchResults.map((r, i) => [r.id, i])),
+    [batchResults],
+  );
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -202,28 +216,45 @@ export function DetectionResult({
         </div>
       </div>
 
-      {batchResults.length > 1 && (
+      {batchFiles.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-2">
-          {batchResults.map((res, i) => (
-            <button
-              key={res.id}
-              onClick={() => onSelectBatch(res, batchFiles[i])}
-              className={`relative flex-shrink-0 rounded border-2 p-1 transition-colors ${
-                result.id === res.id
-                  ? "border-primary-500"
-                  : "border-transparent hover:border-gray-200"
-              }`}
-            >
-              <img
-                src={`${API_BASE}/detections/${res.id}/image`}
-                alt={res.imageName}
-                className="h-14 w-14 rounded object-cover"
-              />
-              <span className="absolute -top-1 -right-1 bg-primary-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                {res.boxes.length}
-              </span>
-            </button>
-          ))}
+          {batchFiles.map((file, i) => {
+            const res = batchResults[i];
+            const done = !!res;
+            const isActive = done && result.id === res.id;
+            return (
+              <button
+                key={i}
+                onClick={() => done && onSelectBatch(res, file)}
+                disabled={!done}
+                className={`relative flex-shrink-0 rounded border-2 p-1 transition-colors ${
+                  isActive
+                    ? "border-primary-500"
+                    : done
+                      ? "border-transparent hover:border-gray-200"
+                      : "border-gray-200 opacity-60"
+                }`}
+              >
+                <img
+                  src={blobUrls[i]}
+                  alt={file.name}
+                  className="h-14 w-14 rounded object-cover"
+                />
+                {done ? (
+                  <span className="absolute -top-1 -right-1 bg-primary-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                    {res.boxes.length}
+                  </span>
+                ) : (
+                  <div className="absolute inset-0 bg-white/50 rounded flex items-center justify-center">
+                    <svg className="animate-spin h-4 w-4 text-primary-500" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
