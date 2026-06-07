@@ -69,11 +69,13 @@ class TestYoloZip:
         """Full YOLO parse via zip extraction."""
         names = json.dumps({"0": "cat"})
         img_bytes = _make_image()
-        zip_path = _make_zip({
-            "data.yaml": f"names: {names}\nnc: 1",
-            "images/img1.jpg": img_bytes,
-            "labels/img1.txt": "0 0.5 0.5 0.3 0.4\n",
-        })
+        zip_path = _make_zip(
+            {
+                "data.yaml": f"names: {names}\nnc: 1",
+                "images/img1.jpg": img_bytes,
+                "labels/img1.txt": "0 0.5 0.5 0.3 0.4\n",
+            }
+        )
         try:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
@@ -88,9 +90,11 @@ class TestYoloZip:
             os.unlink(zip_path)
 
     def test_no_images_raises(self):
-        zip_path = _make_zip({
-            "labels/img1.txt": "0 0.5 0.5 0.1 0.1\n",
-        })
+        zip_path = _make_zip(
+            {
+                "labels/img1.txt": "0 0.5 0.5 0.1 0.1\n",
+            }
+        )
         try:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
@@ -128,9 +132,7 @@ class TestReadYoloNames:
 class TestParseYoloSegLine:
     def test_polygon(self):
         names = {0: "cat"}
-        box = _parse_yolo_seg_line(
-            "0 0.1 0.1 0.3 0.1 0.3 0.3 0.1 0.3", names, 100, 100
-        )
+        box = _parse_yolo_seg_line("0 0.1 0.1 0.3 0.1 0.3 0.3 0.1 0.3", names, 100, 100)
         assert box is not None
         assert box["class_name"] == "cat"
         assert box["mask_polygon"] is not None
@@ -168,10 +170,12 @@ class TestCocoZip:
             ],
             "categories": [{"id": 1, "name": "cat"}],
         }
-        zip_path = _make_zip({
-            "annotations.json": json.dumps(coco),
-            "images/img1.jpg": img,
-        })
+        zip_path = _make_zip(
+            {
+                "annotations.json": json.dumps(coco),
+                "images/img1.jpg": img,
+            }
+        )
         try:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
@@ -224,7 +228,7 @@ class TestVocZip:
     def test_basic(self):
         img = _make_image()
         xml = (
-            '<annotation><filename>img1.jpg</filename>'
+            "<annotation><filename>img1.jpg</filename>"
             "<size><width>100</width><height>100</height></size>"
             "<object><name>cat</name><bndbox>"
             "<xmin>10</xmin><ymin>20</ymin><xmax>50</xmax><ymax>60</ymax>"

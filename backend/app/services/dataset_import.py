@@ -145,6 +145,7 @@ def _read_yolo_names(extract: Path) -> dict[int, str]:
         content = yaml_path.read_text()
         # Simple YAML parsing — just extract the 'names' dict
         import re
+
         # Try to find names as {0: "cat", 1: "dog"} or {0: 'cat', 1: 'dog'}
         names_match = re.search(r"names\s*:\s*(\{[^}]+\})", content)
         if names_match:
