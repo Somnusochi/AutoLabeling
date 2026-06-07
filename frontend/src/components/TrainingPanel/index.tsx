@@ -12,6 +12,7 @@ export function TrainingPanel({ detections }: Props) {
   const isTraining = useAppStore((s) => s.isTraining);
   const setIsTraining = useAppStore((s) => s.setIsTraining);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [series, setSeries] = useState("yolo26");
   const [variant, setVariant] = useState("yolo26n");
   const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
@@ -214,6 +215,13 @@ export function TrainingPanel({ detections }: Props) {
           )}
           <button
             type="button"
+            onClick={() => setImportModalOpen(true)}
+            className="text-xs text-primary-600 hover:underline"
+          >
+            {t("trainingPanel.importDataset")}
+          </button>
+          <button
+            type="button"
             onClick={selectAll}
             className="text-xs text-primary-600 hover:underline"
           >
@@ -368,6 +376,10 @@ export function TrainingPanel({ detections }: Props) {
           </div>
         </div>
       )}
+      <DatasetImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+      />
     </div>
   );
 }

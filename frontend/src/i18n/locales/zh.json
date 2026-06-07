@@ -240,8 +240,20 @@
     "statusFailed": "失败",
     "statusCancelled": "已取消",
     "downloadDataset": "下载数据集",
+    "importDataset": "导入数据集",
     "datasetDownloaded": "数据集下载成功",
     "datasetDownloadFailed": "数据集下载失败"
+  },
+  "datasetImport": {
+    "title": "导入数据集",
+    "format": "标注格式",
+    "dropZip": "拖拽 .zip 文件到此处，或点击浏览",
+    "import": "开始导入",
+    "importing": "正在导入…",
+    "importSuccess": "成功导入 {{count}} 张图片",
+    "importFailed": "导入失败",
+    "invalidZip": "仅支持 .zip 文件",
+    "fileTooLarge": "文件大小超过上限"
   },
   "videoValidator": {
     "playerCompleted": "播放完成，点击重播",

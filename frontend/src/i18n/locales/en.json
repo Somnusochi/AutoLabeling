@@ -240,8 +240,21 @@
     "statusFailed": "Failed",
     "statusCancelled": "Cancelled",
     "downloadDataset": "Download Dataset",
+    "importDataset": "Import Dataset",
     "datasetDownloaded": "Dataset downloaded successfully",
     "datasetDownloadFailed": "Failed to download dataset"
+  },
+  "datasetImport": {
+    "title": "Import Dataset",
+    "format": "Annotation Format",
+    "dropZip": "Drag a .zip file here or click to browse",
+    "import": "Import",
+    "importing": "Importing…",
+    "importSuccess": "Successfully imported {{count}} images",
+    "importFailed": "Import failed",
+    "invalidZip": "Only .zip files are supported",
+    "fileTooLarge": "File exceeds size limit"
+  },
   },
   "videoValidator": {
     "playerCompleted": "Playback completed. Click to replay",

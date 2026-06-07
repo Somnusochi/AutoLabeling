@@ -247,3 +247,40 @@ export async function checkSam3Health(): Promise<Sam3Status> {
 export async function unloadSam3(): Promise<void> {
   await request.post("/model/sam3/unload");
 }
+
+// ── Dataset Import ────────────────────────────────
+
+export interface ImportResult {
+  importId: string;
+  status: string;
+}
+
+export interface ImportProgress {
+  total: number;
+  completed: number;
+  status: string;
+  detectionIds?: string[];
+  error?: string | null;
+}
+
+export async function importDataset(
+  file: File,
+  format: string,
+): Promise<ImportResult> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("format", format);
+  const { data } = await request.post<{ data: ImportResult }>("/datasets/import", form);
+  return data.data;
+}
+
+export async function fetchImportProgress(importId: string): Promise<ImportProgress> {
+  const { data } = await request.get<{ data: ImportProgress }>(
+    `/datasets/import/${importId}/progress`,
+  );
+  return data.data;
+}
+
+export async function cancelImport(importId: string): Promise<void> {
+  await request.post(`/datasets/import/${importId}/cancel`);
+}
