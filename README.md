@@ -18,7 +18,7 @@
 
 **Images or videos in → YOLO model out**, with VLM auto-labeling (LocateAnything-3B), SAM2.1 / SAM3 mask refinement, and human-in-the-loop correction. Multi-format export, one-click YOLO training (detect & segment), video keyframe extraction, and model validation — all GPU-accelerated on macOS MPS and Windows/Linux CUDA.
 
-![Architecture](docs/architecture.png)
+![Architecture](docs/architecture_en.png)
 
 ## Key Features
 - 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
