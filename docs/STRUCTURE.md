@@ -9,8 +9,9 @@ VLM-AutoYOLO/
 │   │   │   └── routes/
 │   │   │       ├── detection.py     # Detection CRUD, manual annotation, model mgmt
 │   │   │       ├── export.py        # Multi-format dataset export
+│   │   │       ├── import_dataset.py # Dataset import (5 formats, chunked upload, resume)
 │   │   │       ├── predict.py       # Model validation, video inference (MJPEG/SSE)
-│   │   │       ├── train.py         # YOLO training, SSE progress, retrain
+│   │   │       ├── train.py         # YOLO training, SSE progress, retrain, cancel
 │   │   │       └── video.py         # Video upload, keyframe extraction
 │   │   ├── core/
 │   │   │   ├── config.py            # Settings, device auto-detect, allocator tuning
@@ -35,6 +36,10 @@ VLM-AutoYOLO/
 │   │   │   ├── sam2_service.py      # SAM2 segmentation service
 │   │   │   ├── sam3_client.py       # SAM3 HTTP client + watchdog
 │   │   │   ├── trainer.py           # YOLO training + validation
+│   │   │   ├── detection_service.py # Detection orchestration (offload → infer → persist)
+│   │   │   ├── detection_strategy.py # Strategy pattern (VLM / VLM+SAM2 / SAM3)
+│   │   │   ├── dataset_import.py    # Dataset import parsers (5 formats)
+│   │   │   ├── training_queue.py    # Training job queue with cancel
 │   │   │   ├── export.py            # Multi-format export dispatcher
 │   │   │   ├── yolo_format.py       # YOLO label conversion (bbox + seg)
 │   │   │   ├── coco_format.py       # COCO JSON exporter
