@@ -125,16 +125,21 @@ export const HistoryListItem = memo(
                     {t("common.export")}
                   </button>
                 </Dropdown>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(t("historyList.deleteConfirm"))) onDelete(det.id);
-                  }}
-                  disabled={isDeleting}
-                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                <Popconfirm
+                  title={t("historyList.deleteConfirm")}
+                  onConfirm={() => onDelete(det.id)}
+                  okText={t("common.delete")}
+                  cancelText={t("common.cancel")}
+                  okButtonProps={{ danger: true }}
                 >
-                  {t("common.delete")}
-                </button>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    disabled={isDeleting}
+                    className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                  >
+                    {t("common.delete")}
+                  </button>
+                </Popconfirm>
               </div>
             </div>
           </div>

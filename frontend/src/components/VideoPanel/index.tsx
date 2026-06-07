@@ -78,10 +78,9 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
 
   const handleClearAllVideos = useCallback(() => {
     const allIds = (videoList?.items ?? []).map((v) => v.id);
-    if (!confirm(t("videoPanel.deleteAllConfirm", { count: allIds.length }))) return;
     for (const id of allIds) deleteMut.mutate(id);
     setSelectedVideoId(null);
-  }, [videoList, deleteMut, t]);
+  }, [videoList, deleteMut]);
 
   const handleDrop = useCallback(
     async (e: DragEvent) => {
@@ -212,26 +211,38 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                         : ""}
                     </span>
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(t("videoPanel.deleteConfirm"))) deleteMut.mutate(v.id);
-                    }}
-                    className="text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 px-0.5"
+                  <Popconfirm
+                    title={t("videoPanel.deleteConfirm")}
+                    onConfirm={() => deleteMut.mutate(v.id)}
+                    okText={t("common.delete")}
+                    cancelText={t("common.cancel")}
+                    okButtonProps={{ danger: true }}
                   >
-                    {t("common.delete")}
-                  </button>
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 px-0.5"
+                    >
+                      {t("common.delete")}
+                    </button>
+                  </Popconfirm>
                 </div>
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={handleClearAllVideos}
-            className="w-full rounded border border-red-200 bg-red-50 py-1 text-[10px] text-red-500 hover:bg-red-100 transition-colors"
+          <Popconfirm
+            title={t("videoPanel.deleteAllConfirm", { count: videoList.items.length })}
+            onConfirm={handleClearAllVideos}
+            okText={t("common.delete")}
+            cancelText={t("common.cancel")}
+            okButtonProps={{ danger: true }}
           >
-            {t("videoPanel.clearAllVideos")} ({videoList.items.length})
-          </button>
+            <button
+              type="button"
+              className="w-full rounded border border-red-200 bg-red-50 py-1 text-[10px] text-red-500 hover:bg-red-100 transition-colors"
+            >
+              {t("videoPanel.clearAllVideos")} ({videoList.items.length})
+            </button>
+          </Popconfirm>
         </>
       )}
 

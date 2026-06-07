@@ -95,13 +95,20 @@ export function ResultTable({ boxes, hiddenIndices, onToggleVisibility, onDelete
               </td>
               {onDelete && (
                 <td className="px-2 py-2">
-                  <button
-                    onClick={() => { if (confirm(t("resultTable.deleteBoxConfirm"))) onDelete(box.id); }}
-                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                    title={t("resultTable.deleteBox")}
+                  <Popconfirm
+                    title={t("resultTable.deleteBoxConfirm")}
+                    onConfirm={() => onDelete(box.id)}
+                    okText={t("common.delete")}
+                    cancelText={t("common.cancel")}
+                    okButtonProps={{ danger: true }}
                   >
-                    ✕
-                  </button>
+                    <button
+                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                      title={t("resultTable.deleteBox")}
+                    >
+                      ✕
+                    </button>
+                  </Popconfirm>
                 </td>
               )}
             </tr>

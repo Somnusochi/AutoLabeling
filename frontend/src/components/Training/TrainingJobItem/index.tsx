@@ -100,11 +100,9 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
               {t("trainingPanel.waitingToStart")}
             </div>
           )}
-          <button
-            type="button"
-            disabled={cancelling}
-            onClick={async () => {
-              if (!confirm(t("trainingPanel.cancelJobConfirm"))) return;
+          <Popconfirm
+            title={t("trainingPanel.cancelJobConfirm")}
+            onConfirm={async () => {
               setCancelling(true);
               try {
                 await cancelTrainingJob(job.id);
@@ -115,10 +113,18 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
                 setCancelling(false);
               }
             }}
-            className="text-[10px] text-red-400 hover:text-red-600 disabled:opacity-50 flex-shrink-0 ml-2"
+            okText={t("common.cancel")}
+            cancelText={t("common.close")}
+            okButtonProps={{ danger: true }}
           >
-            {cancelling ? t("common.cancelling") : t("common.cancel")}
-          </button>
+            <button
+              type="button"
+              disabled={cancelling}
+              className="text-[10px] text-red-400 hover:text-red-600 disabled:opacity-50 flex-shrink-0 ml-2"
+            >
+              {cancelling ? t("common.cancelling") : t("common.cancel")}
+            </button>
+          </Popconfirm>
         </div>
       )}
 
@@ -211,18 +217,21 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
                 </button>
               </>
             )}
-            <button
-              onClick={() => {
-                if (confirm(t("trainingPanel.deleteJobConfirm"))) {
-                  deleteTrainingJob(job.id)
-                    .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
-                    .catch(() => toast.error(t("trainingPanel.deleteFailed")));
-                }
-              }}
-              className="text-red-400 hover:text-red-600 font-medium"
+            <Popconfirm
+              title={t("trainingPanel.deleteJobConfirm")}
+              onConfirm={() =>
+                deleteTrainingJob(job.id)
+                  .then(() => qc.invalidateQueries({ queryKey: ["training-jobs"] }))
+                  .catch(() => toast.error(t("trainingPanel.deleteFailed")))
+              }
+              okText={t("common.delete")}
+              cancelText={t("common.cancel")}
+              okButtonProps={{ danger: true }}
             >
-              {t("common.delete")}
-            </button>
+              <button className="text-red-400 hover:text-red-600 font-medium">
+                {t("common.delete")}
+              </button>
+            </Popconfirm>
           </div>
           <Modal
             open={chartOpen}
