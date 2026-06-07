@@ -12,6 +12,8 @@
     "save": "保存",
     "add": "追加",
     "delete": "削除",
+    "cancel": "キャンセル",
+    "cancelling": "キャンセル中…",
     "close": "閉じる",
     "loading": "読み込み中...",
     "export": "エクスポート",
@@ -97,6 +99,8 @@
     "extractFailed": "キーフレームの抽出に失敗しました",
     "deleteSuccess": "削除しました",
     "deleteFailed": "削除に失敗しました",
+    "deleteConfirm": "この動画を削除してもよろしいですか？",
+    "deleteAllConfirm": "{{count}} 個の動画をすべて削除してもよろしいですか？",
     "selectFrameRequired": "先にキーフレームを選択してください",
     "loadSuccess": "{{count}} キーフレームをアノテーションキューに読み込みました",
     "loadFailed": "読み込みに失敗しました",
@@ -173,7 +177,8 @@
     "confidence": "信頼度",
     "showBox": "ボックスを表示",
     "hideBox": "ボックスを非表示",
-    "deleteBox": "このバウンディングボックスを削除"
+    "deleteBox": "このバウンディングボックスを削除",
+    "deleteBoxConfirm": "このバウンディングボックスを削除してもよろしいですか？"
   },
   "trainingPanel": {
     "variant": "モデルバリアント",
@@ -229,9 +234,26 @@
     "statusRunning": "実行中",
     "statusCompleted": "完了",
     "statusFailed": "失敗",
+    "statusCancelled": "キャンセル済み",
+    "importDataset": "データセットをインポート",
     "downloadDataset": "データセットをダウンロード",
     "datasetDownloaded": "データセットのダウンロードが完了しました",
-    "datasetDownloadFailed": "データセットのダウンロードに失敗しました"
+    "datasetDownloadFailed": "データセットのダウンロードに失敗しました",
+    "addToQueue": "学習キューに追加 ({{count}} 件)",
+    "cancelJobConfirm": "この学習ジョブをキャンセルしてもよろしいですか？",
+    "cancelFailed": "キャンセルに失敗しました",
+    "trainingInProgress": "学習実行中、検出機能は一時利用できません"
+  },
+  "datasetImport": {
+    "title": "データセットをインポート",
+    "format": "アノテーション形式",
+    "dropZip": ".zip ファイルをドラッグするか、クリックして選択",
+    "import": "インポート開始",
+    "importing": "インポート中…",
+    "importSuccess": "{{count}} 枚の画像をインポートしました",
+    "importFailed": "インポートに失敗しました",
+    "invalidZip": ".zip ファイルのみ対応しています",
+    "fileTooLarge": "ファイルサイズが上限を超えています"
   },
   "videoValidator": {
     "playerCompleted": "再生が完了しました。クリックでリプレイ",
