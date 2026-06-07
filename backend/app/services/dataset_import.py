@@ -122,13 +122,15 @@ def _parse_yolo_zip(extract_dir: str) -> list[dict]:
                 boxes.append(box)
 
         saved_path = _save_image(str(img_path), img_path.name)
-        items.append({
-            "image_path": saved_path,
-            "image_name": img_path.name,
-            "image_width": w,
-            "image_height": h,
-            "boxes": boxes,
-        })
+        items.append(
+            {
+                "image_path": saved_path,
+                "image_name": img_path.name,
+                "image_width": w,
+                "image_height": h,
+                "boxes": boxes,
+            }
+        )
 
     if not items:
         raise ValueError("No valid image-label pairs found in YOLO dataset")
@@ -137,13 +139,12 @@ def _parse_yolo_zip(extract_dir: str) -> list[dict]:
 
 def _read_yolo_names(extract: Path) -> dict[int, str]:
     """Read class names from data.yaml, or derive from label files."""
+    names: dict[int, str] = {}
     yaml_path = extract / "data.yaml"
     if yaml_path.exists():
         content = yaml_path.read_text()
         # Simple YAML parsing — just extract the 'names' dict
         import re
-
-        names: dict[int, str] = {}
         # Try to find names as {0: "cat", 1: "dog"} or {0: 'cat', 1: 'dog'}
         names_match = re.search(r"names\s*:\s*(\{[^}]+\})", content)
         if names_match:
@@ -181,9 +182,7 @@ def _read_yolo_names(extract: Path) -> dict[int, str]:
     return names
 
 
-def _parse_yolo_line(
-    line: str, class_names: dict[int, str], img_w: int, img_h: int
-) -> dict | None:
+def _parse_yolo_line(line: str, class_names: dict[int, str], img_w: int, img_h: int) -> dict | None:
     """Parse a single YOLO label line, returning a box dict or None."""
     parts = line.strip().split()
     if len(parts) < 5:
@@ -248,13 +247,15 @@ def _parse_yolo_seg_zip(extract_dir: str) -> list[dict]:
                 boxes.append(box)
 
         saved_path = _save_image(str(img_path), img_path.name)
-        items.append({
-            "image_path": saved_path,
-            "image_name": img_path.name,
-            "image_width": w,
-            "image_height": h,
-            "boxes": boxes,
-        })
+        items.append(
+            {
+                "image_path": saved_path,
+                "image_name": img_path.name,
+                "image_width": w,
+                "image_height": h,
+                "boxes": boxes,
+            }
+        )
 
     if not items:
         raise ValueError("No valid image-label pairs found in YOLO Seg dataset")
@@ -369,24 +370,28 @@ def _parse_coco_zip(extract_dir: str) -> list[dict]:
                 if len(poly) >= 6:
                     mask_poly = [[poly[j], poly[j + 1]] for j in range(0, len(poly), 2)]
 
-            boxes.append({
-                "class_name": cat_map.get(ann["category_id"], f"class_{ann['category_id']}"),
-                "x1": int(x),
-                "y1": int(y),
-                "x2": int(x + bw),
-                "y2": int(y + bh),
-                "confidence": None,
-                "mask_polygon": mask_poly,
-            })
+            boxes.append(
+                {
+                    "class_name": cat_map.get(ann["category_id"], f"class_{ann['category_id']}"),
+                    "x1": int(x),
+                    "y1": int(y),
+                    "x2": int(x + bw),
+                    "y2": int(y + bh),
+                    "confidence": None,
+                    "mask_polygon": mask_poly,
+                }
+            )
 
         saved_path = _save_image(str(img_info["path"]), img_info["name"])
-        items.append({
-            "image_path": saved_path,
-            "image_name": img_info["name"],
-            "image_width": img_info["width"],
-            "image_height": img_info["height"],
-            "boxes": boxes,
-        })
+        items.append(
+            {
+                "image_path": saved_path,
+                "image_name": img_info["name"],
+                "image_width": img_info["width"],
+                "image_height": img_info["height"],
+                "boxes": boxes,
+            }
+        )
 
     if not items:
         raise ValueError("No valid image-annotation pairs found in COCO dataset")
@@ -448,24 +453,28 @@ def _parse_voc_zip(extract_dir: str) -> list[dict]:
                 y2 = int(float(bndbox.findtext("ymax", "0")))
             except (ValueError, TypeError):
                 continue
-            boxes.append({
-                "class_name": class_name,
-                "x1": x1,
-                "y1": y1,
-                "x2": x2,
-                "y2": y2,
-                "confidence": None,
-                "mask_polygon": None,
-            })
+            boxes.append(
+                {
+                    "class_name": class_name,
+                    "x1": x1,
+                    "y1": y1,
+                    "x2": x2,
+                    "y2": y2,
+                    "confidence": None,
+                    "mask_polygon": None,
+                }
+            )
 
         saved_path = _save_image(str(img_file), img_name)
-        items.append({
-            "image_path": saved_path,
-            "image_name": img_name,
-            "image_width": w,
-            "image_height": h,
-            "boxes": boxes,
-        })
+        items.append(
+            {
+                "image_path": saved_path,
+                "image_name": img_name,
+                "image_width": w,
+                "image_height": h,
+                "boxes": boxes,
+            }
+        )
 
     if not items:
         raise ValueError("No valid image-annotation pairs found in VOC dataset")
@@ -513,24 +522,28 @@ def _parse_createml_zip(extract_dir: str) -> list[dict]:
             bh = int(coords.get("height", 0))
             if bw <= 0 or bh <= 0:
                 continue
-            boxes.append({
-                "class_name": label,
-                "x1": x,
-                "y1": y,
-                "x2": x + bw,
-                "y2": y + bh,
-                "confidence": None,
-                "mask_polygon": None,
-            })
+            boxes.append(
+                {
+                    "class_name": label,
+                    "x1": x,
+                    "y1": y,
+                    "x2": x + bw,
+                    "y2": y + bh,
+                    "confidence": None,
+                    "mask_polygon": None,
+                }
+            )
 
         saved_path = _save_image(str(img_file), Path(img_name).name)
-        items.append({
-            "image_path": saved_path,
-            "image_name": Path(img_name).name,
-            "image_width": w,
-            "image_height": h,
-            "boxes": boxes,
-        })
+        items.append(
+            {
+                "image_path": saved_path,
+                "image_name": Path(img_name).name,
+                "image_width": w,
+                "image_height": h,
+                "boxes": boxes,
+            }
+        )
 
     if not items:
         raise ValueError("No valid image-annotation pairs found in CreateML dataset")
