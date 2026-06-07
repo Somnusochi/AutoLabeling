@@ -20,6 +20,8 @@
 
 ![业务流程](docs/architecture_zh.png)
 
+> 详细 Mermaid 图表请查看 [架构与流程文档](docs/architecture_diagram.md)
+
 ## 核心功能
 - 🤖 **VLM 自动标注**：基于 LocateAnything-3B 的开放词汇目标检测
 - 🎯 **SAM2 / SAM3 分割**：SAM2 精修 VLM 检测框；SAM3 文本驱动的端到端检测+分割，BBox/Mask 画布独立开关

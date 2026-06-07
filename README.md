@@ -20,6 +20,8 @@
 
 ![Architecture](docs/architecture_en.png)
 
+> See [Architecture & Workflow Documentation](docs/architecture_diagram.md) for detailed Mermaid diagrams.
+
 ## Key Features
 - 🤖 **VLM auto-labeling**: Open-vocabulary object detection with LocateAnything-3B
 - 🎯 **SAM2 / SAM3 segmentation**: Bbox → pixel-precise mask with SAM 2.1 or SAM3 text-driven detection+segmentation in one pass, BBox/Mask toggle on canvas
