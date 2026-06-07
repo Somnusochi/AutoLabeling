@@ -36,6 +36,13 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   frontend:
     image: ghcr.io/somnusochi/vlm-autoyolo-frontend:latest

@@ -97,20 +97,7 @@ docker compose up -d --build
 | SAM3 | 8002 | SAM3 standalone inference service |
 | Database | 5432 | PostgreSQL |
 
-**GPU Support** — add to `docker-compose.yml`:
-
-```yaml
-backend:
-  deploy:
-    resources:
-      reservations:
-        devices:
-          - driver: nvidia
-            count: 1
-            capabilities: [gpu]
-  environment:
-    DEVICE: cuda
-```
+**GPU Support** — `docker-compose.yml` now has built-in GPU passthrough configured. No manual editing required.
 
 **Persistent Storage (Docker volumes):**
 - `pgdata` — Database · `model-cache` — VLM, SAM2 & SAM3 models · `uploads` — User images/videos · `training-data` — YOLO training outputs

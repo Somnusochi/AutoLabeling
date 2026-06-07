@@ -97,20 +97,7 @@ docker compose up -d --build
 | SAM3 | 8002 | SAM3 独立推理服务 |
 | 数据库 | 5432 | PostgreSQL |
 
-**GPU 支持** — 编辑 `docker-compose.yml`：
-
-```yaml
-backend:
-  deploy:
-    resources:
-      reservations:
-        devices:
-          - driver: nvidia
-            count: 1
-            capabilities: [gpu]
-  environment:
-    DEVICE: cuda
-```
+**GPU 支持** — `docker-compose.yml` 现已内置 GPU 直通配置，直接拉起即可，无需手动修改配置。
 
 **持久化存储（Docker 卷）：**
 - `pgdata` — 数据库 · `model-cache` — VLM、SAM2、SAM3 模型 · `uploads` — 用户上传 · `training-data` — 训练输出
