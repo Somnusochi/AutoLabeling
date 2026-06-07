@@ -14,7 +14,9 @@ export function useYoloValidation() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setValidateMode({ jobId: detail.jobId, modelVariant: detail.modelVariant });
-      toast.success(t("validationSettings.switchedToValidationMode", { model: detail.modelVariant }));
+      toast.success(
+        t("validationSettings.switchedToValidationMode", { model: detail.modelVariant }),
+      );
     };
     window.addEventListener("yolo-validate", handler);
     return () => window.removeEventListener("yolo-validate", handler);
@@ -26,7 +28,12 @@ export function useYoloValidation() {
   }, []);
 
   const runValidation = useCallback(
-    async (file: File, jobId?: string, token?: string, modelVariant?: string): Promise<Detection | null> => {
+    async (
+      file: File,
+      jobId?: string,
+      token?: string,
+      modelVariant?: string,
+    ): Promise<Detection | null> => {
       const activeJobId = jobId || validateMode?.jobId;
       const activeVariant = modelVariant || validateMode?.modelVariant;
       if (!activeJobId && !token) {
@@ -39,7 +46,7 @@ export function useYoloValidation() {
         form.append("file", file);
         form.append("conf", String(validateConf));
         form.append("iou", String(validateIou));
-        
+
         const url = token
           ? `${API_BASE}/train/validate-image/${token}`
           : `${API_BASE}/train/jobs/${activeJobId}/predict`;
@@ -55,7 +62,7 @@ export function useYoloValidation() {
           id: `validate-${Date.now()}`,
           imageName: file.name,
           categories: [],
-          modelName: token ? t("validationSettings.uploadedModelLabel") : (activeVariant || "YOLO"),
+          modelName: token ? t("validationSettings.uploadedModelLabel") : activeVariant || "YOLO",
           modelType: null,
           imageWidth: data.imageWidth,
           imageHeight: data.imageHeight,

@@ -1,3 +1,4 @@
+pnpm run format
 pnpm run lint -- --fix
 npx tsc --noEmit --pretty
 git add -u

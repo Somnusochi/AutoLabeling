@@ -1,4 +1,4 @@
-import {Dropdown} from "antd";
+import { Dropdown } from "antd";
 
 interface Props {
   result: Detection;
@@ -92,7 +92,10 @@ export function DetectionResult({
           {t("detectionResult.resultCount", { count: result.boxes.length })}
           {result.elapsedMs != null && result.elapsedMs > 0 && (
             <span className="ml-2 text-gray-400 font-normal">
-              {t("detectionResult.timeElapsed")} {result.elapsedMs >= 1000 ? `${(result.elapsedMs / 1000).toFixed(1)}s` : `${result.elapsedMs}ms`}
+              {t("detectionResult.timeElapsed")}{" "}
+              {result.elapsedMs >= 1000
+                ? `${(result.elapsedMs / 1000).toFixed(1)}s`
+                : `${result.elapsedMs}ms`}
             </span>
           )}
           {batchResults.length > 1 && (
@@ -133,9 +136,20 @@ export function DetectionResult({
               ],
               onClick: async ({ key }) => {
                 if (key === "yolo") {
-                  downloadYoloTxt(result.boxes, categories, result.imageWidth, result.imageHeight, result.imageName);
+                  downloadYoloTxt(
+                    result.boxes,
+                    categories,
+                    result.imageWidth,
+                    result.imageHeight,
+                    result.imageName,
+                  );
                 } else {
-                  const labels: Record<string, string> = { coco: "COCO", "yolo-seg": "YOLO_Seg", voc: "VOC", createml: "CreateML" };
+                  const labels: Record<string, string> = {
+                    coco: "COCO",
+                    "yolo-seg": "YOLO_Seg",
+                    voc: "VOC",
+                    createml: "CreateML",
+                  };
                   const blob = await exportBatch([result.id], key);
                   downloadBlob(blob, `${labels[key] ?? key}_dataset.zip`);
                 }
@@ -143,7 +157,10 @@ export function DetectionResult({
             }}
             trigger={["click"]}
           >
-            <button type="button" className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors">
+            <button
+              type="button"
+              className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors"
+            >
               {t("detectionResult.exportLabel")}
             </button>
           </Dropdown>
@@ -159,14 +176,23 @@ export function DetectionResult({
                 ],
                 onClick: async ({ key }) => {
                   const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
-                  const labels: Record<string, string> = { yolo: "YOLO", "yolo-seg": "YOLO_Seg", coco: "COCO", voc: "VOC", createml: "CreateML" };
+                  const labels: Record<string, string> = {
+                    yolo: "YOLO",
+                    "yolo-seg": "YOLO_Seg",
+                    coco: "COCO",
+                    voc: "VOC",
+                    createml: "CreateML",
+                  };
                   const blob = await exportBatch(ids, key);
                   downloadBlob(blob, `${labels[key] ?? key}_dataset.zip`);
                 },
               }}
               trigger={["click"]}
             >
-              <button type="button" className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors">
+              <button
+                type="button"
+                className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
+              >
                 {batchResults.length > 1
                   ? t("detectionResult.exportAllDataset", { count: batchResults.length })
                   : t("detectionResult.exportDataset")}
@@ -183,7 +209,9 @@ export function DetectionResult({
               key={res.id}
               onClick={() => onSelectBatch(res, batchFiles[i])}
               className={`relative flex-shrink-0 rounded border-2 p-1 transition-colors ${
-                result.id === res.id ? "border-primary-500" : "border-transparent hover:border-gray-200"
+                result.id === res.id
+                  ? "border-primary-500"
+                  : "border-transparent hover:border-gray-200"
               }`}
             >
               <img
@@ -199,7 +227,12 @@ export function DetectionResult({
         </div>
       )}
 
-      <ResultTable boxes={result.boxes} hiddenIndices={hiddenIndices} onToggleVisibility={onToggleVisibility} onDelete={onDeleteBox} />
+      <ResultTable
+        boxes={result.boxes}
+        hiddenIndices={hiddenIndices}
+        onToggleVisibility={onToggleVisibility}
+        onDelete={onDeleteBox}
+      />
     </div>
   );
 }
@@ -208,15 +241,30 @@ function LoadingOverlay({ elapsedMs }: { elapsedMs: number }) {
   const { t } = useTranslation();
   const { vlm, sam2, sam3 } = useModelEvents();
   const modelLoading =
-    vlm.state === "loading" || vlm.state === "downloading" ||
-    sam2.state === "loading" || sam2.state === "downloading" ||
-    sam3.status === "loading" || sam3.status === "starting";
+    vlm.state === "loading" ||
+    vlm.state === "downloading" ||
+    sam2.state === "loading" ||
+    sam2.state === "downloading" ||
+    sam3.status === "loading" ||
+    sam3.status === "starting";
 
   return (
     <div className="absolute inset-0 bg-white/60 rounded-lg flex flex-col items-center justify-center gap-3">
       <svg className="animate-spin h-10 w-10 text-primary-500" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+          fill="none"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+        />
       </svg>
       <p className="text-sm font-medium text-gray-600">
         {modelLoading ? t("detectionResult.loadingModel") : t("detectionResult.detecting")}

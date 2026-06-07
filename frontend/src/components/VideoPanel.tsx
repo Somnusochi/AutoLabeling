@@ -1,9 +1,6 @@
-import {type DragEvent} from "react";
+import { type DragEvent } from "react";
 
-import {Image} from "antd";
-
-
-
+import { Image } from "antd";
 
 interface Props {
   onLoadKeyframes: (files: File[], videoName: string) => void;
@@ -48,7 +45,16 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
 
   const extractMut = useMutation({
     mutationFn: ({ id, params }: { id: string; params: Record<string, unknown> }) =>
-      extractKeyframes(id, params as { method: string; threshold?: number; intervalSeconds?: number; maxFrames: number; ssimThreshold: number }),
+      extractKeyframes(
+        id,
+        params as {
+          method: string;
+          threshold?: number;
+          intervalSeconds?: number;
+          maxFrames: number;
+          ssimThreshold: number;
+        },
+      ),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["videos"] });
       setExtracting(false);
@@ -109,7 +115,8 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
   const toggleFrame = useCallback((id: string) => {
     setSelectedFrameIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -125,7 +132,10 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
   const handleLoadSelected = useCallback(
     async (video: VideoInfo) => {
       const selected = video.keyframes.filter((k) => selectedFrameIds.has(k.id));
-      if (selected.length === 0) { toast.error(t("videoPanel.selectFrameRequired")); return; }
+      if (selected.length === 0) {
+        toast.error(t("videoPanel.selectFrameRequired"));
+        return;
+      }
       setLoadingAll(true);
       try {
         const files: File[] = [];
@@ -151,7 +161,10 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
     <div className="space-y-2">
       {/* Upload */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => document.getElementById("video-input")?.click()}
@@ -161,10 +174,19 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
       >
         <p className="text-gray-500">{t("videoPanel.dragToUpload")}</p>
         <p className="text-gray-400 text-[10px] mt-0.5">{t("videoPanel.uploadLimit")}</p>
-        <input id="video-input" type="file" accept="video/*" className="hidden" disabled={disabled} onChange={handleFileInput} />
+        <input
+          id="video-input"
+          type="file"
+          accept="video/*"
+          className="hidden"
+          disabled={disabled}
+          onChange={handleFileInput}
+        />
       </div>
 
-      {uploadMut.isPending && <p className="text-xs text-gray-400 text-center">{t("videoPanel.uploading")}</p>}
+      {uploadMut.isPending && (
+        <p className="text-xs text-gray-400 text-center">{t("videoPanel.uploading")}</p>
+      )}
 
       {/* Video list */}
       {videoList && videoList.items.length > 0 && (
@@ -184,13 +206,20 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
                     <span className="truncate block">{v.fileName}</span>
                     <span className="text-[10px] text-gray-400">
                       {v.duration != null ? formatTime(v.duration) : "?"}
-                      {v.keyframes.length > 0 ? ` · ${v.keyframes.length} ${t("videoPanel.unitFrames")}` : ""}
+                      {v.keyframes.length > 0
+                        ? ` · ${v.keyframes.length} ${t("videoPanel.unitFrames")}`
+                        : ""}
                     </span>
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); deleteMut.mutate(v.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteMut.mutate(v.id);
+                    }}
                     className="text-[10px] text-red-400 hover:text-red-600 flex-shrink-0 px-0.5"
-                  >{t("common.delete")}</button>
+                  >
+                    {t("common.delete")}
+                  </button>
                 </div>
               </div>
             ))}
@@ -206,8 +235,9 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
       )}
 
       {/* Extraction panel */}
-      {selectedVideoId && selectedVideo && (
-        isValidation ? (
+      {selectedVideoId &&
+        selectedVideo &&
+        (isValidation ? (
           <div className="rounded border border-gray-200 p-2.5">
             <button
               onClick={() => onValidateVideo!(selectedVideo.id)}
@@ -217,185 +247,250 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
             </button>
           </div>
         ) : (
-        <div className="rounded border border-gray-200 p-2.5 space-y-3">
-          {/* Method toggle */}
-          <div className="flex gap-0.5 rounded bg-gray-100 p-0.5">
-            {(["scene", "motion", "interval"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMethod(m)}
-                className={`flex-1 rounded px-1.5 py-1 text-[11px] font-medium transition-colors ${
-                  method === m ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {methodLabels[m]}
-              </button>
-            ))}
-          </div>
-
-          {/* Settings — one per row */}
-          <div className="space-y-2 text-[11px]">
-            {/* Method-specific param */}
-            {method === "scene" && (
-              <div>
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-gray-500">{t("videoPanel.sceneThreshold")}</span>
-                  <span className="text-gray-700 font-medium">{threshold}</span>
-                </div>
-                <input type="range" min={1} max={100} value={threshold}
-                  onChange={(e) => setThreshold(Number(e.target.value))}
-                  className="w-full h-1 accent-primary-500" />
-                <div className="flex justify-between text-[10px] text-gray-400">
-                  <span>{t("videoPanel.moreFrames")}</span>
-                  <span>{t("videoPanel.fewerFrames")}</span>
-                </div>
-              </div>
-            )}
-
-            {method === "motion" && (
-              <div>
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-gray-500">{t("videoPanel.motionThreshold")}</span>
-                  <span className="text-gray-700 font-medium">{threshold}px</span>
-                </div>
-                <input type="range" min={1} max={50} step={0.5} value={threshold}
-                  onChange={(e) => setThreshold(Number(e.target.value))}
-                  className="w-full h-1 accent-primary-500" />
-                <div className="flex justify-between text-[10px] text-gray-400">
-                  <span>{t("videoPanel.motionMore")}</span>
-                  <span>{t("videoPanel.motionFewer")}</span>
-                </div>
-              </div>
-            )}
-
-            {method === "interval" && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">{t("videoPanel.timeInterval")}</span>
-                <input type="number" min={0.5} max={60} step={0.5} value={intervalSec}
-                  onChange={(e) => setIntervalSec(Number(e.target.value))}
-                  className="w-14 rounded border border-gray-200 px-1.5 py-0.5 text-xs" />
-                <span className="text-gray-400">{t("videoPanel.unitSeconds")}</span>
-              </div>
-            )}
-
-            {/* Max frames */}
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">{t("videoPanel.maxFrames")}</span>
-              <input type="number" min={1} max={1000} value={maxFrames}
-                onChange={(e) => setMaxFrames(Number(e.target.value))}
-                className="w-14 rounded border border-gray-200 px-1.5 py-0.5 text-xs" />
-              <span className="text-gray-400">{t("videoPanel.unitFrames")}</span>
-            </div>
-
-            {/* SSIM dedup */}
-            <div>
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-gray-500">{t("videoPanel.ssimThreshold")}</span>
-                <span className="text-gray-700 font-medium">
-                  {ssimThreshold >= 1 ? t("videoPanel.ssimClose") : ssimThreshold.toFixed(2)}
-                </span>
-              </div>
-              <input type="range" min={0.5} max={1} step={0.01} value={ssimThreshold}
-                onChange={(e) => setSsimThreshold(Number(e.target.value))}
-                className="w-full h-1 accent-primary-500" />
-              <div className="flex justify-between text-[10px] text-gray-400">
-                <span>{t("videoPanel.ssimStrict")}</span>
-                <span>{t("videoPanel.ssimLoose")}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-1">
-            {selectedVideo.keyframes.length === 0 ? (
-              <button
-                onClick={() => handleExtract(selectedVideoId)}
-                disabled={extracting}
-                className="flex-1 rounded bg-primary-600 py-1.5 text-[11px] font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
-              >
-                {extracting ? t("videoPanel.extracting") : t("videoPanel.startExtract")}
-              </button>
-            ) : (
-              <>
+          <div className="rounded border border-gray-200 p-2.5 space-y-3">
+            {/* Method toggle */}
+            <div className="flex gap-0.5 rounded bg-gray-100 p-0.5">
+              {(["scene", "motion", "interval"] as const).map((m) => (
                 <button
-                  onClick={() => handleLoadSelected(selectedVideo)}
-                  disabled={loadingAll || selectedFrameIds.size === 0}
-                  className="flex-1 rounded bg-green-600 py-1.5 text-[11px] font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  key={m}
+                  onClick={() => setMethod(m)}
+                  className={`flex-1 rounded px-1.5 py-1 text-[11px] font-medium transition-colors ${
+                    method === m
+                      ? "bg-white text-primary-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
                 >
-                  {loadingAll ? t("common.loading") : t("videoPanel.loadSelected", { count: selectedFrameIds.size })}
+                  {methodLabels[m]}
                 </button>
+              ))}
+            </div>
+
+            {/* Settings — one per row */}
+            <div className="space-y-2 text-[11px]">
+              {/* Method-specific param */}
+              {method === "scene" && (
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-gray-500">{t("videoPanel.sceneThreshold")}</span>
+                    <span className="text-gray-700 font-medium">{threshold}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={100}
+                    value={threshold}
+                    onChange={(e) => setThreshold(Number(e.target.value))}
+                    className="w-full h-1 accent-primary-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-400">
+                    <span>{t("videoPanel.moreFrames")}</span>
+                    <span>{t("videoPanel.fewerFrames")}</span>
+                  </div>
+                </div>
+              )}
+
+              {method === "motion" && (
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-gray-500">{t("videoPanel.motionThreshold")}</span>
+                    <span className="text-gray-700 font-medium">{threshold}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={50}
+                    step={0.5}
+                    value={threshold}
+                    onChange={(e) => setThreshold(Number(e.target.value))}
+                    className="w-full h-1 accent-primary-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-400">
+                    <span>{t("videoPanel.motionMore")}</span>
+                    <span>{t("videoPanel.motionFewer")}</span>
+                  </div>
+                </div>
+              )}
+
+              {method === "interval" && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">{t("videoPanel.timeInterval")}</span>
+                  <input
+                    type="number"
+                    min={0.5}
+                    max={60}
+                    step={0.5}
+                    value={intervalSec}
+                    onChange={(e) => setIntervalSec(Number(e.target.value))}
+                    className="w-14 rounded border border-gray-200 px-1.5 py-0.5 text-xs"
+                  />
+                  <span className="text-gray-400">{t("videoPanel.unitSeconds")}</span>
+                </div>
+              )}
+
+              {/* Max frames */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">{t("videoPanel.maxFrames")}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={maxFrames}
+                  onChange={(e) => setMaxFrames(Number(e.target.value))}
+                  className="w-14 rounded border border-gray-200 px-1.5 py-0.5 text-xs"
+                />
+                <span className="text-gray-400">{t("videoPanel.unitFrames")}</span>
+              </div>
+
+              {/* SSIM dedup */}
+              <div>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-gray-500">{t("videoPanel.ssimThreshold")}</span>
+                  <span className="text-gray-700 font-medium">
+                    {ssimThreshold >= 1 ? t("videoPanel.ssimClose") : ssimThreshold.toFixed(2)}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={1}
+                  step={0.01}
+                  value={ssimThreshold}
+                  onChange={(e) => setSsimThreshold(Number(e.target.value))}
+                  className="w-full h-1 accent-primary-500"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400">
+                  <span>{t("videoPanel.ssimStrict")}</span>
+                  <span>{t("videoPanel.ssimLoose")}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-1">
+              {selectedVideo.keyframes.length === 0 ? (
                 <button
                   onClick={() => handleExtract(selectedVideoId)}
                   disabled={extracting}
-                  className="rounded border border-gray-200 px-2 py-1.5 text-[11px] text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                >{t("videoPanel.reExtract")}</button>
+                  className="flex-1 rounded bg-primary-600 py-1.5 text-[11px] font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                >
+                  {extracting ? t("videoPanel.extracting") : t("videoPanel.startExtract")}
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleLoadSelected(selectedVideo)}
+                    disabled={loadingAll || selectedFrameIds.size === 0}
+                    className="flex-1 rounded bg-green-600 py-1.5 text-[11px] font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {loadingAll
+                      ? t("common.loading")
+                      : t("videoPanel.loadSelected", { count: selectedFrameIds.size })}
+                  </button>
+                  <button
+                    onClick={() => handleExtract(selectedVideoId)}
+                    disabled={extracting}
+                    className="rounded border border-gray-200 px-2 py-1.5 text-[11px] text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {t("videoPanel.reExtract")}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Timeline keyframe strip */}
+            {extracting && (
+              <div className="flex items-center gap-2 py-3 justify-center text-[11px] text-gray-400">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                {t("videoPanel.extracting")}
+              </div>
+            )}
+
+            {!extracting && selectedVideo.keyframes.length > 0 && (
+              <>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-gray-400">
+                    {t("videoPanel.selectedCount", {
+                      current: selectedFrameIds.size,
+                      total: selectedVideo.keyframes.length,
+                    })}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => selectAllFrames(selectedVideo)}
+                      className="text-gray-500 hover:text-primary-600"
+                    >
+                      {t("videoPanel.selectAll")}
+                    </button>
+                    <button
+                      onClick={deselectAllFrames}
+                      className="text-gray-500 hover:text-primary-600"
+                    >
+                      {t("videoPanel.deselectAll")}
+                    </button>
+                  </div>
+                </div>
+                <Image.PreviewGroup>
+                  <div className="flex gap-1.5 overflow-x-auto pb-1">
+                    {selectedVideo.keyframes.map((kf) => {
+                      const sel = selectedFrameIds.has(kf.id);
+                      return (
+                        <div
+                          key={kf.id}
+                          onClick={() => toggleFrame(kf.id)}
+                          className={`flex-shrink-0 w-24 rounded overflow-hidden border-2 transition-all cursor-pointer ${
+                            sel
+                              ? "border-primary-500 ring-1 ring-primary-200"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                        >
+                          <div className="relative">
+                            <Image
+                              src={keyframeImageUrl(selectedVideo.id, kf.id)}
+                              alt={`#${kf.frameNumber}`}
+                              className="w-full h-14 object-cover"
+                              preview={{ mask: t("videoPanel.clickToView") }}
+                              style={{ display: "block" }}
+                            />
+                            {sel && (
+                              <div className="absolute top-0.5 right-0.5 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
+                                <svg
+                                  className="w-2.5 h-2.5 text-white"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          <div className="bg-gray-50 text-[10px] text-gray-500 px-1 py-0.5 text-center">
+                            {formatTime(kf.timestampSeconds)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Image.PreviewGroup>
               </>
             )}
           </div>
-
-          {/* Timeline keyframe strip */}
-          {extracting && (
-            <div className="flex items-center gap-2 py-3 justify-center text-[11px] text-gray-400">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              {t("videoPanel.extracting")}
-            </div>
-          )}
-
-          {!extracting && selectedVideo.keyframes.length > 0 && (
-            <>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-gray-400">
-                  {t("videoPanel.selectedCount", { current: selectedFrameIds.size, total: selectedVideo.keyframes.length })}
-                </span>
-                <div className="flex gap-1">
-                  <button onClick={() => selectAllFrames(selectedVideo)} className="text-gray-500 hover:text-primary-600">{t("videoPanel.selectAll")}</button>
-                  <button onClick={deselectAllFrames} className="text-gray-500 hover:text-primary-600">{t("videoPanel.deselectAll")}</button>
-                </div>
-              </div>
-              <Image.PreviewGroup>
-                <div className="flex gap-1.5 overflow-x-auto pb-1">
-                  {selectedVideo.keyframes.map((kf) => {
-                    const sel = selectedFrameIds.has(kf.id);
-                    return (
-                      <div
-                        key={kf.id}
-                        onClick={() => toggleFrame(kf.id)}
-                        className={`flex-shrink-0 w-24 rounded overflow-hidden border-2 transition-all cursor-pointer ${
-                          sel
-                            ? "border-primary-500 ring-1 ring-primary-200"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <div className="relative">
-                          <Image
-                            src={keyframeImageUrl(selectedVideo.id, kf.id)}
-                            alt={`#${kf.frameNumber}`}
-                            className="w-full h-14 object-cover"
-                            preview={{ mask: t("videoPanel.clickToView") }}
-                            style={{ display: "block" }}
-                          />
-                          {sel && (
-                            <div className="absolute top-0.5 right-0.5 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
-                              <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        <div className="bg-gray-50 text-[10px] text-gray-500 px-1 py-0.5 text-center">
-                          {formatTime(kf.timestampSeconds)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Image.PreviewGroup>
-            </>
-          )}
-        </div>
-      ))}
+        ))}
     </div>
   );
 }

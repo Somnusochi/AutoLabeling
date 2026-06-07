@@ -10,8 +10,38 @@ export function useDetectMutation() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ file, categories, useSam2, sam2ScoreThreshold, useSam3, sam3Text, useSam3Seg, sam3Threshold, sam3MaskThreshold }: { file: File; categories: string[]; useSam2?: boolean; sam2ScoreThreshold?: number; useSam3?: boolean; sam3Text?: string; useSam3Seg?: boolean; sam3Threshold?: number; sam3MaskThreshold?: number }) =>
-      detectImage(file, categories, useSam2, sam2ScoreThreshold, useSam3, sam3Text, useSam3Seg, sam3Threshold, sam3MaskThreshold),
+    mutationFn: ({
+      file,
+      categories,
+      useSam2,
+      sam2ScoreThreshold,
+      useSam3,
+      sam3Text,
+      useSam3Seg,
+      sam3Threshold,
+      sam3MaskThreshold,
+    }: {
+      file: File;
+      categories: string[];
+      useSam2?: boolean;
+      sam2ScoreThreshold?: number;
+      useSam3?: boolean;
+      sam3Text?: string;
+      useSam3Seg?: boolean;
+      sam3Threshold?: number;
+      sam3MaskThreshold?: number;
+    }) =>
+      detectImage(
+        file,
+        categories,
+        useSam2,
+        sam2ScoreThreshold,
+        useSam3,
+        sam3Text,
+        useSam3Seg,
+        sam3Threshold,
+        sam3MaskThreshold,
+      ),
     onMutate: ({ useSam2 }) => {
       qc.invalidateQueries({ queryKey: ["model-status"] });
       if (useSam2) qc.invalidateQueries({ queryKey: ["sam2-status"] });

@@ -160,7 +160,9 @@ export function ModelStatus() {
         {(sam2Downloading || sam2Loading) && (
           <div className="mt-1.5">
             <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
-              <span>{sam2Stage ? (stageLabels[sam2Stage] || sam2Stage) : t("modelStatus.preparing")}</span>
+              <span>
+                {sam2Stage ? stageLabels[sam2Stage] || sam2Stage : t("modelStatus.preparing")}
+              </span>
               <span>{sam2Progress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1 overflow-hidden">

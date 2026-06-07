@@ -24,10 +24,16 @@ export function Sam3Status() {
           {isLoading ? (
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
           ) : (
-            <span className={`inline-block h-1.5 w-1.5 rounded-full ${loaded ? "bg-green-500" : "bg-gray-300"}`} />
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${loaded ? "bg-green-500" : "bg-gray-300"}`}
+            />
           )}
           <span className="text-gray-500">
-            {isLoading ? t("modelStatus.loading") : loaded ? t("modelStatus.sam3Loaded") : t("modelStatus.sam3Unloaded")}
+            {isLoading
+              ? t("modelStatus.loading")
+              : loaded
+                ? t("modelStatus.sam3Loaded")
+                : t("modelStatus.sam3Unloaded")}
           </span>
         </span>
         {loaded && (

@@ -136,7 +136,10 @@ export async function uploadVideo(file: File): Promise<VideoInfo> {
   return data.data;
 }
 
-export async function listVideos(page = 1, pageSize = 20): Promise<{ items: VideoInfo[]; total: number }> {
+export async function listVideos(
+  page = 1,
+  pageSize = 20,
+): Promise<{ items: VideoInfo[]; total: number }> {
   const { data } = await request.get<ListResponse<VideoInfo>>("/videos", {
     params: { page, pageSize },
   });
@@ -150,7 +153,13 @@ export async function getVideo(id: string): Promise<VideoInfo> {
 
 export async function extractKeyframes(
   videoId: string,
-  params: { method: string; threshold?: number; intervalSeconds?: number; maxFrames?: number; ssimThreshold?: number },
+  params: {
+    method: string;
+    threshold?: number;
+    intervalSeconds?: number;
+    maxFrames?: number;
+    ssimThreshold?: number;
+  },
 ): Promise<VideoInfo> {
   const { data } = await request.post<{ data: VideoInfo }>(
     `/videos/${videoId}/extract-keyframes`,

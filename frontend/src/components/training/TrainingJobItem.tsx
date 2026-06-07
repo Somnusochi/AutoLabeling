@@ -6,7 +6,11 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
   const qc = useQueryClient();
   const [chartOpen, setChartOpen] = useState(false);
   const [progress, setProgress] = useState<{
-    epoch: number; totalEpochs: number; loss: number; mAP50?: number; mAP50_95?: number;
+    epoch: number;
+    totalEpochs: number;
+    loss: number;
+    mAP50?: number;
+    mAP50_95?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -24,7 +28,9 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
         setProgress(null);
       }
     };
-    es.onerror = () => { es.close(); };
+    es.onerror = () => {
+      es.close();
+    };
     return () => es.close();
   }, [job.id, job.status, qc]);
 
@@ -35,18 +41,29 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
           <span className="font-medium">{job.modelVariant}</span>
           {job.completedAt && (
             <span className="text-gray-400 ml-2">
-              {new Date(job.completedAt).toLocaleString(i18n.language.startsWith("zh") ? "zh-CN" : "en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              {new Date(job.completedAt).toLocaleString(
+                i18n.language.startsWith("zh") ? "zh-CN" : "en-US",
+                {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              )}
             </span>
           )}
         </div>
         <StatusBadge status={job.status} />
       </div>
 
-      {(job.status === "pending" || job.status === "running") && (
-        progress && progress.totalEpochs > 0 ? (
+      {(job.status === "pending" || job.status === "running") &&
+        (progress && progress.totalEpochs > 0 ? (
           <div className="mt-1.5 space-y-1">
             <div className="flex justify-between text-gray-400">
-              <span>Epoch {progress.epoch}/{progress.totalEpochs}</span>
+              <span>
+                Epoch {progress.epoch}/{progress.totalEpochs}
+              </span>
               <span>{Math.round((progress.epoch / progress.totalEpochs) * 100)}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
@@ -63,13 +80,24 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
         ) : (
           <div className="mt-1.5 flex items-center gap-2 text-gray-400">
             <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
             {t("trainingPanel.waitingToStart")}
           </div>
-        )
-      )}
+        ))}
 
       {(job.status === "completed" || job.status === "failed") && (
         <>
@@ -78,13 +106,21 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
               <span className="text-gray-400">mAP50</span>
               <span className="text-gray-400">mAP50-95</span>
               <span className="text-gray-400">Precision</span>
-              <span className="font-medium">{(job.metrics.mAP50 as number)?.toFixed(3) ?? "-"}</span>
-              <span className="font-medium">{(job.metrics["mAP50-95"] as number)?.toFixed(3) ?? "-"}</span>
-              <span className="font-medium">{(job.metrics.precision as number)?.toFixed(3) ?? "-"}</span>
+              <span className="font-medium">
+                {(job.metrics.mAP50 as number)?.toFixed(3) ?? "-"}
+              </span>
+              <span className="font-medium">
+                {(job.metrics["mAP50-95"] as number)?.toFixed(3) ?? "-"}
+              </span>
+              <span className="font-medium">
+                {(job.metrics.precision as number)?.toFixed(3) ?? "-"}
+              </span>
               <span className="text-gray-400">Recall</span>
               <span className="text-gray-400">{t("trainingPanel.samples")}</span>
               <span className="text-gray-400">{t("trainingPanel.classes")}</span>
-              <span className="font-medium">{(job.metrics.recall as number)?.toFixed(3) ?? "-"}</span>
+              <span className="font-medium">
+                {(job.metrics.recall as number)?.toFixed(3) ?? "-"}
+              </span>
               <span className="font-medium">{String(job.metrics.num_samples ?? "-")}</span>
               <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
             </div>
@@ -92,14 +128,33 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             {job.status === "completed" && (
               <>
-                <a href={downloadModelUrl(job.id)} download className="text-primary-600 hover:underline font-medium">{t("trainingPanel.model")}</a>
-                <a href={downloadDatasetUrl(job.id)} download className="text-primary-600 hover:underline font-medium">{t("trainingPanel.dataset")}</a>
-                <a href={downloadOnnxUrl(job.id)} className="text-primary-600 hover:underline font-medium">ONNX</a>
+                <a
+                  href={downloadModelUrl(job.id)}
+                  download
+                  className="text-primary-600 hover:underline font-medium"
+                >
+                  {t("trainingPanel.model")}
+                </a>
+                <a
+                  href={downloadDatasetUrl(job.id)}
+                  download
+                  className="text-primary-600 hover:underline font-medium"
+                >
+                  {t("trainingPanel.dataset")}
+                </a>
+                <a
+                  href={downloadOnnxUrl(job.id)}
+                  className="text-primary-600 hover:underline font-medium"
+                >
+                  ONNX
+                </a>
                 <button
                   onClick={() => {
-                    window.dispatchEvent(new CustomEvent("yolo-validate", {
-                      detail: { jobId: job.id, modelVariant: job.modelVariant }
-                    }));
+                    window.dispatchEvent(
+                      new CustomEvent("yolo-validate", {
+                        detail: { jobId: job.id, modelVariant: job.modelVariant },
+                      }),
+                    );
                   }}
                   className="text-green-600 hover:underline font-medium"
                 >
@@ -108,14 +163,29 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
                 <button
                   onClick={async () => {
                     try {
-                      const resp = await fetch(`${API_BASE}/train/jobs/${job.id}/retrain`, { method: "POST" });
-                      if (resp.ok) { toast.success(t("trainingPanel.retrainCreated")); qc.invalidateQueries({ queryKey: ["training-jobs"] }); }
-                      else { toast.error(t("trainingPanel.retrainFailed")); }
-                    } catch { toast.error(t("trainingPanel.retrainFailed")); }
+                      const resp = await fetch(`${API_BASE}/train/jobs/${job.id}/retrain`, {
+                        method: "POST",
+                      });
+                      if (resp.ok) {
+                        toast.success(t("trainingPanel.retrainCreated"));
+                        qc.invalidateQueries({ queryKey: ["training-jobs"] });
+                      } else {
+                        toast.error(t("trainingPanel.retrainFailed"));
+                      }
+                    } catch {
+                      toast.error(t("trainingPanel.retrainFailed"));
+                    }
                   }}
                   className="text-orange-500 hover:text-orange-600 font-medium"
-                >{t("trainingPanel.retrain")}</button>
-                <button onClick={() => setChartOpen(true)} className="text-gray-500 hover:text-gray-700 font-medium">{t("trainingPanel.details")}</button>
+                >
+                  {t("trainingPanel.retrain")}
+                </button>
+                <button
+                  onClick={() => setChartOpen(true)}
+                  className="text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  {t("trainingPanel.details")}
+                </button>
               </>
             )}
             <button
@@ -131,8 +201,18 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
               {t("common.delete")}
             </button>
           </div>
-          <Modal open={chartOpen} onCancel={() => setChartOpen(false)} footer={null} width={800} title={t("trainingPanel.chartModalTitle")}>
-            <img src={chartUrl(job.id)} alt={t("trainingPanel.chartModalTitle")} className="w-full" />
+          <Modal
+            open={chartOpen}
+            onCancel={() => setChartOpen(false)}
+            footer={null}
+            width={800}
+            title={t("trainingPanel.chartModalTitle")}
+          >
+            <img
+              src={chartUrl(job.id)}
+              alt={t("trainingPanel.chartModalTitle")}
+              className="w-full"
+            />
           </Modal>
         </>
       )}

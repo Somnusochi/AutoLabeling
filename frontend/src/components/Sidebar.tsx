@@ -13,7 +13,6 @@ import { HistorySkeleton } from "@/components/LoadingSkeleton";
 import type { Detection } from "@/types";
 import { useAppStore } from "@/store/useAppStore";
 
-
 export interface SidebarProps {
   recentCategories: string[];
   handleFiles: (fs: File[]) => void;
@@ -53,30 +52,51 @@ export function Sidebar({
   const { themeMode, setThemeMode } = useTheme();
 
   const {
-    appMode, setAppMode,
-    validateModelSource, setValidateModelSource,
-    selectedTrainedJobId, setSelectedTrainedJobId,
-    inputMode, setInputMode,
-    files, setFiles, setPreviewUrl,
-    categories, setCategories,
-    validateVideoId, setValidateVideoId, setValidateRunKey,
-    externalModelFile, setExternalModelFile,
-    validateConf, setValidateConf,
-    validateIou, setValidateIou,
-    filterMode, setFilterMode,
-    nmsIou, setNmsIou, setHiddenIndices,
-    useSam2, setUseSam2,
-    useSam3, setUseSam3,
-    useSam3Seg, setUseSam3Seg,
-    sam3Threshold, setSam3Threshold,
-    sam3MaskThreshold, setSam3MaskThreshold,
-    sam2ScoreThreshold, setSam2ScoreThreshold,
+    appMode,
+    setAppMode,
+    validateModelSource,
+    setValidateModelSource,
+    selectedTrainedJobId,
+    setSelectedTrainedJobId,
+    inputMode,
+    setInputMode,
+    files,
+    setFiles,
+    setPreviewUrl,
+    categories,
+    setCategories,
+    validateVideoId,
+    setValidateVideoId,
+    setValidateRunKey,
+    externalModelFile,
+    setExternalModelFile,
+    validateConf,
+    setValidateConf,
+    validateIou,
+    setValidateIou,
+    filterMode,
+    setFilterMode,
+    nmsIou,
+    setNmsIou,
+    setHiddenIndices,
+    useSam2,
+    setUseSam2,
+    useSam3,
+    setUseSam3,
+    useSam3Seg,
+    setUseSam3Seg,
+    sam3Threshold,
+    setSam3Threshold,
+    sam3MaskThreshold,
+    setSam3MaskThreshold,
+    sam2ScoreThreshold,
+    setSam2ScoreThreshold,
   } = useAppStore();
 
   return (
     <aside
       className="flex-shrink-0 border-r border-gray-200 bg-white flex flex-col gap-4 overflow-y-auto relative"
-      style={{ width: 440, padding: '1.25rem' }}
+      style={{ width: 440, padding: "1.25rem" }}
     >
       {/* Header: Title + Controls */}
       <div className="flex justify-between items-center mb-1">
@@ -93,8 +113,18 @@ export function Sidebar({
               }`}
               title={t("common.themeLight")}
             >
-              <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              <svg
+                className="h-3.5 w-3.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
               </svg>
             </button>
             <button
@@ -106,8 +136,18 @@ export function Sidebar({
               }`}
               title={t("common.themeDark")}
             >
-              <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              <svg
+                className="h-3.5 w-3.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
               </svg>
             </button>
             <button
@@ -119,8 +159,18 @@ export function Sidebar({
               }`}
               title={t("common.themeSystem")}
             >
-              <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <svg
+                className="h-3.5 w-3.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
             </button>
           </div>
@@ -161,8 +211,8 @@ export function Sidebar({
                 setUseSam3(mode === "sam3");
               }}
               className={`flex-1 text-xs font-semibold px-3 py-1 rounded-md transition-all duration-300 cursor-pointer relative z-10 ${
-                active 
-                  ? "bg-white text-primary-600 shadow-sm ring-1 ring-black/5" 
+                active
+                  ? "bg-white text-primary-600 shadow-sm ring-1 ring-black/5"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
               }`}
             >
@@ -177,18 +227,18 @@ export function Sidebar({
 
       {/* Mode tabs */}
       <div className="flex border-b border-gray-200 mb-2">
-        {(['annotate', 'validate'] as const).map(m => (
+        {(["annotate", "validate"] as const).map((m) => (
           <button
             key={m}
             onClick={() => {
-              setAppMode(m)
-              setResult(null)
-              setValidateVideoId(null)
+              setAppMode(m);
+              setResult(null);
+              setValidateVideoId(null);
             }}
             className={`flex-1 pb-3 pt-1 text-sm font-bold transition-all duration-200 relative text-center cursor-pointer ${
               appMode === m
-                ? 'text-primary-600 border-b-2 border-primary-600 scale-[1.02]'
-                : 'text-gray-400 hover:text-gray-600 border-b-2 border-transparent'
+                ? "text-primary-600 border-b-2 border-primary-600 scale-[1.02]"
+                : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"
             }`}
           >
             {{ annotate: t("common.annotate"), validate: t("common.validate") }[m]}
@@ -196,7 +246,7 @@ export function Sidebar({
         ))}
       </div>
 
-      {appMode === 'validate' && (
+      {appMode === "validate" && (
         <ValidationSettings
           selectedJobId={selectedTrainedJobId}
           onSelectJob={setSelectedTrainedJobId}
@@ -213,26 +263,26 @@ export function Sidebar({
 
       <div>
         <div className="flex gap-1 rounded bg-gray-100 p-0.5 mb-2">
-          {(['image', 'video'] as const).map(mode => (
+          {(["image", "video"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => {
-                setInputMode(mode)
-                setFiles([])
-                setPreviewUrl(null)
-                setBatchResults([])
+                setInputMode(mode);
+                setFiles([]);
+                setPreviewUrl(null);
+                setBatchResults([]);
               }}
               className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
                 inputMode === mode
-                  ? 'bg-white text-primary-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {{ image: t("common.image"), video: t("common.video") }[mode]}
             </button>
           ))}
         </div>
-        {inputMode === 'image' ? (
+        {inputMode === "image" ? (
           <ImageUploader
             onFiles={handleFiles}
             onClear={() => {
@@ -246,10 +296,10 @@ export function Sidebar({
           <VideoPanel
             onLoadKeyframes={handleSelectKeyframe}
             onValidateVideo={
-              appMode === 'validate'
-                ? videoId => {
-                    setValidateVideoId(videoId)
-                    setValidateRunKey(k => k + 1)
+              appMode === "validate"
+                ? (videoId) => {
+                    setValidateVideoId(videoId);
+                    setValidateRunKey((k) => k + 1);
                   }
                 : undefined
             }
@@ -258,11 +308,7 @@ export function Sidebar({
         )}
       </div>
 
-      {!(
-        appMode === 'validate' &&
-        inputMode === 'video' &&
-        validateVideoId
-      ) && (
+      {!(appMode === "validate" && inputMode === "video" && validateVideoId) && (
         <>
           <div>
             <p className="text-sm font-medium text-gray-600 mb-2">{t("common.categories")}</p>
@@ -340,9 +386,7 @@ export function Sidebar({
           <button
             type="button"
             disabled={
-              loading ||
-              files.length === 0 ||
-              (appMode !== 'validate' && categories.length === 0)
+              loading || files.length === 0 || (appMode !== "validate" && categories.length === 0)
             }
             onClick={handleDetect}
             className="w-full rounded bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
@@ -366,10 +410,13 @@ export function Sidebar({
                   />
                 </svg>
                 {batchProgress.total > 1
-                  ? t("home.detectingCount", { current: batchProgress.current, total: batchProgress.total })
+                  ? t("home.detectingCount", {
+                      current: batchProgress.current,
+                      total: batchProgress.total,
+                    })
                   : t("home.detectingDefault")}
               </span>
-            ) : appMode === 'validate' ? (
+            ) : appMode === "validate" ? (
               t("home.yoloValidation")
             ) : files.length > 1 ? (
               t("home.detectBtnImageCount", { count: files.length })
@@ -380,11 +427,9 @@ export function Sidebar({
         </>
       )}
 
-      {appMode === 'validate' && inputMode === 'video' && (
+      {appMode === "validate" && inputMode === "video" && (
         <div className="text-xs text-gray-400 text-center py-2">
-          {validateVideoId
-            ? t("home.placeholderVideoRunning")
-            : t("home.placeholderSelectVideo")}
+          {validateVideoId ? t("home.placeholderVideoRunning") : t("home.placeholderSelectVideo")}
         </div>
       )}
 

@@ -1,5 +1,4 @@
-import {PlayCircleOutlined, ReloadOutlined} from "@ant-design/icons";
-
+import { PlayCircleOutlined, ReloadOutlined } from "@ant-design/icons";
 
 interface Props {
   videoId: string;
@@ -18,7 +17,7 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
   const [loading, setLoading] = useState(true);
   const [hasFrozenFrame, setHasFrozenFrame] = useState(false);
   const [uploadedToken, setUploadedToken] = useState<string | null>(() => {
-    return modelFile ? (tokenCache.get(modelFile) || null) : null;
+    return modelFile ? tokenCache.get(modelFile) || null : null;
   });
 
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -86,7 +85,10 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
             const form = new FormData();
             form.append("file", modelFile);
             promise = (async () => {
-              const resp = await fetch(`${API_BASE}/train/upload-model`, { method: "POST", body: form });
+              const resp = await fetch(`${API_BASE}/train/upload-model`, {
+                method: "POST",
+                body: form,
+              });
               const json = await resp.json();
               if (json.data?.token) {
                 tokenCache.set(modelFile, json.data.token);
@@ -110,14 +112,20 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
           }
         }
         if (!cancelled && token) {
-          setMjpegUrl(`${API_BASE}/train/validate-mjpeg/${token}/${videoId}?conf=${conf}&iou=${iou}&r=${reloadKey}`);
+          setMjpegUrl(
+            `${API_BASE}/train/validate-mjpeg/${token}/${videoId}?conf=${conf}&iou=${iou}&r=${reloadKey}`,
+          );
         }
       } else if (jobId) {
-        setMjpegUrl(`${API_BASE}/train/jobs/${jobId}/validate-mjpeg/${videoId}?conf=${conf}&iou=${iou}&r=${reloadKey}`);
+        setMjpegUrl(
+          `${API_BASE}/train/jobs/${jobId}/validate-mjpeg/${videoId}?conf=${conf}&iou=${iou}&r=${reloadKey}`,
+        );
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [videoId, jobId, modelFile, uploadedToken, conf, iou, reloadKey]);
 
   const handleContainerClick = () => {
@@ -139,10 +147,24 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400 z-10 bg-black/60 backdrop-blur-[0.5px]">
             <svg className="animate-spin h-5 w-5 mr-2 text-green-500" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
-            {modelFile && !uploadedToken ? t("videoValidator.uploadingModel") : t("videoValidator.connecting")}
+            {modelFile && !uploadedToken
+              ? t("videoValidator.uploadingModel")
+              : t("videoValidator.connecting")}
           </div>
         )}
         {mjpegUrl && (
@@ -174,19 +196,26 @@ export function VideoValidator({ videoId, jobId, modelFile, conf, iou }: Props) 
         {paused && !loading && !ended && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-sm text-gray-200 bg-black/40 gap-2 backdrop-blur-[1.5px] z-10">
             <PlayCircleOutlined className="text-white drop-shadow" style={{ fontSize: "40px" }} />
-            <span className="text-white font-medium drop-shadow text-xs">{t("videoValidator.clickToResume")}</span>
+            <span className="text-white font-medium drop-shadow text-xs">
+              {t("videoValidator.clickToResume")}
+            </span>
           </div>
         )}
         {ended && !loading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-sm text-gray-200 bg-black/50 gap-2 backdrop-blur-[1.5px] z-10">
-            <ReloadOutlined className="text-white drop-shadow animate-pulse" style={{ fontSize: "40px" }} />
-            <span className="text-white font-medium drop-shadow text-xs">{t("videoValidator.playerCompleted")}</span>
+            <ReloadOutlined
+              className="text-white drop-shadow animate-pulse"
+              style={{ fontSize: "40px" }}
+            />
+            <span className="text-white font-medium drop-shadow text-xs">
+              {t("videoValidator.playerCompleted")}
+            </span>
           </div>
         )}
       </div>
 
       <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400">{t("videoValidator.mjpegStreamTips")}</span>
+        <span className="text-xs text-gray-400">{t("videoValidator.mjpegStreamTips")}</span>
         <button
           type="button"
           onClick={(e) => {

@@ -1,5 +1,3 @@
-
-
 interface VlmState {
   state: string;
   stage: string;
@@ -43,7 +41,9 @@ function connect() {
       const data = JSON.parse(e.data);
       cached = { ...defaults, ...data };
       subscribers.forEach((fn) => fn(cached));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
   es.onerror = () => {
     es?.close();
@@ -76,8 +76,10 @@ export function optimisticModelLoading(model: "vlm" | "sam2" | "sam3") {
 
 /** Immediately mark a model as unloaded — SSE will correct it on next poll. */
 export function optimisticModelUnloaded(model: "vlm" | "sam2" | "sam3") {
-  if (model === "vlm") cached = { ...cached, vlm: { state: "unloaded", stage: "", progress: 0, error: "" } };
-  else if (model === "sam2") cached = { ...cached, sam2: { state: "unloaded", stage: "", progress: 0, error: "" } };
+  if (model === "vlm")
+    cached = { ...cached, vlm: { state: "unloaded", stage: "", progress: 0, error: "" } };
+  else if (model === "sam2")
+    cached = { ...cached, sam2: { state: "unloaded", stage: "", progress: 0, error: "" } };
   else cached = { ...cached, sam3: { loaded: false, status: "unloaded" } };
   subscribers.forEach((fn) => fn(cached));
 }

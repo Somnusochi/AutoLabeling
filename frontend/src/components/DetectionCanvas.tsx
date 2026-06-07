@@ -14,14 +14,24 @@ interface Props {
 }
 
 export function DetectionCanvas({
-  imageUrl, boxes, imgWidth, imgHeight, mode, hiddenIndices, onModeChange, onDrawBox,
+  imageUrl,
+  boxes,
+  imgWidth,
+  imgHeight,
+  mode,
+  hiddenIndices,
+  onModeChange,
+  onDrawBox,
 }: Props) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scale = Math.min(CANVAS_MAX_W / imgWidth, CANVAS_MAX_H / imgHeight, 1);
   const [drawing, setDrawing] = useState<{
-    startX: number; startY: number; currentX: number; currentY: number;
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
   } | null>(null);
   const [showBBox, setShowBBox] = useState(true);
   const [showMask, setShowMask] = useState(true);
@@ -59,9 +69,15 @@ export function DetectionCanvas({
           drawPolygon(ctx, box.maskPolygon, scale, color);
         }
         if (showBBox) {
-          drawRect(ctx, box.x1 * scale, box.y1 * scale,
-            (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale,
-            color, box.className);
+          drawRect(
+            ctx,
+            box.x1 * scale,
+            box.y1 * scale,
+            (box.x2 - box.x1) * scale,
+            (box.y2 - box.y1) * scale,
+            color,
+            box.className,
+          );
         }
       });
 
@@ -117,7 +133,9 @@ export function DetectionCanvas({
       <div className="flex items-center gap-3 mb-2 flex-wrap">
         <label className="flex items-center gap-1 text-xs cursor-pointer">
           <input
-            type="radio" name="canvas-mode" checked={mode === "view"}
+            type="radio"
+            name="canvas-mode"
+            checked={mode === "view"}
             onChange={() => onModeChange("view")}
             className="h-3 w-3"
           />
@@ -125,7 +143,9 @@ export function DetectionCanvas({
         </label>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
           <input
-            type="radio" name="canvas-mode" checked={mode === "draw"}
+            type="radio"
+            name="canvas-mode"
+            checked={mode === "draw"}
             onChange={() => onModeChange("draw")}
             className="h-3 w-3"
           />
@@ -134,7 +154,8 @@ export function DetectionCanvas({
         <span className="text-gray-300">|</span>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
           <input
-            type="checkbox" checked={showBBox}
+            type="checkbox"
+            checked={showBBox}
             onChange={(e) => setShowBBox(e.target.checked)}
             className="h-3 w-3 rounded"
           />
@@ -142,7 +163,8 @@ export function DetectionCanvas({
         </label>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
           <input
-            type="checkbox" checked={showMask}
+            type="checkbox"
+            checked={showMask}
             onChange={(e) => setShowMask(e.target.checked)}
             className="h-3 w-3 rounded"
           />
@@ -170,10 +192,10 @@ export function DetectionCanvas({
 // ── Helpers ─────────────────────────────────────
 
 function confidenceColor(conf: number | null | undefined, baseColor: string): string {
-  if (conf == null) return baseColor;   // if no confidence, use base color
-  if (conf >= 0.8) return baseColor;    // high confidence
-  if (conf >= 0.5) return "#F59E0B";    // amber — medium
-  return "#EF4444";                      // red — low
+  if (conf == null) return baseColor; // if no confidence, use base color
+  if (conf >= 0.8) return baseColor; // high confidence
+  if (conf >= 0.5) return "#F59E0B"; // amber — medium
+  return "#EF4444"; // red — low
 }
 
 function drawPolygon(
@@ -199,8 +221,13 @@ function drawPolygon(
 }
 
 function drawRect(
-  ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number,
-  color: string, label: string,
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  color: string,
+  label: string,
 ) {
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
@@ -208,7 +235,7 @@ function drawRect(
   if (label) {
     ctx.font = "12px system-ui, sans-serif";
     const tw = ctx.measureText(label).width + 8;
-    const labelY = y < 18 ? y + 2 : y - 18;  // inside box if near top edge
+    const labelY = y < 18 ? y + 2 : y - 18; // inside box if near top edge
     const textY = y < 18 ? y + 14 : y - 6;
     ctx.fillStyle = color;
     ctx.fillRect(x, labelY, tw, 18);

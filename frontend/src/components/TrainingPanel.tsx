@@ -19,8 +19,8 @@ export function TrainingPanel({ detections }: Props) {
 
   const splitPresets: Record<string, { train: number; val: number }> = {
     "70 / 20 / 10": { train: 0.7, val: 0.2 },
-    "80 / 20":      { train: 0.8, val: 0.2 },
-    "90 / 10":      { train: 0.9, val: 0.1 },
+    "80 / 20": { train: 0.8, val: 0.2 },
+    "90 / 10": { train: 0.9, val: 0.1 },
     "60 / 20 / 20": { train: 0.6, val: 0.2 },
   };
   const qc = useQueryClient();
@@ -34,7 +34,7 @@ export function TrainingPanel({ detections }: Props) {
   const seriesOptions = variantsQuery.data ?? {};
   const variantOptions = seriesOptions[series]?.variants ?? {};
   const variantKeys = Object.keys(variantOptions);
-  const currentVariant = variant in variantOptions ? variant : variantKeys[0] ?? variant;
+  const currentVariant = variant in variantOptions ? variant : (variantKeys[0] ?? variant);
 
   const jobsQuery = useQuery({
     queryKey: ["training-jobs"],
@@ -120,9 +120,10 @@ export function TrainingPanel({ detections }: Props) {
     return [...count.entries()].sort((a, b) => b[1] - a[1]);
   }, [detections]);
   const [trainFilter, setTrainFilter] = useState<Set<string>>(new Set());
-  const filteredDetections = trainFilter.size === 0
-    ? detections
-    : detections.filter((d) => parseCategories(d.categories).some((c) => trainFilter.has(c)));
+  const filteredDetections =
+    trainFilter.size === 0
+      ? detections
+      : detections.filter((d) => parseCategories(d.categories).some((c) => trainFilter.has(c)));
 
   const selectedCount = selected.size;
 
@@ -137,16 +138,20 @@ export function TrainingPanel({ detections }: Props) {
       {trainCategories.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {trainCategories.map(([name, count]) => (
-            <button key={name} type="button"
-              onClick={() => setTrainFilter((prev) => {
-                const next = new Set(prev);
-                if (next.has(name)) {
-                  next.delete(name);
-                } else {
-                  next.add(name);
-                }
-                return next;
-              })}
+            <button
+              key={name}
+              type="button"
+              onClick={() =>
+                setTrainFilter((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(name)) {
+                    next.delete(name);
+                  } else {
+                    next.add(name);
+                  }
+                  return next;
+                })
+              }
               className={`rounded px-1 py-[2px] text-[11px] font-medium border transition-colors ${
                 trainFilter.has(name)
                   ? "border-green-600 bg-green-600/20 text-green-500"
@@ -180,7 +185,13 @@ export function TrainingPanel({ detections }: Props) {
                   { key: "createml", label: "CreateML (.json)" },
                 ],
                 onClick: ({ key }) => {
-                  const labels: Record<string, string> = { yolo: "YOLO", "yolo-seg": "YOLO_Seg", coco: "COCO", voc: "VOC", createml: "CreateML" };
+                  const labels: Record<string, string> = {
+                    yolo: "YOLO",
+                    "yolo-seg": "YOLO_Seg",
+                    coco: "COCO",
+                    voc: "VOC",
+                    createml: "CreateML",
+                  };
                   handleDownloadDataset(key, labels[key] ?? key);
                 },
               }}
@@ -191,12 +202,16 @@ export function TrainingPanel({ detections }: Props) {
               </button>
             </Dropdown>
           )}
-          <button type="button" onClick={selectAll}
-            className="text-xs text-primary-600 hover:underline">
+          <button
+            type="button"
+            onClick={selectAll}
+            className="text-xs text-primary-600 hover:underline"
+          >
             {(() => {
               const targets = trainFilter.size > 0 ? filteredDetections : detections;
               return selectedCount === targets.length && targets.every((d) => selected.has(d.id))
-                ? t("trainingPanel.deselectAll") : t("trainingPanel.selectAll");
+                ? t("trainingPanel.deselectAll")
+                : t("trainingPanel.selectAll");
             })()}
           </button>
         </div>
@@ -228,33 +243,65 @@ export function TrainingPanel({ detections }: Props) {
       <div className="grid grid-cols-2 gap-3 training-params">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.series")}</label>
-          <Select value={series} onChange={setSeries}
-            options={Object.entries(seriesOptions).map(([key, s]) => ({value: key, label: s.label}))}
-            className="w-full" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
+          <Select
+            value={series}
+            onChange={setSeries}
+            options={Object.entries(seriesOptions).map(([key, s]) => ({
+              value: key,
+              label: s.label,
+            }))}
+            className="w-full"
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+            }
+          />
         </div>
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.specification")}</label>
-          <Select value={currentVariant} onChange={setVariant}
-            options={Object.entries(variantOptions).map(([key, label]) => ({value: key, label}))}
-            className="w-full" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
+          <label className="text-xs text-gray-500 mb-1 block">
+            {t("trainingPanel.specification")}
+          </label>
+          <Select
+            value={currentVariant}
+            onChange={setVariant}
+            options={Object.entries(variantOptions).map(([key, label]) => ({ value: key, label }))}
+            className="w-full"
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+            }
+          />
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.epochs")}</label>
-          <InputNumber min={1} max={9999} value={epochs}
+          <InputNumber
+            min={1}
+            max={9999}
+            value={epochs}
             onChange={(v) => setEpochs(v ?? DEFAULT_EPOCHS)}
-            className="w-full" />
+            className="w-full"
+          />
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.imgsz")}</label>
-          <InputNumber min={128} max={4096} step={64} value={imgsz}
+          <InputNumber
+            min={128}
+            max={4096}
+            step={64}
+            value={imgsz}
             onChange={(v) => setImgsz(v ?? DEFAULT_IMGSZ)}
-            className="w-full" />
+            className="w-full"
+          />
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">{t("trainingPanel.batch")}</label>
-          <InputNumber min={1} max={256} value={batch}
+          <InputNumber
+            min={1}
+            max={256}
+            value={batch}
             onChange={(v) => setBatch(v ?? DEFAULT_BATCH)}
-            className="w-full" />
+            className="w-full"
+          />
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">
@@ -293,7 +340,9 @@ export function TrainingPanel({ detections }: Props) {
         onClick={handleTrain}
         className="w-full rounded bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
       >
-        {trainMut.isPending ? t("trainingPanel.starting") : t("trainingPanel.startTrainCount", { count: selectedCount })}
+        {trainMut.isPending
+          ? t("trainingPanel.starting")
+          : t("trainingPanel.startTrainCount", { count: selectedCount })}
       </button>
 
       {/* Job history */}
@@ -310,5 +359,3 @@ export function TrainingPanel({ detections }: Props) {
     </div>
   );
 }
-
-

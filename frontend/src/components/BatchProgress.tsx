@@ -19,7 +19,9 @@ export function BatchProgress({ current, total, completed, onCancel }: Props) {
             style={{ width: `${(current / total) * 100}%` }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1">{t("batchProgress.status", { completed, total })}</p>
+        <p className="text-xs text-gray-400 mt-1">
+          {t("batchProgress.status", { completed, total })}
+        </p>
       </div>
       {current < total && (
         <button

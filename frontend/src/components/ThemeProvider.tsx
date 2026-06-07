@@ -1,4 +1,3 @@
-
 import { ThemeContext } from "../hooks/useTheme";
 import type { ThemeMode } from "../hooks/useTheme";
 
@@ -22,7 +21,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
 
     const apply = () => {
-      const dark = themeMode === "dark" ||
+      const dark =
+        themeMode === "dark" ||
         (themeMode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
       root.classList.toggle("dark", dark);
       setIsDark(dark);

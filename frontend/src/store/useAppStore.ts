@@ -84,10 +84,11 @@ export const useAppStore = create<AppState>((set) => ({
   files: [],
   setFiles: (files) => set({ files }),
   previewUrl: null,
-  setPreviewUrl: (url) => set((state) => {
-    if (state.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(state.previewUrl);
-    return { previewUrl: url };
-  }),
+  setPreviewUrl: (url) =>
+    set((state) => {
+      if (state.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(state.previewUrl);
+      return { previewUrl: url };
+    }),
   categories: [],
   setCategories: (categories) => set({ categories }),
 
@@ -97,9 +98,10 @@ export const useAppStore = create<AppState>((set) => ({
   drawCategory: "",
   setDrawCategory: (drawCategory) => set({ drawCategory }),
   hiddenIndices: new Set(),
-  setHiddenIndices: (updater) => set((state) => ({
-    hiddenIndices: typeof updater === "function" ? updater(state.hiddenIndices) : updater
-  })),
+  setHiddenIndices: (updater) =>
+    set((state) => ({
+      hiddenIndices: typeof updater === "function" ? updater(state.hiddenIndices) : updater,
+    })),
   filterMode: "all",
   setFilterMode: (filterMode) => set({ filterMode }),
   nmsIou: 0.5,
@@ -113,9 +115,10 @@ export const useAppStore = create<AppState>((set) => ({
   validateVideoId: null,
   setValidateVideoId: (validateVideoId) => set({ validateVideoId }),
   validateRunKey: 0,
-  setValidateRunKey: (updater) => set((state) => ({
-    validateRunKey: typeof updater === "function" ? updater(state.validateRunKey) : updater
-  })),
+  setValidateRunKey: (updater) =>
+    set((state) => ({
+      validateRunKey: typeof updater === "function" ? updater(state.validateRunKey) : updater,
+    })),
   externalModelFile: null,
   setExternalModelFile: (externalModelFile) => set({ externalModelFile }),
   validateConf: 0.25,

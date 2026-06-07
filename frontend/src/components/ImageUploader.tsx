@@ -1,4 +1,4 @@
-import {type DragEvent} from "react";
+import { type DragEvent } from "react";
 
 const MAX_LONG_SIDE = 1280;
 const JPEG_QUALITY = 0.75;
@@ -39,7 +39,10 @@ function compressImage(file: File): Promise<File> {
         JPEG_QUALITY,
       );
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
     img.src = url;
   });
 }
@@ -96,16 +99,20 @@ export function ImageUploader({ onFiles, onClear, disabled }: Props) {
   return (
     <div>
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
         className={`
           relative cursor-pointer rounded-lg border-2 border-dashed p-4 text-center transition-colors
           ${disabled ? "pointer-events-none opacity-50" : ""}
-          ${dragOver
-            ? "border-primary-500 bg-primary-50"
-            : "border-gray-300 hover:border-gray-400 bg-gray-50"
+          ${
+            dragOver
+              ? "border-primary-500 bg-primary-50"
+              : "border-gray-300 hover:border-gray-400 bg-gray-50"
           }
         `}
       >
@@ -135,9 +142,7 @@ export function ImageUploader({ onFiles, onClear, disabled }: Props) {
         ) : (
           <div className="text-gray-500">
             <p className="text-sm">{t("imageUploader.dragToUpload")}</p>
-            <p className="mt-1 text-xs text-gray-400">
-              {t("imageUploader.supportInfo")}
-            </p>
+            <p className="mt-1 text-xs text-gray-400">{t("imageUploader.supportInfo")}</p>
           </div>
         )}
         <input
@@ -156,7 +161,10 @@ export function ImageUploader({ onFiles, onClear, disabled }: Props) {
       {previews.length > 0 && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); handleClear(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClear();
+          }}
           className="mt-2 w-full rounded border border-red-200 bg-red-50 py-1 text-[11px] text-red-500 hover:bg-red-100 transition-colors cursor-pointer"
         >
           {t("imageUploader.clearAll")} ({previews.length})

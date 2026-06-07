@@ -1,8 +1,14 @@
-import {Component, type ErrorInfo, type ReactNode} from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import i18n from "i18next";
 
-interface Props { children: ReactNode; fallback?: ReactNode }
-interface State { hasError: boolean; error: Error | null }
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+interface State {
+  hasError: boolean;
+  error: Error | null;
+}
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };

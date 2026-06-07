@@ -11,9 +11,10 @@ request.interceptors.response.use(
   (error) => {
     // Extract server error messages or fallback to network error description
     const detail = error.response?.data?.detail;
-    const message = typeof detail === "string" 
-      ? detail 
-      : (error.response?.data?.message || error.message || "Request failed");
+    const message =
+      typeof detail === "string"
+        ? detail
+        : error.response?.data?.message || error.message || "Request failed";
     return Promise.reject(new Error(message));
-  }
+  },
 );

@@ -1,4 +1,4 @@
-import {type KeyboardEvent} from "react";
+import { type KeyboardEvent } from "react";
 
 interface Props {
   categories: string[];
@@ -49,13 +49,18 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
   };
 
   // Filter recent tags that aren't already selected and aren't hidden
-  const suggested = recentCategories.filter((c) => !categories.includes(c) && !hiddenSuggested.has(c));
+  const suggested = recentCategories.filter(
+    (c) => !categories.includes(c) && !hiddenSuggested.has(c),
+  );
 
   return (
     <div>
       <div className="flex flex-wrap gap-1 mb-2">
         {categories.map((cat) => (
-          <span key={cat} className="flex items-center bg-green-600 text-xs text-white rounded-sm px-1.5 leading-5 h-5">
+          <span
+            key={cat}
+            className="flex items-center bg-green-600 text-xs text-white rounded-sm px-1.5 leading-5 h-5"
+          >
             {cat}
             <button
               type="button"
@@ -68,7 +73,9 @@ export function CategoryInput({ categories, onChange, disabled, recentCategories
           </span>
         ))}
         {categories.length === 0 && (
-          <span className="text-xs text-gray-400 self-center">{t("categoryInput.enterToConfirm")}</span>
+          <span className="text-xs text-gray-400 self-center">
+            {t("categoryInput.enterToConfirm")}
+          </span>
         )}
       </div>
 

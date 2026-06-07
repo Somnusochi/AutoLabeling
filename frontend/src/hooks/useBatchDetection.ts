@@ -25,7 +25,17 @@ export function useBatchDetection() {
       try {
         for (let i = 0; i < files.length; i++) {
           if (!batchRef.current) break;
-          const data = await detectImage(files[i], categories, useSam2, sam2ScoreThreshold, useSam3, sam3Text, useSam3Seg, sam3Threshold, sam3MaskThreshold);
+          const data = await detectImage(
+            files[i],
+            categories,
+            useSam2,
+            sam2ScoreThreshold,
+            useSam3,
+            sam3Text,
+            useSam3Seg,
+            sam3Threshold,
+            sam3MaskThreshold,
+          );
           results.push(data);
           setBatchResults([...results]);
           if (i === files.length - 1) {

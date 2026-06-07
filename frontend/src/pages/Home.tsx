@@ -64,19 +64,15 @@ export function Home() {
       <Sidebar {...homeState} />
 
       <main className="flex-1 flex flex-col overflow-y-auto p-6">
-        {validateVideoId && appMode === 'validate' && (
+        {validateVideoId && appMode === "validate" && (
           <VideoValidator
             key={validateRunKey}
             videoId={validateVideoId}
             jobId={
-              validateModelSource === 'trained'
-                ? (selectedTrainedJobId ?? undefined)
-                : undefined
+              validateModelSource === "trained" ? (selectedTrainedJobId ?? undefined) : undefined
             }
             modelFile={
-              validateModelSource === 'upload'
-                ? (externalModelFile ?? undefined)
-                : undefined
+              validateModelSource === "upload" ? (externalModelFile ?? undefined) : undefined
             }
             conf={validateConf}
             iou={validateIou}
@@ -104,7 +100,7 @@ export function Home() {
               recentCategories={recentCategories}
               hiddenIndices={hiddenIndices}
               onToggleVisibility={toggleBoxVisibility}
-              isValidation={appMode === 'validate'}
+              isValidation={appMode === "validate"}
               onCanvasModeChange={setCanvasMode}
               onDrawCategoryChange={setDrawCategory}
               onDeleteBox={handleDeleteBox}

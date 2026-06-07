@@ -1,5 +1,4 @@
-import {Select, Radio} from "antd";
-
+import { Select, Radio } from "antd";
 
 interface Props {
   selectedJobId: string | null;
@@ -10,7 +9,14 @@ interface Props {
   onExternalFile: (f: File | null) => void;
 }
 
-export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourceChange, externalFile, onExternalFile }: Props) {
+export function ModelSelector({
+  selectedJobId,
+  onSelectJob,
+  modelSource,
+  onSourceChange,
+  externalFile,
+  onExternalFile,
+}: Props) {
   const { t, i18n } = useTranslation();
   const { data: jobs } = useQuery({
     queryKey: ["training-jobs"],
@@ -21,7 +27,11 @@ export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourc
 
   return (
     <div className="space-y-2">
-      <Radio.Group value={modelSource} onChange={(e) => onSourceChange(e.target.value)} style={{ display: "flex", gap: "12px", marginBottom: "8px" }}>
+      <Radio.Group
+        value={modelSource}
+        onChange={(e) => onSourceChange(e.target.value)}
+        style={{ display: "flex", gap: "12px", marginBottom: "8px" }}
+      >
         <Radio value="trained">{t("validationSettings.trainedModel")}</Radio>
         <Radio value="upload">{t("validationSettings.uploadModel")}</Radio>
       </Radio.Group>
@@ -47,8 +57,12 @@ export function ModelSelector({ selectedJobId, onSelectJob, modelSource, onSourc
           <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">
             {externalFile ? t("validationSettings.selected") : t("validationSettings.browse")}
           </span>
-          <input type="file" accept=".pt" className="hidden"
-            onChange={(e) => onExternalFile(e.target.files?.[0] ?? null)} />
+          <input
+            type="file"
+            accept=".pt"
+            className="hidden"
+            onChange={(e) => onExternalFile(e.target.files?.[0] ?? null)}
+          />
         </label>
       )}
     </div>
