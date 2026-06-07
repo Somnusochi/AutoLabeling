@@ -49,14 +49,20 @@ export function DetectionResult({
 }: Props) {
   const { t } = useTranslation();
 
-  // Stable blob URLs — only recreate when batchFiles identity changes
-  const blobCache = useRef<{ files: File[]; urls: string[] } | null>(null);
-  if (blobCache.current?.files !== batchFiles) {
-    blobCache.current?.urls.forEach((u) => URL.revokeObjectURL(u));
-    blobCache.current = { files: batchFiles, urls: batchFiles.map((f) => URL.createObjectURL(f)) };
-  }
-  const blobUrls = blobCache.current.urls;
-  useEffect(() => () => blobCache.current?.urls.forEach((u) => URL.revokeObjectURL(u)), []);
+  const [blobUrls, setBlobUrls] = useState<string[]>(() =>
+    batchFiles.map((f) => URL.createObjectURL(f)),
+  );
+  const prevFilesRef = useRef<File[]>(batchFiles);
+  const blobUrlsRef = useRef<string[]>(blobUrls);
+  useEffect(() => {
+    if (prevFilesRef.current === batchFiles) return;
+    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    const urls = batchFiles.map((f) => URL.createObjectURL(f));
+    blobUrlsRef.current = urls;
+    prevFilesRef.current = batchFiles;
+    setBlobUrls(urls);
+  }, [batchFiles]);
+  useEffect(() => () => { blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u)); }, []);
 
   return (
     <div className="space-y-4">

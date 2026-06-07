@@ -94,11 +94,7 @@ export const useAppStore = create<AppState>((set) => ({
   files: [],
   setFiles: (files) => set({ files }),
   previewUrl: null,
-  setPreviewUrl: (url) =>
-    set((state) => {
-      if (state.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(state.previewUrl);
-      return { previewUrl: url };
-    }),
+  setPreviewUrl: (previewUrl) => set({ previewUrl }),
   categories: [],
   setCategories: (categories) => set({ categories }),
 
