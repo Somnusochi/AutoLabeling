@@ -48,6 +48,11 @@ VLM-AutoYOLO/
 │   │   └── versions/
 │   ├── sam3_server.py              # SAM3 独立 WSGI 服务（端口 8002）
 │   ├── sam3-venv/                   # SAM3 专用虚拟环境
+│   ├── tests/
+│   │   ├── test_api_integration.py  # API 集成测试
+│   │   ├── test_regression.py       # 回归快照测试
+│   │   ├── snapshots/               # 回归测试基线
+│   │   └── ...
 │   ├── requirements.txt
 │   └── pyproject.toml
 ├── frontend/
@@ -82,7 +87,8 @@ VLM-AutoYOLO/
 │       │   ├── Layout.tsx           # 应用布局
 │       │   └── ...
 │       ├── pages/Home.tsx           # 主页面
-│       ├── hooks/                   # 自定义 Hooks（useHomeState, useModelEvents, useBatchDetection, ...）
+│       ├── hooks/                   # 自定义 Hooks（useHomeState, useModelConfig, useUploadState, useAnnotationState, ...）
+│       ├── e2e/                      # Playwright E2E 测试
 │       ├── i18n/locales/            # en.json、zh.json、ja.json
 │       ├── services/api.ts          # 统一 API 层
 │       ├── lib/                     # 常量、过滤器、解析器、yoloExport
@@ -94,6 +100,7 @@ VLM-AutoYOLO/
 │   ├── guide/                       # 中文用户指南
 │   └── guide/en/                    # 英文用户指南
 ├── docker-compose.yml
+├── commitlint.config.js            # Conventional Commits 规范
 ├── start.sh / start.bat
 └── README.md
 ```

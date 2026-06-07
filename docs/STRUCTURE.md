@@ -48,6 +48,11 @@ VLM-AutoYOLO/
 │   │   └── versions/
 │   ├── sam3_server.py              # SAM3 standalone WSGI server (port 8002)
 │   ├── sam3-venv/                   # SAM3 dedicated virtual environment
+│   ├── tests/
+│   │   ├── test_api_integration.py  # API integration tests (detection → training → validation)
+│   │   ├── test_regression.py       # Regression snapshot tests (box position drift detection)
+│   │   ├── snapshots/               # Baseline JSON fixtures for regression tests
+│   │   └── ...
 │   ├── requirements.txt
 │   └── pyproject.toml
 ├── frontend/
@@ -82,7 +87,8 @@ VLM-AutoYOLO/
 │       │   ├── Layout.tsx           # App layout
 │       │   └── ...
 │       ├── pages/Home.tsx           # Main page
-│       ├── hooks/                   # Custom hooks (useHomeState, useModelEvents, useBatchDetection, ...)
+│       ├── hooks/                   # Custom hooks (useHomeState, useModelConfig, useUploadState, useAnnotationState, useDetectionTimer, useModelEvents, ...)
+│       ├── e2e/                      # Playwright E2E tests
 │       ├── i18n/locales/            # en.json, zh.json, ja.json
 │       ├── services/api.ts          # Unified API layer
 │       ├── lib/                     # Constants, filters, parsers, yoloExport
@@ -93,6 +99,7 @@ VLM-AutoYOLO/
 │   ├── guide/                       # 中文用户指南
 │   └── guide/en/                    # English user guide
 ├── docker-compose.yml
+├── commitlint.config.js            # Conventional commits enforcement
 ├── start.sh / start.bat
 └── README.md
 ```

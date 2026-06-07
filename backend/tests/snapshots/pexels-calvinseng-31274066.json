@@ -1,0 +1,17 @@
+{
+  "imageName": "pexels-calvinseng-31274066.jpg",
+  "modelType": "vlm",
+  "imageWidth": 5550,
+  "imageHeight": 7770,
+  "boxCount": 1,
+  "boxes": [
+    {
+      "className": "cat",
+      "x1": 0,
+      "y1": 0,
+      "x2": 5542,
+      "y2": 5552,
+      "confidence": null
+    }
+  ]
+}

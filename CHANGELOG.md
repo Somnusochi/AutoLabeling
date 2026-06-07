@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.5 (2026-06-07)
+
+### Refactoring & Code Quality
+- Refactor: split `useHomeState` (311-line giant hook) into `useModelConfig`, `useUploadState`, `useAnnotationState`, `useDetectionTimer` — `useHomeState` now coordinates
+- Test: add Playwright E2E tests (6 cases: page render, model switch, history list, detail view, model status, upload+detect)
+- Test: add integration tests (10 cases: VLM/SAM3 detection, list/detail consistency, SSE, model management, mask validation)
+- Test: add regression snapshot tests (7 cases: 5 images × box position + model type consistency)
+- Test: add `test_api_integration.py` with data integrity checks (box bounds, confidence range, polygon validity, list/detail consistency)
+- Chore: add commitlint config (conventional commits)
+
 ## v1.5.4 (2026-06-07)
 
 ### SAM3 Stability & Performance

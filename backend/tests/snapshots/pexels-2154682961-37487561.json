@@ -1,0 +1,17 @@
+{
+  "imageName": "pexels-2154682961-37487561.jpg",
+  "modelType": "vlm",
+  "imageWidth": 2118,
+  "imageHeight": 3413,
+  "boxCount": 1,
+  "boxes": [
+    {
+      "className": "cat",
+      "x1": 0,
+      "y1": 353,
+      "x2": 2111,
+      "y2": 3406,
+      "confidence": null
+    }
+  ]
+}

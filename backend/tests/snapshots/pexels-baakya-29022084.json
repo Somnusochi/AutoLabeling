@@ -1,0 +1,17 @@
+{
+  "imageName": "pexels-baakya-29022084.jpg",
+  "modelType": "vlm",
+  "imageWidth": 6631,
+  "imageHeight": 4672,
+  "boxCount": 1,
+  "boxes": [
+    {
+      "className": "cat",
+      "x1": 0,
+      "y1": 1224,
+      "x2": 6462,
+      "y2": 4270,
+      "confidence": null
+    }
+  ]
+}

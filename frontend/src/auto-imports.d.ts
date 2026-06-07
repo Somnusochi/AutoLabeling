@@ -104,6 +104,7 @@ declare global {
   const uploadVideo: typeof import('./services/api').uploadVideo
   const use: typeof import('react').use
   const useActionState: typeof import('react').useActionState
+  const useAnnotationState: typeof import('./hooks/useAnnotationState').useAnnotationState
   const useAntdTable: typeof import('ahooks').useAntdTable
   const useAsyncEffect: typeof import('ahooks').useAsyncEffect
   const useBatchDetection: typeof import('./hooks/useBatchDetection').useBatchDetection
@@ -127,6 +128,7 @@ declare global {
   const useDetectMutation: typeof import('./hooks/useDetection').useDetectMutation
   const useDetectionDetailQuery: typeof import('./hooks/useDetection').useDetectionDetailQuery
   const useDetectionListQuery: typeof import('./hooks/useDetection').useDetectionListQuery
+  const useDetectionTimer: typeof import('./hooks/useDetectionTimer').useDetectionTimer
   const useDocumentVisibility: typeof import('ahooks').useDocumentVisibility
   const useDrag: typeof import('ahooks').useDrag
   const useDrop: typeof import('ahooks').useDrop
@@ -163,6 +165,7 @@ declare global {
   const useMap: typeof import('ahooks').useMap
   const useMemo: typeof import('react').useMemo
   const useMemoizedFn: typeof import('ahooks').useMemoizedFn
+  const useModelConfig: typeof import('./hooks/useModelConfig').useModelConfig
   const useModelEvents: typeof import('./hooks/useModelEvents').useModelEvents
   const useMount: typeof import('ahooks').useMount
   const useMouse: typeof import('ahooks').useMouse
@@ -208,6 +211,7 @@ declare global {
   const useUpdate: typeof import('ahooks').useUpdate
   const useUpdateEffect: typeof import('ahooks').useUpdateEffect
   const useUpdateLayoutEffect: typeof import('ahooks').useUpdateLayoutEffect
+  const useUploadState: typeof import('./hooks/useUploadState').useUploadState
   const useVirtualList: typeof import('ahooks').useVirtualList
   const useVirtualizer: typeof import('@tanstack/react-virtual').useVirtualizer
   const useWebSocket: typeof import('ahooks').useWebSocket

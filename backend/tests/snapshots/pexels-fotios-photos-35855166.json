@@ -1,0 +1,17 @@
+{
+  "imageName": "pexels-fotios-photos-35855166.jpg",
+  "modelType": "vlm",
+  "imageWidth": 3888,
+  "imageHeight": 5184,
+  "boxCount": 1,
+  "boxes": [
+    {
+      "className": "cat",
+      "x1": 0,
+      "y1": 0,
+      "x2": 3882,
+      "y2": 3533,
+      "confidence": null
+    }
+  ]
+}

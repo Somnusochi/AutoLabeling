@@ -1,0 +1,17 @@
+{
+  "imageName": "pexels-5lfilm-19854242.jpg",
+  "modelType": "vlm",
+  "imageWidth": 3456,
+  "imageHeight": 5184,
+  "boxCount": 1,
+  "boxes": [
+    {
+      "className": "cat",
+      "x1": 0,
+      "y1": 1361,
+      "x2": 2680,
+      "y2": 5173,
+      "confidence": null
+    }
+  ]
+}
