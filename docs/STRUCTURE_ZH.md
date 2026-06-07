@@ -87,7 +87,8 @@ VLM-AutoYOLO/
 │       │   ├── Layout.tsx           # 应用布局
 │       │   └── ...
 │       ├── pages/Home.tsx           # 主页面
-│       ├── hooks/                   # 自定义 Hooks（useHomeState, useModelConfig, useUploadState, useAnnotationState, ...）
+│       ├── store/                   # Zustand 全局状态（useAppStore）
+│       ├── hooks/                   # 自定义 Hooks（useHomeState, useDetectionTimer, useModelEvents, ...）
 │       ├── e2e/                      # Playwright E2E 测试
 │       ├── i18n/locales/            # en.json、zh.json、ja.json
 │       ├── services/api.ts          # 统一 API 层

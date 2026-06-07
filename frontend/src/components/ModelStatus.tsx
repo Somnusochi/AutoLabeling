@@ -29,6 +29,7 @@ export function ModelStatus() {
       toast.error(t("modelStatus.unloadFailed"));
     } finally {
       setUnloading(false);
+      optimisticModelUnloaded("vlm");
     }
   }, [t]);
 
@@ -36,6 +37,7 @@ export function ModelStatus() {
     setUnloadingSam2(true);
     try {
       await unloadSam2();
+      optimisticModelUnloaded("sam2");
       toast.success(t("modelStatus.sam2UnloadSuccess"));
     } catch {
       toast.error(t("modelStatus.sam2UnloadFailed"));

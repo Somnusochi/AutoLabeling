@@ -55,10 +55,10 @@
 | 后端 | Python FastAPI + PostgreSQL + SSE |
 | 前端 | React + TypeScript + Vite + Tailwind CSS + antd |
 | GPU 内存 | 策略模式（`gpu_memory.py`）— CUDA expandable segments / MPS synchronize + empty_cache |
-| 状态管理 | TanStack Query + ahooks |
+| 状态管理 | Zustand + TanStack Query + ahooks |
 | 国际化 | i18next（中文 / 英文 / 日本語） |
 | 视频处理 | ffmpeg（场景检测 / 运动检测 / 间隔提取） |
-| 工程化 | pnpm、ESLint、Prettier |
+| 工程化 | pnpm、ESLint、Prettier、Husky、commitlint、Playwright |
 
 ## 快速开始
 

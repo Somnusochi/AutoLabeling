@@ -162,7 +162,10 @@
     "redetect": "Re-detect",
     "exportLabel": "Export Labels",
     "exportAllDataset": "Export All Datasets ({{count}})",
-    "exportDataset": "Export Dataset"
+    "exportDataset": "Export Dataset",
+    "loadingModel": "Loading model...",
+    "detecting": "Detecting...",
+    "pleaseWait": "Please wait"
   },
   "resultTable": {
     "noTargets": "No targets detected",

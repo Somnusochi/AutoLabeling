@@ -23,7 +23,8 @@
     "react-dom": "^19.2.6",
     "react-hot-toast": "^2.6.0",
     "react-i18next": "^17.0.8",
-    "react-router-dom": "^7.16.0"
+    "react-router-dom": "^7.16.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",

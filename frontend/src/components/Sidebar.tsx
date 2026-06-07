@@ -11,31 +11,10 @@ import { ValidationSettings } from "@/components/ValidationSettings";
 import { FilterPanel } from "@/components/FilterPanel";
 import { HistorySkeleton } from "@/components/LoadingSkeleton";
 import type { Detection } from "@/types";
+import { useAppStore } from "@/store/useAppStore";
 
 
 export interface SidebarProps {
-  appMode: "annotate" | "validate";
-  setAppMode: (mode: "annotate" | "validate") => void;
-  validateModelSource: "trained" | "upload";
-  setValidateModelSource: (source: "trained" | "upload") => void;
-  selectedTrainedJobId: string | null;
-  setSelectedTrainedJobId: (id: string | null) => void;
-  inputMode: "image" | "video";
-  setInputMode: (mode: "image" | "video") => void;
-  files: File[];
-  setFiles: (files: File[]) => void;
-  setPreviewUrl: (url: string | null) => void;
-  categories: string[];
-  setCategories: (categories: string[]) => void;
-  validateVideoId: string | null;
-  setValidateVideoId: (id: string | null) => void;
-  setValidateRunKey: React.Dispatch<React.SetStateAction<number>>;
-  externalModelFile: File | null;
-  setExternalModelFile: (file: File | null) => void;
-  validateConf: number;
-  setValidateConf: (conf: number) => void;
-  validateIou: number;
-  setValidateIou: (iou: number) => void;
   recentCategories: string[];
   handleFiles: (fs: File[]) => void;
   handleDetect: () => void;
@@ -45,27 +24,10 @@ export interface SidebarProps {
   batchResults: Detection[];
   setBatchResults: React.Dispatch<React.SetStateAction<Detection[]>>;
   cancelBatch: () => void;
-  filterMode: FilterMode;
-  setFilterMode: (mode: FilterMode) => void;
-  nmsIou: number;
-  setNmsIou: (iou: number) => void;
-  setHiddenIndices: React.Dispatch<React.SetStateAction<Set<string>>>;
   historyData?: { items: Detection[]; total: number };
   result: Detection | null;
   setResult: (result: Detection | null) => void;
   handleSelectKeyframe: (files: File[]) => void;
-  useSam2: boolean;
-  setUseSam2: (v: boolean) => void;
-  useSam3: boolean;
-  setUseSam3: (v: boolean) => void;
-  useSam3Seg: boolean;
-  setUseSam3Seg: (v: boolean) => void;
-  sam3Threshold: number;
-  setSam3Threshold: (v: number) => void;
-  sam3MaskThreshold: number;
-  setSam3MaskThreshold: (v: number) => void;
-  sam2ScoreThreshold: number;
-  setSam2ScoreThreshold: (v: number) => void;
 }
 
 const LANG_KEYS = ["zh", "en", "ja"] as const;
@@ -73,28 +35,6 @@ const LANG_LABELS: Record<string, string> = { zh: "中", en: "EN", ja: "日" };
 const LANG_TITLES: Record<string, string> = { zh: "中文", en: "English", ja: "日本語" };
 
 export function Sidebar({
-  appMode,
-  setAppMode,
-  validateModelSource,
-  setValidateModelSource,
-  selectedTrainedJobId,
-  setSelectedTrainedJobId,
-  inputMode,
-  setInputMode,
-  files,
-  setFiles,
-  setPreviewUrl,
-  categories,
-  setCategories,
-  validateVideoId,
-  setValidateVideoId,
-  setValidateRunKey,
-  externalModelFile,
-  setExternalModelFile,
-  validateConf,
-  setValidateConf,
-  validateIou,
-  setValidateIou,
   recentCategories,
   handleFiles,
   handleDetect,
@@ -104,30 +44,34 @@ export function Sidebar({
   batchResults,
   setBatchResults,
   cancelBatch,
-  filterMode,
-  setFilterMode,
-  nmsIou,
-  setNmsIou,
-  setHiddenIndices,
   historyData,
   result,
   setResult,
   handleSelectKeyframe,
-  useSam2,
-  setUseSam2,
-  useSam3,
-  setUseSam3,
-  useSam3Seg,
-  setUseSam3Seg,
-  sam3Threshold,
-  setSam3Threshold,
-  sam3MaskThreshold,
-  setSam3MaskThreshold,
-  sam2ScoreThreshold,
-  setSam2ScoreThreshold,
 }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
+
+  const {
+    appMode, setAppMode,
+    validateModelSource, setValidateModelSource,
+    selectedTrainedJobId, setSelectedTrainedJobId,
+    inputMode, setInputMode,
+    files, setFiles, setPreviewUrl,
+    categories, setCategories,
+    validateVideoId, setValidateVideoId, setValidateRunKey,
+    externalModelFile, setExternalModelFile,
+    validateConf, setValidateConf,
+    validateIou, setValidateIou,
+    filterMode, setFilterMode,
+    nmsIou, setNmsIou, setHiddenIndices,
+    useSam2, setUseSam2,
+    useSam3, setUseSam3,
+    useSam3Seg, setUseSam3Seg,
+    sam3Threshold, setSam3Threshold,
+    sam3MaskThreshold, setSam3MaskThreshold,
+    sam2ScoreThreshold, setSam2ScoreThreshold,
+  } = useAppStore();
 
   return (
     <aside

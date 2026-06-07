@@ -90,6 +90,8 @@ declare global {
   const listDetections: typeof import('./services/api').listDetections
   const listVideos: typeof import('./services/api').listVideos
   const memo: typeof import('react').memo
+  const optimisticModelLoading: typeof import('./hooks/useModelEvents').optimisticModelLoading
+  const optimisticModelUnloaded: typeof import('./hooks/useModelEvents').optimisticModelUnloaded
   const parseCategories: typeof import('./lib/parsers').parseCategories
   const request: typeof import('./services/request').request
   const saveFilterSettings: typeof import('./services/api').saveFilterSettings

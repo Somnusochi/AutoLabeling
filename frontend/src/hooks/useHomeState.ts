@@ -1,10 +1,20 @@
+import { useAppStore } from "@/store/useAppStore";
+
 export function useHomeState() {
   const { t } = useTranslation();
+  const {
+    appMode, setAppMode,
+    validateModelSource,
+    selectedTrainedJobId,
+    externalModelFile,
+    useSam2, sam2ScoreThreshold,
+    useSam3, sam3Text, useSam3Seg, sam3Threshold, sam3MaskThreshold,
+    files, setFiles, setPreviewUrl, categories, setCategories,
+    filterMode, setFilterMode, nmsIou, setNmsIou,
+    drawCategory, setHiddenIndices
+  } = useAppStore();
 
   // ── Composed state hooks ──────────────────────────
-  const model = useModelConfig();
-  const upload = useUploadState();
-  const annotation = useAnnotationState();
   const timer = useDetectionTimer();
 
   // ── Detection ────────────────────────────────────
@@ -15,28 +25,18 @@ export function useHomeState() {
   // ── Batch ────────────────────────────────────────
   const { batchResults, batchProgress, runBatch, cancelBatch, setBatchResults, setBatchProgress } = useBatchDetection();
 
-  // ── YOLO Validation ──────────────────────────────
-  const [validateModelSource, setValidateModelSource] = useState<"trained" | "upload">("trained");
-  const [selectedTrainedJobId, setSelectedTrainedJobId] = useState<string | null>(null);
-  const [validateVideoId, setValidateVideoId] = useState<string | null>(null);
-  const [validateRunKey, setValidateRunKey] = useState(0);
-  const [externalModelFile, setExternalModelFile] = useState<File | null>(null);
-  const {
-    validateConf, validateIou, validating,
-    setValidateConf, setValidateIou, runValidation,
-  } = useYoloValidation();
+  const { validating, runValidation } = useYoloValidation();
 
   // ── YOLO event listener ──────────────────────────
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      model.setAppMode("validate");
-      setValidateModelSource("trained");
-      setSelectedTrainedJobId(detail.jobId);
+      setAppMode("validate");
+      useAppStore.setState({ validateModelSource: "trained", selectedTrainedJobId: detail.jobId });
     };
     window.addEventListener("yolo-validate", handler);
     return () => window.removeEventListener("yolo-validate", handler);
-  }, [model.setAppMode]);
+  }, [setAppMode]);
 
   // ── History ──────────────────────────────────────
   const { data: historyData } = useDetectionListQuery();
@@ -49,19 +49,22 @@ export function useHomeState() {
   // ── Handlers ──────────────────────────────────────
 
   const handleFiles = useCallback((fs: File[]) => {
-    upload.setFiles(fs);
+    setFiles(fs);
     setBatchResults([]);
     setResult(null);
-    upload.setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
-  }, [setBatchResults, upload.setFiles, upload.setPreviewUrl]);
+    setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
+  }, [setBatchResults, setFiles, setPreviewUrl]);
 
   const handleDetect = useCallback(async () => {
-    if (upload.files.length === 0) return;
+    if (files.length === 0) return;
+    // Optimistically show loading state before SSE catches up
+    if (useSam2) optimisticModelLoading("sam2");
+    if (!useSam2 && !useSam3) optimisticModelLoading("vlm");
     timer.startTimer();
     batchFileMap.current.clear();
 
     try {
-      if (model.appMode === "validate") {
+      if (appMode === "validate") {
         let token: string | undefined;
         if (validateModelSource === "upload") {
           if (!externalModelFile) { toast.error(t("home.modelUploadRequired")); return; }
@@ -88,52 +91,52 @@ export function useHomeState() {
         } else if (!selectedTrainedJobId) { toast.error(t("home.modelSelectionRequired")); return; }
 
         const results: Detection[] = [];
-        setBatchProgress({ current: 0, total: upload.files.length });
-        for (let i = 0; i < upload.files.length; i++) {
-          const data = await runValidation(upload.files[i], selectedTrainedJobId || undefined, token);
+        setBatchProgress({ current: 0, total: files.length });
+        for (let i = 0; i < files.length; i++) {
+          const data = await runValidation(files[i], selectedTrainedJobId || undefined, token);
           if (data) {
             results.push(data); setBatchResults([...results]);
-            if (i === 0) { setResult(data); upload.setPreviewUrl(URL.createObjectURL(upload.files[i])); }
+            if (i === 0) { setResult(data); setPreviewUrl(URL.createObjectURL(files[i])); }
           }
-          setBatchProgress({ current: i + 1, total: upload.files.length });
+          setBatchProgress({ current: i + 1, total: files.length });
         }
         setBatchProgress({ current: 0, total: 0 });
         return;
       }
 
-      if (upload.categories.length === 0) return;
+      if (categories.length === 0) return;
       await runBatch(
-        upload.files, upload.categories,
-        model.useSam2, model.sam2ScoreThreshold,
-        model.useSam3, model.sam3Text, model.useSam3Seg,
-        model.sam3Threshold, model.sam3MaskThreshold,
+        files, categories,
+        useSam2, sam2ScoreThreshold,
+        useSam3, sam3Text, useSam3Seg,
+        sam3Threshold, sam3MaskThreshold,
         (data, file, i) => {
           batchFileMap.current.set(data.id, file);
-          if (i === 0) { setResult(data); upload.setPreviewUrl(URL.createObjectURL(file)); }
+          if (i === 0) { setResult(data); setPreviewUrl(URL.createObjectURL(file)); }
         },
       );
       queryClient.invalidateQueries({ queryKey: ["detections"] });
     } finally { timer.stopTimer(); }
   }, [
-    upload.files, upload.categories, model.appMode, model.useSam2, model.sam2ScoreThreshold,
-    model.useSam3, model.sam3Text, model.useSam3Seg, model.sam3Threshold, model.sam3MaskThreshold,
+    files, categories, appMode, useSam2, sam2ScoreThreshold,
+    useSam3, sam3Text, useSam3Seg, sam3Threshold, sam3MaskThreshold,
     validateModelSource, externalModelFile, selectedTrainedJobId,
-    runValidation, runBatch, timer.startTimer, timer.stopTimer,
-    queryClient, setBatchResults, setBatchProgress, upload.setPreviewUrl, t,
+    runValidation, runBatch, timer,
+    queryClient, setBatchResults, setBatchProgress, setPreviewUrl, t,
   ]);
 
   const handleSelectHistory = useCallback(async (det: Detection) => {
-    upload.setFiles([]);
+    setFiles([]);
     batchFileMap.current.clear();
-    upload.setPreviewUrl(`${API_BASE}/detections/${det.id}/image`);
+    setPreviewUrl(`${API_BASE}/detections/${det.id}/image`);
     const full = await getDetection(det.id);
     setResult(full);
     setBatchResults([]);
-    upload.setCategories(parseCategories(full.categories));
-    annotation.setFilterMode((full.filterMode as FilterMode) || "all");
-    if (full.filterNmsIou != null) annotation.setNmsIou(full.filterNmsIou);
-    annotation.setHiddenIndices(new Set());
-  }, [setBatchResults, upload.setFiles, upload.setPreviewUrl, upload.setCategories, annotation.setFilterMode, annotation.setNmsIou, annotation.setHiddenIndices]);
+    setCategories(parseCategories(full.categories));
+    setFilterMode((full.filterMode as FilterMode) || "all");
+    if (full.filterNmsIou != null) setNmsIou(full.filterNmsIou);
+    setHiddenIndices(new Set());
+  }, [setBatchResults, setFiles, setPreviewUrl, setCategories, setFilterMode, setNmsIou, setHiddenIndices]);
 
   const handleReDetect = useCallback(async () => {
     if (!result) return;
@@ -146,28 +149,28 @@ export function useHomeState() {
         file = new File([blob], result.imageName, { type: blob.type });
       }
       const data = await detectMut.mutateAsync({
-        file, categories: upload.categories,
-        useSam2: model.useSam2, sam2ScoreThreshold: model.sam2ScoreThreshold,
-        useSam3: model.useSam3, sam3Text: model.sam3Text, useSam3Seg: model.useSam3Seg,
-        sam3Threshold: model.sam3Threshold, sam3MaskThreshold: model.sam3MaskThreshold,
+        file, categories,
+        useSam2, sam2ScoreThreshold,
+        useSam3, sam3Text, useSam3Seg,
+        sam3Threshold, sam3MaskThreshold,
       });
       if (data) batchFileMap.current.set(data.id, file);
       setResult(data);
       setBatchResults((prev) => prev.map((r) => (r.id === result.id ? data : r)));
     } catch { /* handled by mutation */ }
     finally { timer.stopTimer(); }
-  }, [result, upload.categories, model, detectMut, timer, setBatchResults]);
+  }, [result, categories, useSam2, sam2ScoreThreshold, useSam3, sam3Text, useSam3Seg, sam3Threshold, sam3MaskThreshold, detectMut, timer, setBatchResults]);
 
   const handleDrawBox = useCallback(async (raw: { x1: number; y1: number; x2: number; y2: number }) => {
-    if (!result || !annotation.drawCategory.trim()) { toast.error(t("home.drawCategoryRequired")); return; }
+    if (!result || !drawCategory.trim()) { toast.error(t("home.drawCategoryRequired")); return; }
     try {
-      await addBox(result.id, { ...raw, className: annotation.drawCategory.trim() });
-      const newBox: BBox = { id: `manual-${Date.now()}`, className: annotation.drawCategory.trim(), ...raw, confidence: null };
+      await addBox(result.id, { ...raw, className: drawCategory.trim() });
+      const newBox: BBox = { id: `manual-${Date.now()}`, className: drawCategory.trim(), ...raw, confidence: null };
       const updated = { ...result, boxes: [...result.boxes, newBox] };
       setResult(updated);
       setBatchResults((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     } catch { /* ignore */ }
-  }, [result, annotation.drawCategory, setBatchResults, t]);
+  }, [result, drawCategory, setBatchResults, t]);
 
   const handleDeleteBox = useCallback(async (boxId: string) => {
     if (!result) return;
@@ -182,63 +185,52 @@ export function useHomeState() {
   }, [result, setBatchResults]);
 
   const handleSelectKeyframe = useCallback((fs: File[]) => {
-    upload.setFiles(fs);
-    upload.setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
+    setFiles(fs);
+    setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
     setBatchResults([]);
     setResult(null);
-  }, [setBatchResults, upload.setFiles, upload.setPreviewUrl]);
+  }, [setBatchResults, setFiles, setPreviewUrl]);
 
   const handleBatchSelect = useCallback((det: Detection, file?: File) => {
     setResult(det);
-    if (file) upload.setPreviewUrl(URL.createObjectURL(file));
-  }, [upload.setPreviewUrl]);
+    if (file) setPreviewUrl(URL.createObjectURL(file));
+  }, [setPreviewUrl]);
 
   const handleSaveBoxes = useCallback(async () => {
     if (!result) return;
-    await annotation.handleSaveBoxes(result);
-    setResult((prev) => prev ? { ...prev, filterMode: annotation.filterMode, filterNmsIou: annotation.filterMode === "nms" ? annotation.nmsIou : null } : null);
-  }, [result, annotation]);
+    
+    // Create an API call directly here if needed or migrate handleSaveBoxes from old hook
+    // It seems the API was in useAnnotationState. We can just use the underlying fetch here.
+    try {
+        await fetch(`${API_BASE}/detections/${result.id}/filter-settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filter_mode: filterMode, filter_nms_iou: filterMode === "nms" ? nmsIou : null }),
+        });
+        toast.success(t("home.savedSuccessfully"));
+    } catch {
+        toast.error(t("home.saveFailed"));
+    }
+    setResult((prev) => prev ? { ...prev, filterMode: filterMode, filterNmsIou: filterMode === "nms" ? nmsIou : null } : null);
+  }, [result, filterMode, nmsIou, t]);
 
   const loading = detectMut.isPending || batchProgress.total > 0 || validating;
 
+  const toggleBoxVisibility = useCallback((id: string) => {
+    setHiddenIndices(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, [setHiddenIndices]);
+
   const displayResult = useMemo(
-    () => result ? { ...result, boxes: applyFilter(annotation.filterMode, result.boxes, annotation.nmsIou) } : null,
-    [result, annotation.filterMode, annotation.nmsIou],
+    () => result ? { ...result, boxes: applyFilter(filterMode, result.boxes, nmsIou) } : null,
+    [result, filterMode, nmsIou],
   );
 
   return {
-    // Model config
-    appMode: model.appMode, setAppMode: model.setAppMode,
-    useSam2: model.useSam2, setUseSam2: model.setUseSam2,
-    useSam3: model.useSam3, setUseSam3: model.setUseSam3,
-    useSam3Seg: model.useSam3Seg, setUseSam3Seg: model.setUseSam3Seg,
-    sam3Threshold: model.sam3Threshold, setSam3Threshold: model.setSam3Threshold,
-    sam3MaskThreshold: model.sam3MaskThreshold, setSam3MaskThreshold: model.setSam3MaskThreshold,
-    sam2ScoreThreshold: model.sam2ScoreThreshold, setSam2ScoreThreshold: model.setSam2ScoreThreshold,
-    sam3Text: model.sam3Text, setSam3Text: model.setSam3Text,
-
-    // Upload
-    inputMode: upload.inputMode, setInputMode: upload.setInputMode,
-    files: upload.files, setFiles: upload.setFiles,
-    previewUrl: upload.previewUrl, setPreviewUrl: upload.setPreviewUrl,
-    categories: upload.categories, setCategories: upload.setCategories,
-
-    // Validation
-    validateModelSource, setValidateModelSource,
-    selectedTrainedJobId, setSelectedTrainedJobId,
-    validateVideoId, setValidateVideoId,
-    validateRunKey, setValidateRunKey,
-    externalModelFile, setExternalModelFile,
-    validateConf, setValidateConf, validateIou, setValidateIou, validating,
-
-    // Annotation
-    canvasMode: annotation.canvasMode, setCanvasMode: annotation.setCanvasMode,
-    drawCategory: annotation.drawCategory, setDrawCategory: annotation.setDrawCategory,
-    hiddenIndices: annotation.hiddenIndices, setHiddenIndices: annotation.setHiddenIndices,
-    filterMode: annotation.filterMode, setFilterMode: annotation.setFilterMode,
-    nmsIou: annotation.nmsIou, setNmsIou: annotation.setNmsIou,
-    toggleBoxVisibility: annotation.toggleBoxVisibility,
-
     // Timer
     elapsedMs: timer.elapsedMs,
 
@@ -251,7 +243,7 @@ export function useHomeState() {
     // Handlers
     handleFiles, handleDetect, handleSelectHistory, handleReDetect,
     handleDrawBox, handleDeleteBox, handleSelectKeyframe, handleBatchSelect,
-    handleSaveBoxes, cancelBatch,
+    handleSaveBoxes, cancelBatch, toggleBoxVisibility,
     loading, displayResult,
   };
 }

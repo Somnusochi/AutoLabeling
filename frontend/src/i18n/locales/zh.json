@@ -162,7 +162,10 @@
     "redetect": "重新检测",
     "exportLabel": "导出标注",
     "exportAllDataset": "导出全部数据集 ({{count}})",
-    "exportDataset": "导出数据集"
+    "exportDataset": "导出数据集",
+    "loadingModel": "模型加载中...",
+    "detecting": "检测进行中...",
+    "pleaseWait": "请稍候"
   },
   "resultTable": {
     "noTargets": "未检测到目标",

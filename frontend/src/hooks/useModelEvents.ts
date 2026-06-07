@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+
 
 interface VlmState {
   state: string;
@@ -64,6 +64,22 @@ function subscribe(fn: (s: ModelStates) => void) {
       es = null;
     }
   };
+}
+
+/** Immediately mark a model as loading — SSE will correct it on next poll. */
+export function optimisticModelLoading(model: "vlm" | "sam2" | "sam3") {
+  if (model === "vlm") cached = { ...cached, vlm: { ...cached.vlm, state: "loading" } };
+  else if (model === "sam2") cached = { ...cached, sam2: { ...cached.sam2, state: "loading" } };
+  else cached = { ...cached, sam3: { ...cached.sam3, status: "loading" } };
+  subscribers.forEach((fn) => fn(cached));
+}
+
+/** Immediately mark a model as unloaded — SSE will correct it on next poll. */
+export function optimisticModelUnloaded(model: "vlm" | "sam2" | "sam3") {
+  if (model === "vlm") cached = { ...cached, vlm: { state: "unloaded", stage: "", progress: 0, error: "" } };
+  else if (model === "sam2") cached = { ...cached, sam2: { state: "unloaded", stage: "", progress: 0, error: "" } };
+  else cached = { ...cached, sam3: { loaded: false, status: "unloaded" } };
+  subscribers.forEach((fn) => fn(cached));
 }
 
 export function useModelEvents(): ModelStates {

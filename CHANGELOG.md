@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.5.6 (2026-06-07)
+
+### State Management Refactoring
+- Refactor: introduce Zustand (`useAppStore`) for global state, replacing 4 individual hooks
+- Remove: `useModelConfig`, `useUploadState`, `useAnnotationState` (consolidated into store)
+- Simplify: `useHomeState` now reads from store, ~100 lines lighter
+- Simplify: `Sidebar` props reduced from 60+ to 14, `Home` reads state directly from store
+
+### UX Improvements
+- Feat: loading overlay shows contextual text ("模型加载中" / "检测进行中")
+- Feat: optimistic model status updates — loading/unload reflects immediately without waiting for SSE poll
+- Fix: SAM2 loading state not shown when model loads faster than SSE interval
+- Fix: model unload status delayed up to 10s — now instant via optimistic update
+
+### Fixes
+- Fix: unused `threading` import in `train.py`
+- Fix: E2E detection test selector (Ant Design uses div, not `<table>`)
+
 ## v1.5.5 (2026-06-07)
 
 ### Refactoring & Code Quality

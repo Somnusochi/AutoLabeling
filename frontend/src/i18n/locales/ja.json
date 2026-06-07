@@ -162,7 +162,10 @@
     "redetect": "再検出",
     "exportLabel": "ラベルをエクスポート",
     "exportAllDataset": "全データセットをエクスポート ({{count}})",
-    "exportDataset": "データセットをエクスポート"
+    "exportDataset": "データセットをエクスポート",
+    "loadingModel": "モデル読み込み中...",
+    "detecting": "検出中...",
+    "pleaseWait": "しばらくお待ちください"
   },
   "resultTable": {
     "noTargets": "ターゲットが検出されませんでした",

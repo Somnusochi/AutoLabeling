@@ -87,7 +87,8 @@ VLM-AutoYOLO/
 │       │   ├── Layout.tsx           # App layout
 │       │   └── ...
 │       ├── pages/Home.tsx           # Main page
-│       ├── hooks/                   # Custom hooks (useHomeState, useModelConfig, useUploadState, useAnnotationState, useDetectionTimer, useModelEvents, ...)
+│       ├── store/                   # Zustand global state (useAppStore)
+│       ├── hooks/                   # Custom hooks (useHomeState, useDetectionTimer, useModelEvents, ...)
 │       ├── e2e/                      # Playwright E2E tests
 │       ├── i18n/locales/            # en.json, zh.json, ja.json
 │       ├── services/api.ts          # Unified API layer

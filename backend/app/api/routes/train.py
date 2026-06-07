@@ -7,11 +7,10 @@ import json
 import logging
 import shutil
 import tempfile
-import threading
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from starlette.responses import StreamingResponse
@@ -37,6 +36,7 @@ def list_variants() -> APIResponse:
 @router.post("/jobs", status_code=201)
 def create_training_job(
     body: TrainRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     request_id: str = Depends(get_request_id),
 ) -> APIResponse:
@@ -63,23 +63,19 @@ def create_training_job(
     db.commit()
     db.refresh(job)
 
-    # Run training in background thread
-    thread = threading.Thread(
-        target=run_training_safe,
-        args=(
-            str(job.id),
-            body.detection_ids,
-            body.model_variant,
-            body.epochs,
-            body.imgsz,
-            body.batch,
-            body.train_ratio,
-            body.val_ratio,
-            body.task_type,
-        ),
-        daemon=True,
+    # Run training in background task
+    background_tasks.add_task(
+        run_training_safe,
+        str(job.id),
+        body.detection_ids,
+        body.model_variant,
+        body.epochs,
+        body.imgsz,
+        body.batch,
+        body.train_ratio,
+        body.val_ratio,
+        body.task_type,
     )
-    thread.start()
 
     return APIResponse(
         data=TrainingJobOut.model_validate(job).model_dump(by_alias=True),
@@ -293,6 +289,7 @@ def download_model(
 @router.post("/jobs/{job_id}/retrain")
 def retrain_job(
     job_id: UUID,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """Re-run training with the same detection_ids and settings."""
@@ -324,21 +321,17 @@ def retrain_job(
     db.refresh(new_job)
 
     detection_ids = [str(link.detection_id) for link in new_job.detection_links]
-    thread = threading.Thread(
-        target=run_training_safe,
-        args=(
-            str(new_job.id),
-            detection_ids,
-            new_job.model_variant,
-            new_job.epochs,
-            new_job.imgsz,
-            new_job.batch,
-            new_job.train_ratio,
-            new_job.val_ratio,
-            new_job.task_type,
-        ),
-        daemon=True,
+    background_tasks.add_task(
+        run_training_safe,
+        str(new_job.id),
+        detection_ids,
+        new_job.model_variant,
+        new_job.epochs,
+        new_job.imgsz,
+        new_job.batch,
+        new_job.train_ratio,
+        new_job.val_ratio,
+        new_job.task_type,
     )
-    thread.start()
 
     return APIResponse(data=TrainingJobOut.model_validate(new_job).model_dump(by_alias=True))

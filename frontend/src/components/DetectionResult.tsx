@@ -84,15 +84,7 @@ export function DetectionResult({
             ))}
           </div>
         )}
-        {loading && (
-          <div className="absolute inset-0 bg-white/60 rounded-lg flex flex-col items-center justify-center gap-2">
-            <svg className="animate-spin h-8 w-8 text-primary-500" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <span className="text-sm font-medium text-gray-500">{(elapsedMs / 1000).toFixed(1)}s</span>
-          </div>
-        )}
+        {loading && <LoadingOverlay elapsedMs={elapsedMs} />}
       </div>
 
       <div className="flex items-center justify-between">
@@ -208,6 +200,30 @@ export function DetectionResult({
       )}
 
       <ResultTable boxes={result.boxes} hiddenIndices={hiddenIndices} onToggleVisibility={onToggleVisibility} onDelete={onDeleteBox} />
+    </div>
+  );
+}
+
+function LoadingOverlay({ elapsedMs }: { elapsedMs: number }) {
+  const { t } = useTranslation();
+  const { vlm, sam2, sam3 } = useModelEvents();
+  const modelLoading =
+    vlm.state === "loading" || vlm.state === "downloading" ||
+    sam2.state === "loading" || sam2.state === "downloading" ||
+    sam3.status === "loading" || sam3.status === "starting";
+
+  return (
+    <div className="absolute inset-0 bg-white/60 rounded-lg flex flex-col items-center justify-center gap-3">
+      <svg className="animate-spin h-10 w-10 text-primary-500" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+      <p className="text-sm font-medium text-gray-600">
+        {modelLoading ? t("detectionResult.loadingModel") : t("detectionResult.detecting")}
+      </p>
+      <p className="text-xs text-gray-400">
+        {modelLoading ? t("detectionResult.pleaseWait") : `${(elapsedMs / 1000).toFixed(1)}s`}
+      </p>
     </div>
   );
 }

@@ -3,6 +3,9 @@ import { Sidebar } from "@/components/Sidebar";
 import { VideoValidator } from "@/components/VideoValidator";
 import { DetectionSkeleton } from "@/components/LoadingSkeleton";
 import { DetectionResult } from "@/components/DetectionResult";
+import { useTranslation } from "react-i18next";
+import { useHomeState } from "@/hooks/useHomeState";
+import { useAppStore } from "@/store/useAppStore";
 
 export function Home() {
   const { t } = useTranslation();
@@ -16,21 +19,24 @@ export function Home() {
     validateIou,
     validateVideoId,
     validateRunKey,
-    result,
-    loading,
-    displayResult,
     previewUrl,
-    batchResults,
     files,
-    elapsedMs,
     categories,
     canvasMode,
     drawCategory,
-    recentCategories,
     hiddenIndices,
-    toggleBoxVisibility,
     setCanvasMode,
     setDrawCategory,
+  } = useAppStore();
+
+  const {
+    result,
+    loading,
+    displayResult,
+    batchResults,
+    elapsedMs,
+    recentCategories,
+    toggleBoxVisibility,
     handleDeleteBox,
     handleBatchSelect,
     handleReDetect,

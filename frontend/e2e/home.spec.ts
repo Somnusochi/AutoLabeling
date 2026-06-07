@@ -58,7 +58,7 @@ test.describe("Home page", () => {
     // Click detect
     await detectBtn.click();
 
-    // Wait for detection to complete (result table with "boxes" appears)
-    await expect(page.locator("table")).toBeVisible({ timeout: 60000 });
+    // Wait for detection result (category "cat" appears in result sidebar)
+    await expect(page.locator("text=cat")).toBeVisible({ timeout: 60000 });
   });
 });

@@ -55,10 +55,10 @@ Comprehensive guides: quick start, annotation best practices, training parameter
 | Backend | Python FastAPI + PostgreSQL + SSE |
 | Frontend | React + TypeScript + Vite + Tailwind CSS + antd |
 | GPU Memory | Strategy Pattern (`gpu_memory.py`) — CUDA expandable segments / MPS synchronize + empty_cache |
-| State | TanStack Query + ahooks |
+| State | Zustand + TanStack Query + ahooks |
 | i18n | i18next (English / 简体中文 / 日本語) |
 | Video | ffmpeg (scene / motion / interval extraction) |
-| Tooling | pnpm, ESLint, Prettier |
+| Tooling | pnpm, ESLint, Prettier, Husky, commitlint, Playwright |
 
 ## Quick Start
 
