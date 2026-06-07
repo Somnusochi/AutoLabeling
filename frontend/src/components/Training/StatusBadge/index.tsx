@@ -5,12 +5,14 @@ export function StatusBadge({ status }: { status: string }) {
     running: "text-blue-500",
     completed: "text-green-500",
     failed: "text-red-500",
+    cancelled: "text-orange-500",
   };
   const labels: Record<string, string> = {
     pending: t("trainingPanel.statusPending"),
     running: t("trainingPanel.statusRunning"),
     completed: t("trainingPanel.statusCompleted"),
     failed: t("trainingPanel.statusFailed"),
+    cancelled: t("trainingPanel.statusCancelled"),
   };
   return <span className={map[status] ?? "text-gray-400"}>{labels[status] ?? status}</span>;
 }

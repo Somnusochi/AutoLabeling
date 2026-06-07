@@ -101,6 +101,11 @@ export async function fetchTrainingJobs(): Promise<TrainingJob[]> {
   return data.data ?? [];
 }
 
+export async function cancelTrainingJob(id: string): Promise<TrainingJob> {
+  const { data } = await request.post<{ data: TrainingJob }>(`/train/jobs/${id}/cancel`);
+  return data.data;
+}
+
 export async function deleteTrainingJob(id: string): Promise<void> {
   await request.post(`/train/jobs/${id}/delete`);
 }

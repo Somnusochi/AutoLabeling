@@ -4,6 +4,7 @@ import { StatusBadge } from "../StatusBadge";
 export function TrainingJobItem({ job }: { job: TrainingJob }) {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
+  const [cancelling, setCancelling] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
   const [progress, setProgress] = useState<{
     epoch: number;
@@ -57,47 +58,69 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
         <StatusBadge status={job.status} />
       </div>
 
-      {(job.status === "pending" || job.status === "running") &&
-        (progress && progress.totalEpochs > 0 ? (
-          <div className="mt-1.5 space-y-1">
-            <div className="flex justify-between text-gray-400">
-              <span>
-                Epoch {progress.epoch}/{progress.totalEpochs}
-              </span>
-              <span>{Math.round((progress.epoch / progress.totalEpochs) * 100)}%</span>
+      {(job.status === "pending" || job.status === "running") && (
+        <div className="mt-1.5 flex items-center justify-between">
+          {progress && progress.totalEpochs > 0 ? (
+            <div className="flex-1 space-y-1">
+              <div className="flex justify-between text-gray-400">
+                <span>
+                  Epoch {progress.epoch}/{progress.totalEpochs}
+                </span>
+                <span>{Math.round((progress.epoch / progress.totalEpochs) * 100)}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                  style={{ width: `${(progress.epoch / progress.totalEpochs) * 100}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Loss: {progress.loss.toFixed(3)}</span>
+                {progress.mAP50 != null && <span>mAP50: {progress.mAP50.toFixed(3)}</span>}
+              </div>
             </div>
-            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-blue-500 transition-all duration-500"
-                style={{ width: `${(progress.epoch / progress.totalEpochs) * 100}%` }}
-              />
+          ) : (
+            <div className="flex items-center gap-2 text-gray-400">
+              <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              {t("trainingPanel.waitingToStart")}
             </div>
-            <div className="flex justify-between text-gray-400">
-              <span>Loss: {progress.loss.toFixed(3)}</span>
-              {progress.mAP50 != null && <span>mAP50: {progress.mAP50.toFixed(3)}</span>}
-            </div>
-          </div>
-        ) : (
-          <div className="mt-1.5 flex items-center gap-2 text-gray-400">
-            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
-            </svg>
-            {t("trainingPanel.waitingToStart")}
-          </div>
-        ))}
+          )}
+          <button
+            type="button"
+            disabled={cancelling}
+            onClick={async () => {
+              if (!confirm(t("trainingPanel.cancelJobConfirm"))) return;
+              setCancelling(true);
+              try {
+                await cancelTrainingJob(job.id);
+                qc.invalidateQueries({ queryKey: ["training-jobs"] });
+              } catch {
+                toast.error(t("trainingPanel.cancelFailed"));
+              } finally {
+                setCancelling(false);
+              }
+            }}
+            className="text-[10px] text-red-400 hover:text-red-600 disabled:opacity-50 flex-shrink-0 ml-2"
+          >
+            {cancelling ? t("common.cancelling") : t("common.cancel")}
+          </button>
+        </div>
+      )}
 
       {(job.status === "completed" || job.status === "failed") && (
         <>
