@@ -26,7 +26,24 @@ export function DetectionCanvas({
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scale = Math.min(CANVAS_MAX_W / imgWidth, CANVAS_MAX_H / imgHeight, 1);
+  const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    if (imgWidth > 0 && imgHeight > 0) return;
+    let isActive = true;
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      if (isActive) {
+        setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    };
+    return () => { isActive = false; };
+  }, [imageUrl, imgWidth, imgHeight]);
+
+  const actualW = imgWidth > 0 ? imgWidth : naturalSize.w;
+  const actualH = imgHeight > 0 ? imgHeight : naturalSize.h;
+  const scale = actualW > 0 && actualH > 0 ? Math.min(CANVAS_MAX_W / actualW, CANVAS_MAX_H / actualH, 1) : 1;
   const [drawing, setDrawing] = useState<{
     startX: number;
     startY: number;
@@ -45,10 +62,12 @@ export function DetectionCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const displayW = Math.round(imgWidth * scale);
-    const displayH = Math.round(imgHeight * scale);
-    canvas.width = displayW;
-    canvas.height = displayH;
+    if (actualW === 0 || actualH === 0) return;
+
+    const displayW = Math.round(actualW * scale);
+    const displayH = Math.round(actualH * scale);
+    if (canvas.width !== displayW) canvas.width = displayW;
+    if (canvas.height !== displayH) canvas.height = displayH;
 
     // Image — increment load ID to cancel stale image loads
     const loadId = ++loadIdRef.current;
@@ -94,7 +113,7 @@ export function DetectionCanvas({
         drawRect(ctx, x, y, w, h, "#FF9800", "");
       }
     };
-  }, [imageUrl, boxes, scale, drawing, hiddenIndices, imgWidth, imgHeight, showBBox, showMask]);
+  }, [imageUrl, boxes, scale, drawing, hiddenIndices, actualW, actualH, showBBox, showMask]);
 
   useEffect(() => {
     redraw();

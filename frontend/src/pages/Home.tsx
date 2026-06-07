@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Sidebar } from "@/components/Sidebar";
 import { VideoValidator } from "@/components/VideoValidator";
-import { DetectionSkeleton } from "@/components/LoadingSkeleton";
 import { DetectionResult } from "@/components/DetectionResult";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/store/useAppStore";
@@ -46,6 +45,7 @@ export function Home() {
     handleReDetect,
     cancel,
     loading,
+    isRedetecting,
   } = useDetectionProcess();
 
   const { historyData, recentCategories, handleSelectHistory } = useDetectionHistory();
@@ -109,13 +109,13 @@ export function Home() {
           />
         )}
 
-        {!validateVideoId && !result && !loading && (
+        {!validateVideoId && !displayResult && !previewUrl && (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             {t("home.placeholderDefault")}
           </div>
         )}
-        {loading && !validateVideoId && !result && <DetectionSkeleton />}
-        {displayResult && previewUrl && (
+        
+        {previewUrl && !validateVideoId && (
           <ErrorBoundary>
             <DetectionResult
               result={displayResult}
@@ -135,10 +135,14 @@ export function Home() {
               onDrawCategoryChange={setDrawCategory}
               onDeleteBox={handleDeleteBox}
               onSelectBatch={handleBatchSelect}
-              onSelectPending={setPreviewUrl}
+              onSelectPending={(url) => {
+                setPreviewUrl(url);
+                setResult(null);
+              }}
               onReDetect={handleReDetect}
               onSaveBoxes={handleSaveBoxes}
               onDrawBox={handleDrawBox}
+              isRedetecting={isRedetecting}
             />
           </ErrorBoundary>
         )}

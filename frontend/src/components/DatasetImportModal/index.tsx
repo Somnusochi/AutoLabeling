@@ -68,6 +68,26 @@ export function DatasetImportModal({ open, onClose }: Props) {
   }, [handleFile]);
 
   // ── Worker upload ────────────────────────────────
+  const pollImport = useCallback((importId: string) => {
+    pollRef.current = setInterval(async () => {
+      try {
+        const p = await fetchImportProgress(importId);
+        setImportProgress({ total: p.total, completed: p.completed });
+        if (p.status === "completed") {
+          setStatus("completed");
+          if (pollRef.current) clearInterval(pollRef.current);
+          qc.invalidateQueries({ queryKey: ["detections"] });
+          toast.success(t("datasetImport.importSuccess", { count: p.total }));
+        } else if (p.status === "failed") {
+          setStatus("failed");
+          setError(p.error || t("datasetImport.importFailed"));
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch { /* polling error */ }
+    }, 500);
+  }, [qc, t]);
+
+
   const startUpload = useCallback(() => {
     if (!file) return;
     setStatus("uploading");
@@ -114,26 +134,8 @@ export function DatasetImportModal({ open, onClose }: Props) {
     };
 
     worker.postMessage({ type: "upload", file, format: fmt });
-  }, [file, fmt, t]);
+  }, [file, fmt, t, pollImport]);
 
-  const pollImport = useCallback((importId: string) => {
-    pollRef.current = setInterval(async () => {
-      try {
-        const p = await fetchImportProgress(importId);
-        setImportProgress({ total: p.total, completed: p.completed });
-        if (p.status === "completed") {
-          setStatus("completed");
-          if (pollRef.current) clearInterval(pollRef.current);
-          qc.invalidateQueries({ queryKey: ["detections"] });
-          toast.success(t("datasetImport.importSuccess", { count: p.total }));
-        } else if (p.status === "failed") {
-          setStatus("failed");
-          setError(p.error || t("datasetImport.importFailed"));
-          if (pollRef.current) clearInterval(pollRef.current);
-        }
-      } catch { /* polling error */ }
-    }, 500);
-  }, [qc, t]);
 
   const handleCancel = useCallback(async () => {
     workerRef.current?.postMessage({ type: "cancel" });

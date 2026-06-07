@@ -1,7 +1,8 @@
 import { Dropdown } from "antd";
+import { getFileUrl } from "@/lib/cache";
 
 interface Props {
-  result: Detection;
+  result: Detection | null;
   previewUrl: string;
   batchResults: Detection[];
   batchFiles: File[];
@@ -22,7 +23,10 @@ interface Props {
   onSaveBoxes: () => void;
   onDrawBox: (box: { x1: number; y1: number; x2: number; y2: number }) => void;
   isValidation?: boolean;
+  isRedetecting?: boolean;
 }
+
+const EMPTY_BOXES: never[] = [];
 
 export function DetectionResult({
   result,
@@ -46,38 +50,26 @@ export function DetectionResult({
   onSaveBoxes,
   onDrawBox,
   isValidation = false,
+  isRedetecting = false,
 }: Props) {
   const { t } = useTranslation();
 
-  const [blobUrls, setBlobUrls] = useState<string[]>(() =>
-    batchFiles.map((f) => URL.createObjectURL(f)),
-  );
-  const prevFilesRef = useRef<File[]>(batchFiles);
-  const blobUrlsRef = useRef<string[]>(blobUrls);
-  useEffect(() => {
-    if (prevFilesRef.current === batchFiles) return;
-    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-    const urls = batchFiles.map((f) => URL.createObjectURL(f));
-    blobUrlsRef.current = urls;
-    prevFilesRef.current = batchFiles;
-    setBlobUrls(urls);
-  }, [batchFiles]);
-  useEffect(() => () => { blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u)); }, []);
+  const blobUrls = batchFiles.map((f) => getFileUrl(f));
 
   return (
     <div className="space-y-4">
       <div className="relative">
         <DetectionCanvas
           imageUrl={previewUrl}
-          boxes={result.boxes}
-          imgWidth={result.imageWidth}
-          imgHeight={result.imageHeight}
+          boxes={result?.boxes || EMPTY_BOXES}
+          imgWidth={result?.imageWidth || 0}
+          imgHeight={result?.imageHeight || 0}
           mode={canvasMode}
           hiddenIndices={hiddenIndices}
           onModeChange={onCanvasModeChange}
           onDrawBox={onDrawBox}
         />
-        {canvasMode === "draw" && (
+        {canvasMode === "draw" && result && (
           <div className="mt-2 flex items-center gap-2">
             <input
               type="text"
@@ -102,13 +94,17 @@ export function DetectionResult({
             ))}
           </div>
         )}
-        {loading && <LoadingOverlay elapsedMs={elapsedMs} />}
+        {loading && (!result || isRedetecting) && <LoadingOverlay elapsedMs={elapsedMs} />}
       </div>
 
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-gray-700">
-          {t("detectionResult.resultCount", { count: result.boxes.length })}
-          {result.elapsedMs != null && result.elapsedMs > 0 && (
+          {result 
+            ? t("detectionResult.resultCount", { count: result.boxes.length }) 
+            : loading 
+              ? t("common.detecting") 
+              : ""}
+          {result?.elapsedMs != null && result.elapsedMs > 0 && (
             <span className="ml-2 text-gray-400 font-normal">
               {t("detectionResult.timeElapsed")}{" "}
               {result.elapsedMs >= 1000
@@ -116,7 +112,7 @@ export function DetectionResult({
                 : `${result.elapsedMs}ms`}
             </span>
           )}
-          {batchResults.length > 1 && (
+          {result && batchResults.length > 1 && (
             <span className="ml-2 text-gray-400 font-normal">
               — {result.imageName} ({batchResults.indexOf(result) + 1}/{batchResults.length})
             </span>
@@ -127,8 +123,9 @@ export function DetectionResult({
           {!isValidation && (
             <button
               type="button"
+              disabled={!result || loading}
               onClick={onSaveBoxes}
-              className="rounded border border-green-300 px-3 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors"
+              className="rounded border border-green-300 px-3 py-1 text-xs font-medium text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t("detectionResult.saveFilter")}
             </button>
@@ -136,14 +133,15 @@ export function DetectionResult({
           {!isValidation && categories.length > 0 && (
             <button
               type="button"
-              disabled={loading}
+              disabled={!result || loading}
               onClick={onReDetect}
-              className="rounded bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+              className="rounded bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? t("common.detecting") : t("detectionResult.redetect")}
             </button>
           )}
           <Dropdown
+            disabled={!result || loading}
             menu={{
               items: [
                 { key: "yolo", label: "YOLO (.txt)" },
@@ -153,6 +151,7 @@ export function DetectionResult({
                 { key: "createml", label: "CreateML (.json)" },
               ],
               onClick: async ({ key }) => {
+                if (!result) return;
                 if (key === "yolo") {
                   downloadYoloTxt(
                     result.boxes,
@@ -177,13 +176,15 @@ export function DetectionResult({
           >
             <button
               type="button"
-              className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors"
+              disabled={!result || loading}
+              className="rounded border border-primary-200 px-3 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t("detectionResult.exportLabel")}
             </button>
           </Dropdown>
           {!isValidation && (
             <Dropdown
+              disabled={!result || loading}
               menu={{
                 items: [
                   { key: "yolo", label: "YOLO (.txt)" },
@@ -193,6 +194,7 @@ export function DetectionResult({
                   { key: "createml", label: "CreateML (.json)" },
                 ],
                 onClick: async ({ key }) => {
+                  if (!result) return;
                   const ids = batchResults.length > 1 ? batchResults.map((r) => r.id) : [result.id];
                   const labels: Record<string, string> = {
                     yolo: "YOLO",
@@ -209,7 +211,8 @@ export function DetectionResult({
             >
               <button
                 type="button"
-                className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
+                disabled={!result || loading}
+                className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {batchResults.length > 1
                   ? t("detectionResult.exportAllDataset", { count: batchResults.length })
@@ -231,7 +234,7 @@ export function DetectionResult({
             );
             const isActive = anyPendingSelected
               ? previewUrl === blobUrls[i]
-              : done && result.id === res.id;
+              : done && result?.id === res.id;
             return (
               <button
                 key={i}
@@ -275,7 +278,7 @@ export function DetectionResult({
       )}
 
       <ResultTable
-        boxes={result.boxes}
+        boxes={result?.boxes || EMPTY_BOXES}
         hiddenIndices={hiddenIndices}
         onToggleVisibility={onToggleVisibility}
         onDelete={onDeleteBox}

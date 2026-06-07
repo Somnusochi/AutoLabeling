@@ -20,6 +20,7 @@ declare global {
   const DEFAULT_EPOCHS: typeof import('./lib/constants').DEFAULT_EPOCHS
   const DEFAULT_IMGSZ: typeof import('./lib/constants').DEFAULT_IMGSZ
   const DEFAULT_IOU: typeof import('./lib/constants').DEFAULT_IOU
+  const DatasetImportModal: typeof import('./components/DatasetImportModal/index').DatasetImportModal
   const DetectionCanvas: typeof import('./components/DetectionCanvas/index').DetectionCanvas
   const DetectionResult: typeof import('./components/DetectionResult/index').DetectionResult
   const DetectionSkeleton: typeof import('./components/LoadingSkeleton/index').DetectionSkeleton
@@ -59,6 +60,8 @@ declare global {
   const batchFileMap: typeof import('./lib/cache').batchFileMap
   const cache: typeof import('react').cache
   const cacheSignal: typeof import('react').cacheSignal
+  const cancelImport: typeof import('./services/api').cancelImport
+  const cancelTrainingJob: typeof import('./services/api').cancelTrainingJob
   const chartUrl: typeof import('./services/api').chartUrl
   const checkSam3Health: typeof import('./services/api').checkSam3Health
   const createContext: typeof import('react').createContext
@@ -76,15 +79,22 @@ declare global {
   const exportBatch: typeof import('./services/api').exportBatch
   const exportSingleUrl: typeof import('./services/api').exportSingleUrl
   const extractKeyframes: typeof import('./services/api').extractKeyframes
+  const fetchImportProgress: typeof import('./services/api').fetchImportProgress
   const fetchTrainingJobs: typeof import('./services/api').fetchTrainingJobs
   const fetchYoloSeries: typeof import('./services/api').fetchYoloSeries
+  const fileUrlCache: typeof import('./lib/cache').fileUrlCache
   const formatTime: typeof import('./lib/formatTime').formatTime
   const forwardRef: typeof import('react').forwardRef
   const generateYoloTxt: typeof import('./lib/yoloExport').generateYoloTxt
   const getDetection: typeof import('./services/api').getDetection
+  const getFileUrl: typeof import('./lib/cache').getFileUrl
   const getModelStatus: typeof import('./services/api').getModelStatus
   const getSam2Status: typeof import('./services/api').getSam2Status
   const getVideo: typeof import('./services/api').getVideo
+  const importChunkCancel: typeof import('./services/api').importChunkCancel
+  const importChunkComplete: typeof import('./services/api').importChunkComplete
+  const importChunkInit: typeof import('./services/api').importChunkInit
+  const importDataset: typeof import('./services/api').importDataset
   const keyframeImageUrl: typeof import('./services/api').keyframeImageUrl
   const lazy: typeof import('react').lazy
   const listDetections: typeof import('./services/api').listDetections
@@ -233,7 +243,7 @@ declare global {
   export type { FilterMode } from './lib/filterBoxes'
   import('./lib/filterBoxes')
   // @ts-ignore
-  export type { YoloSeries } from './services/api'
+  export type { YoloSeries, ImportResult, ImportProgress, ChunkInitResult } from './services/api'
   import('./services/api')
   // @ts-ignore
   export type { BBox, Detection, DetectResponse, TrainingJob, KeyFrame, VideoInfo, VideoList, ListResponse } from './types/index'

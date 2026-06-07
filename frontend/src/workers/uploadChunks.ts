@@ -41,7 +41,7 @@ async function uploadChunk(
   return false;
 }
 
-async function doUpload(file: File, format: string, uploadId?: string) {
+async function doUpload(file: File, format: string) {
   _cancelled = false;
 
   // 1. Init or resume upload session
@@ -102,10 +102,14 @@ async function doUpload(file: File, format: string, uploadId?: string) {
   self.postMessage({ type: "complete", uploadId: uid, format });
 }
 
-self.onmessage = (e: MessageEvent) => {
+type WorkerMessage =
+  | ({ type: "upload" } & UploadRequest)
+  | { type: "cancel" };
+
+self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   const msg = e.data;
   if (msg.type === "upload") {
-    doUpload(msg.file, msg.format, msg.uploadId);
+    doUpload(msg.file, msg.format);
   } else if (msg.type === "cancel") {
     _cancelled = true;
   }

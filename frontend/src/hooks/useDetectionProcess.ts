@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/store/useAppStore";
-import { batchFileMap } from "@/lib/cache";
+import { batchFileMap, getFileUrl } from "@/lib/cache";
 import { useDetectionTimer } from "./useDetectionTimer";
 import { useBatchDetection } from "./useBatchDetection";
 import { useYoloValidation } from "./useYoloValidation";
@@ -74,7 +74,7 @@ export function useDetectionProcess() {
       setFiles(fs);
       setBatchResults([]);
       setResult(null);
-      setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
+      setPreviewUrl(fs.length === 1 ? getFileUrl(fs[0]) : null);
     },
     [setBatchResults, setFiles, setPreviewUrl, setResult],
   );
@@ -82,7 +82,7 @@ export function useDetectionProcess() {
   const handleSelectKeyframe = useCallback(
     (fs: File[]) => {
       setFiles(fs);
-      setPreviewUrl(fs.length === 1 ? URL.createObjectURL(fs[0]) : null);
+      setPreviewUrl(fs.length === 1 ? getFileUrl(fs[0]) : null);
       setBatchResults([]);
       setResult(null);
     },
@@ -92,7 +92,7 @@ export function useDetectionProcess() {
   const handleBatchSelect = useCallback(
     (det: Detection, file?: File) => {
       setResult(det);
-      if (file) setPreviewUrl(URL.createObjectURL(file));
+      if (file) setPreviewUrl(getFileUrl(file));
     },
     [setPreviewUrl, setResult],
   );
@@ -107,7 +107,7 @@ export function useDetectionProcess() {
     // Clear old result, show first new image immediately
     setResult(null);
     setBatchResults([]);
-    setPreviewUrl(URL.createObjectURL(files[0]));
+    setPreviewUrl(getFileUrl(files[0]));
 
     try {
       if (appMode === "validate") {
@@ -165,7 +165,7 @@ export function useDetectionProcess() {
             setBatchResults([...results]);
             if (i === 0) {
               setResult(data);
-              setPreviewUrl(URL.createObjectURL(files[i]));
+              setPreviewUrl(getFileUrl(files[i]));
             }
           }
           setBatchProgress({ current: i + 1, total: files.length });
@@ -193,7 +193,7 @@ export function useDetectionProcess() {
           });
           if (i === 0) {
             setResult(data);
-            setPreviewUrl(URL.createObjectURL(file));
+            setPreviewUrl(getFileUrl(file));
           }
         },
         ctrl.signal,
@@ -293,5 +293,6 @@ export function useDetectionProcess() {
     handleReDetect,
     cancel,
     loading,
+    isRedetecting: detectMut.isPending,
   };
 }
