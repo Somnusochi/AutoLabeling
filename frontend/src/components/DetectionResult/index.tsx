@@ -226,9 +226,12 @@ export function DetectionResult({
             const res = batchResults[i];
             const done = !!res;
             const pending = !done && loading;
-            const isActive = done
-              ? result.id === res.id
-              : previewUrl === blobUrls[i];
+            const anyPendingSelected = blobUrls.some(
+              (url, idx) => !batchResults[idx] && previewUrl === url,
+            );
+            const isActive = anyPendingSelected
+              ? previewUrl === blobUrls[i]
+              : done && result.id === res.id;
             return (
               <button
                 key={i}
