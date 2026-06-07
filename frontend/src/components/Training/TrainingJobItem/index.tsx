@@ -1,4 +1,4 @@
-import { Modal } from "antd";
+import { Modal, Popconfirm } from "antd";
 import { StatusBadge } from "../StatusBadge";
 
 export function TrainingJobItem({ job }: { job: TrainingJob }) {

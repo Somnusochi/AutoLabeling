@@ -1,3 +1,5 @@
+import { Popconfirm } from "antd";
+
 interface Props {
   boxes: BBox[];
   hiddenIndices: Set<string>;

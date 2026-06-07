@@ -1,6 +1,6 @@
 import { type DragEvent } from "react";
 
-import { Image } from "antd";
+import { Image, Popconfirm } from "antd";
 
 interface Props {
   onLoadKeyframes: (files: File[], videoName: string) => void;
