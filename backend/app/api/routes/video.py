@@ -198,3 +198,18 @@ def delete_video(
 
     repo.delete_video(video)
     repo.db.commit()
+
+
+@router.post("/videos/delete-bulk", status_code=204)
+def delete_videos_bulk(repo: VideoRepository = Depends(_get_video_repo)) -> None:
+    """Delete all videos on the server — not just the currently loaded page."""
+    videos, _ = repo.list_videos(page=1, page_size=10000)
+    for video in videos:
+        with contextlib.suppress(OSError):
+            Path(video.file_path).unlink(missing_ok=True)
+        for kf in video.keyframes:
+            with contextlib.suppress(OSError):
+                Path(kf.image_path).unlink(missing_ok=True)
+        repo.delete_video(video)
+    repo.db.commit()
+    return None

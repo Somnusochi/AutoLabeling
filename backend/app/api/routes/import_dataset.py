@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import shutil
@@ -24,6 +23,7 @@ router = APIRouter(prefix="/api/v1", tags=["import"])
 
 ACTIVE_IMPORTS: dict[str, threading.Event] = {}
 CHUNK_DIR = Path(settings.project_root) / "import_chunks"
+MAX_CHUNK_SIZE = 50 * 1024 * 1024  # 50MB per chunk
 
 
 # ── Chunked upload ──────────────────────────────────
@@ -53,10 +53,12 @@ async def chunk_init(request: Request) -> APIResponse:
     if total_size > max_bytes:
         raise HTTPException(400, f"File exceeds {settings.max_import_size_mb // 1024}GB limit")
 
+    # Cap chunk size to prevent memory pressure
+    chunk_size = min(chunk_size, MAX_CHUNK_SIZE)
     total_chunks = max(1, (total_size + chunk_size - 1) // chunk_size)
 
-    # Derive stable uploadId from file identity
-    upload_id = hashlib.md5(f"{file_name}:{total_size}".encode()).hexdigest()[:16]
+    # Server-generated random uploadId — prevents session collision and guessing
+    upload_id = uuid.uuid4().hex
 
     chunk_dir = CHUNK_DIR / upload_id
     chunk_dir.mkdir(parents=True, exist_ok=True)
@@ -105,6 +107,10 @@ async def chunk_upload(
         raise HTTPException(400, f"Invalid chunk index: {chunk_index}")
 
     chunk_data = await request.body()
+    max_expected = meta["chunkSize"] * 2  # allow some overhead for last chunk
+    if len(chunk_data) > max_expected:
+        raise HTTPException(400, f"Chunk too large: {len(chunk_data)} bytes (max {max_expected})")
+
     chunk_path = chunk_dir / f"chunk_{chunk_index}"
     chunk_path.write_bytes(chunk_data)
 
@@ -167,15 +173,25 @@ def chunk_complete(
             f"Missing chunks: {missing[:10]}{'...' if len(missing) > 10 else ''}",
         )
 
-    # Assemble
+    # Assemble — verify total size matches declared
     progress_dir = Path(settings.project_root) / "import_progress"
     progress_dir.mkdir(parents=True, exist_ok=True)
     zip_path = progress_dir / f"{upload_id}.zip"
+    assembled_size = 0
 
     with open(zip_path, "wb") as out:
         for i in range(meta["totalChunks"]):
             chunk_path = chunk_dir / f"chunk_{i}"
-            out.write(chunk_path.read_bytes())
+            data = chunk_path.read_bytes()
+            assembled_size += len(data)
+            out.write(data)
+
+    if assembled_size != meta["totalSize"]:
+        zip_path.unlink(missing_ok=True)
+        raise HTTPException(
+            400,
+            f"Size mismatch: expected {meta['totalSize']} bytes, got {assembled_size}",
+        )
 
     import_id = upload_id
     cancel_event = threading.Event()

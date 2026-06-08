@@ -28,7 +28,11 @@ class Base(DeclarativeBase):
 
 
 def init_db() -> None:
-    """Run database migrations via Alembic at startup, falling back to create_all."""
+    """Run database migrations via Alembic at startup.
+
+    Falls back to create_all() only when alembic.ini is missing (dev/SQLite).
+    Migration failures in production (PostgreSQL) will fail fast.
+    """
     import os
 
     from alembic.config import Config
@@ -36,34 +40,42 @@ def init_db() -> None:
     import app.models  # noqa: F401
     from alembic import command
 
+    is_production = settings.resolved_database_url.startswith("postgresql")
+
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     ini_path = os.path.join(base_dir, "alembic.ini")
 
-    if os.path.exists(ini_path):
-        try:
-            from alembic.runtime.migration import MigrationContext
-            from alembic.script import ScriptDirectory
-
-            alembic_cfg = Config(ini_path)
-            alembic_cfg.set_main_option("sqlalchemy.url", settings.resolved_database_url)
-
-            script = ScriptDirectory.from_config(alembic_cfg)
-            with engine.connect() as conn:
-                ctx = MigrationContext.configure(conn)
-                current = ctx.get_current_revision()
-            head = script.get_current_head()
-            if current == head:
-                logger.info("Database migrations are up to date")
-            else:
-                logger.info("Running database migrations via Alembic...")
-                command.upgrade(alembic_cfg, "head")
-                logger.info("Database migrations applied successfully")
-        except Exception as e:
-            logger.error("Failed to run database migrations: %s. Falling back to create_all()", e)
-            Base.metadata.create_all(bind=engine)
-    else:
-        logger.warning("alembic.ini not found at %s. Falling back to create_all()", ini_path)
+    if not os.path.exists(ini_path):
+        if is_production:
+            raise RuntimeError(
+                "alembic.ini not found — required for PostgreSQL production deployment"
+            )
+        logger.warning("alembic.ini not found. Creating tables via create_all()")
         Base.metadata.create_all(bind=engine)
+        return
+
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+
+    alembic_cfg = Config(ini_path)
+    alembic_cfg.set_main_option("sqlalchemy.url", settings.resolved_database_url)
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        current = ctx.get_current_revision()
+    head = script.get_current_head()
+
+    if current == head:
+        logger.info("Database migrations are up to date")
+    else:
+        logger.info("Running database migrations via Alembic...")
+        try:
+            command.upgrade(alembic_cfg, "head")
+            logger.info("Database migrations applied successfully")
+        except Exception:
+            logger.exception("Database migration failed — cannot start service")
+            raise
 
 
 def get_db():

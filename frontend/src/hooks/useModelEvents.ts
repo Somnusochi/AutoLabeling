@@ -32,8 +32,10 @@ const defaults: ModelStates = {
 let cached: ModelStates = { ...defaults };
 let subscribers: Array<(s: ModelStates) => void> = [];
 let es: EventSource | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 function connect() {
+  if (subscribers.length === 0) return; // no active subscribers, don't reconnect
   if (es) return;
   es = new EventSource(`${API_BASE}/model/events`);
   es.onmessage = (e) => {
@@ -48,8 +50,8 @@ function connect() {
   es.onerror = () => {
     es?.close();
     es = null;
-    // Reconnect after a delay
-    setTimeout(connect, 5000);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(connect, 5000);
   };
 }
 
@@ -60,6 +62,10 @@ function subscribe(fn: (s: ModelStates) => void) {
   return () => {
     subscribers = subscribers.filter((s) => s !== fn);
     if (subscribers.length === 0) {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
       es?.close();
       es = null;
     }

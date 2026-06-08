@@ -74,6 +74,7 @@ declare global {
   const checkSam3Health: typeof import('./services/api').checkSam3Health
   const createContext: typeof import('react').createContext
   const createRef: typeof import('react').createRef
+  const deleteAllVideos: typeof import('./services/api').deleteAllVideos
   const deleteBox: typeof import('./services/api').deleteBox
   const deleteDetection: typeof import('./services/api').deleteDetection
   const deleteTrainingJob: typeof import('./services/api').deleteTrainingJob

@@ -191,6 +191,10 @@ export async function deleteVideo(id: string): Promise<void> {
   await request.post(`/videos/${id}/delete`);
 }
 
+export async function deleteAllVideos(): Promise<void> {
+  await request.post("/videos/delete-bulk");
+}
+
 export function keyframeImageUrl(videoId: string, keyframeId: string): string {
   return `${API_BASE}/videos/${videoId}/keyframes/${keyframeId}/image`;
 }

@@ -75,10 +75,19 @@ export function VideoPanel({ onLoadKeyframes, onValidateVideo, disabled }: Props
     onError: () => toast.error(t("videoPanel.deleteFailed")),
   });
 
+  const clearAllMut = useMutation({
+    mutationFn: deleteAllVideos,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      setSelectedVideoId(null);
+      toast.success(t("videoPanel.deleteSuccess"));
+    },
+    onError: () => toast.error(t("videoPanel.deleteFailed")),
+  });
+
   const handleClearAllVideos = useCallback(() => {
-    for (const v of allVideos) deleteMut.mutate(v.id);
-    setSelectedVideoId(null);
-  }, [allVideos, deleteMut]);
+    clearAllMut.mutate();
+  }, [clearAllMut]);
 
   const handleDrop = useCallback(
     async (e: DragEvent) => {
