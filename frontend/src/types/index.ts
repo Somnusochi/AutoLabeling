@@ -29,6 +29,7 @@ export type DetectResponse = Detection;
 
 export interface TrainingJob {
   id: string;
+  name: string | null;
   modelVariant: string;
   epochs: number;
   imgsz: number;

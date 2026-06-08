@@ -231,6 +231,7 @@
     "dataset": "数据集",
     "retrain": "重训",
     "details": "详情",
+    "clickToRename": "点击重命名",
     "retrainCreated": "重训任务已创建",
     "retrainFailed": "重训失败",
     "deleteJobConfirm": "确定删除该训练任务吗？此操作不可撤销。",

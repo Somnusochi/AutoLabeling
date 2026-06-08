@@ -231,6 +231,7 @@
     "dataset": "Dataset",
     "retrain": "Retrain",
     "details": "Details",
+    "clickToRename": "Click to rename",
     "retrainCreated": "Retrain job created successfully",
     "retrainFailed": "Failed to retrain",
     "deleteJobConfirm": "Are you sure you want to delete this training job? This action cannot be undone.",

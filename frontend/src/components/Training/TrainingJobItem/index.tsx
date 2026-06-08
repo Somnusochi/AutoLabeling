@@ -6,6 +6,9 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
   const qc = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(job.name || "");
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{
     epoch: number;
     totalEpochs: number;
@@ -38,8 +41,47 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
   return (
     <div className="rounded border border-gray-100 p-2 text-xs">
       <div className="flex items-center justify-between">
-        <div>
-          <span className="font-medium">{job.modelVariant}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {editingName ? (
+            <input
+              ref={nameInputRef}
+              value={nameValue}
+              onChange={(e) => setNameValue(e.target.value)}
+              onBlur={async () => {
+                setEditingName(false);
+                const trimmed = nameValue.trim();
+                if (trimmed !== (job.name || "")) {
+                  try {
+                    await renameTrainingJob(job.id, trimmed);
+                    qc.invalidateQueries({ queryKey: ["training-jobs"] });
+                  } catch { /* ignore */ }
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") {
+                  setNameValue(job.name || "");
+                  setEditingName(false);
+                }
+              }}
+              className="text-xs font-medium border border-primary-300 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-primary-400 max-w-[160px]"
+              maxLength={128}
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span
+              className="font-medium cursor-pointer hover:text-primary-600 truncate max-w-[200px]"
+              onClick={() => {
+                setNameValue(job.name || "");
+                setEditingName(true);
+                setTimeout(() => nameInputRef.current?.select(), 0);
+              }}
+              title={t("trainingPanel.clickToRename")}
+            >
+              {job.name || job.modelVariant}
+            </span>
+          )}
           {job.completedAt && (
             <span className="text-gray-400 ml-2">
               {new Date(job.completedAt).toLocaleString(

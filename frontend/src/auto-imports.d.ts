@@ -103,6 +103,7 @@ declare global {
   const optimisticModelLoading: typeof import('./hooks/useModelEvents').optimisticModelLoading
   const optimisticModelUnloaded: typeof import('./hooks/useModelEvents').optimisticModelUnloaded
   const parseCategories: typeof import('./lib/parsers').parseCategories
+  const renameTrainingJob: typeof import('./services/api').renameTrainingJob
   const request: typeof import('./services/request').request
   const saveFilterSettings: typeof import('./services/api').saveFilterSettings
   const startTraining: typeof import('./services/api').startTraining

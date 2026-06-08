@@ -227,6 +227,7 @@
     "dataset": "資料集合",
     "retrain": "再学習",
     "details": "詳細",
+    "clickToRename": "選択名称変更",
     "retrainCreated": "再学習任務作成",
     "retrainFailed": "再学習失敗",
     "deleteJobConfirm": "学習任務削除確認。取消不可。",

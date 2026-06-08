@@ -107,6 +107,11 @@ export async function cancelTrainingJob(id: string): Promise<TrainingJob> {
   return data.data;
 }
 
+export async function renameTrainingJob(id: string, name: string): Promise<TrainingJob> {
+  const { data } = await request.post<{ data: TrainingJob }>(`/train/jobs/${id}/rename`, { name });
+  return data.data;
+}
+
 export async function deleteTrainingJob(id: string): Promise<void> {
   await request.post(`/train/jobs/${id}/delete`);
 }
