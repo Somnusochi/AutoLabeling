@@ -13,7 +13,6 @@ import json
 import logging
 import os
 import sys
-from pathlib import Path
 from wsgiref.simple_server import make_server
 
 import numpy as np
@@ -42,14 +41,16 @@ def load_model(state: dict):
     try:
         # Use local_files_only when HF_TOKEN is not set (model already cached)
         local_only = not os.environ.get("HF_TOKEN")
-        model = Sam3Model.from_pretrained(
-            "facebook/sam3",
-            torch_dtype=torch.bfloat16,
-            local_files_only=local_only,
-        ).to(DEVICE).eval()
-        processor = Sam3Processor.from_pretrained(
-            "facebook/sam3", local_files_only=local_only
+        model = (
+            Sam3Model.from_pretrained(
+                "facebook/sam3",
+                torch_dtype=torch.bfloat16,
+                local_files_only=local_only,
+            )
+            .to(DEVICE)
+            .eval()
         )
+        processor = Sam3Processor.from_pretrained("facebook/sam3", local_files_only=local_only)
         model.eval()
 
         state["model"] = model
@@ -62,7 +63,15 @@ def load_model(state: dict):
         state["error"] = str(sys.exc_info()[1])
 
 
-def segment(model, processor, image_bytes, text="", segmentation=True, threshold=0.5, mask_threshold=0.5):
+def segment(
+    model,
+    processor,
+    image_bytes,
+    text="",
+    segmentation=True,
+    threshold=0.5,
+    mask_threshold=0.5,
+):
     """Text-based PCS: SAM3 detects + segments all instances matching text."""
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     inputs = processor(images=img, text=text or None, return_tensors="pt")
@@ -72,7 +81,9 @@ def segment(model, processor, image_bytes, text="", segmentation=True, threshold
         outputs = model(**inputs)
 
     results = processor.post_process_instance_segmentation(
-        outputs, threshold=threshold, mask_threshold=mask_threshold,
+        outputs,
+        threshold=threshold,
+        mask_threshold=mask_threshold,
         target_sizes=inputs.get("original_sizes").tolist(),
     )[0]
 
@@ -103,13 +114,17 @@ def segment(model, processor, image_bytes, text="", segmentation=True, threshold
                 if len(largest) >= 3:
                     pts = largest.squeeze(1).tolist()
                     poly = [[float(p[0]), float(p[1])] for p in pts]
-        boxes_out.append({
-            "x1": int(bbox[0]), "y1": int(bbox[1]),
-            "x2": int(bbox[2]), "y2": int(bbox[3]),
-            "confidence": score,
-            "mask_polygon": poly if poly else None,
-            "class_name": text or "object",
-        })
+        boxes_out.append(
+            {
+                "x1": int(bbox[0]),
+                "y1": int(bbox[1]),
+                "x2": int(bbox[2]),
+                "y2": int(bbox[3]),
+                "confidence": score,
+                "mask_polygon": poly if poly else None,
+                "class_name": text or "object",
+            }
+        )
     return boxes_out
 
 
@@ -136,7 +151,7 @@ def _parse_multipart(body: bytes, content_type: str) -> dict[str, bytes]:
         if header_end == -1:
             continue
         headers_block = part[:header_end].decode("latin-1")
-        value = part[header_end + 4:]
+        value = part[header_end + 4 :]
         if value.endswith(b"\r\n"):
             value = value[:-2]
 
@@ -166,18 +181,23 @@ def application(environ, start_response):
 
     if path == "/health":
         status = server_state.get("status", "unloaded")
-        body = json.dumps({
-            "status": status,
-            "device": server_state.get("device", ""),
-            "error": server_state.get("error", ""),
-        })
+        body = json.dumps(
+            {
+                "status": status,
+                "device": server_state.get("device", ""),
+                "error": server_state.get("error", ""),
+            }
+        )
         start_response("200 OK", [("Content-Type", "application/json")] + _CORS_HEADERS)
         return [body.encode()]
     if path == "/segment" and environ.get("REQUEST_METHOD") == "POST":
         try:
             if server_state.get("status") != "loaded":
                 resp = json.dumps({"error": "Model is not loaded yet"})
-                start_response("503 Service Unavailable", [("Content-Type", "application/json")] + _CORS_HEADERS)
+                start_response(
+                    "503 Service Unavailable",
+                    [("Content-Type", "application/json")] + _CORS_HEADERS,
+                )
                 return [resp.encode()]
 
             length = int(environ.get("CONTENT_LENGTH", 0))
@@ -190,8 +210,13 @@ def application(environ, start_response):
             threshold = float(form.get("threshold", b"0.5").decode() or "0.5")
             mask_threshold = float(form.get("mask_threshold", b"0.5").decode() or "0.5")
             boxes = segment(
-                server_state["model"], server_state["processor"],
-                image_bytes, text, segmentation, threshold, mask_threshold,
+                server_state["model"],
+                server_state["processor"],
+                image_bytes,
+                text,
+                segmentation,
+                threshold,
+                mask_threshold,
             )
             resp = json.dumps({"boxes": boxes})
             start_response("200 OK", [("Content-Type", "application/json")] + _CORS_HEADERS)

@@ -13,15 +13,15 @@ class VideoReader:
         return 0
 
 
-class cpu:
+class cpu:  # noqa: N801 - match decord's public API
     pass
 
 
-class gpu:
+class gpu:  # noqa: N801 - match decord's public API
     pass
 
 
-class bridge:
+class bridge:  # noqa: N801 - match decord's public API
     @staticmethod
     def set_bridge(x):
         pass

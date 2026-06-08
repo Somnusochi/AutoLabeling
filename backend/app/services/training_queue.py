@@ -24,6 +24,7 @@ def _ensure_spawn_method():
             multiprocessing.set_start_method("spawn", force=True)
         _multiprocessing_initialized = True
 
+
 _queue_lock = threading.Lock()
 _worker_thread: threading.Thread | None = None
 _running_process: multiprocessing.Process | None = None
