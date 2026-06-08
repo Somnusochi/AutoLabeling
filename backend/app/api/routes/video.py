@@ -202,10 +202,9 @@ def delete_video(
 
 @router.post("/videos/delete-bulk", status_code=204)
 def delete_videos_bulk(repo: VideoRepository = Depends(_get_video_repo)) -> None:
-    """Delete ALL videos on the server — paginates through all rows."""
-    page = 1
+    """Delete ALL videos on the server — always queries page=1 until empty."""
     while True:
-        videos, total = repo.list_videos(page=page, page_size=100)
+        videos, _ = repo.list_videos(page=1, page_size=100)
         if not videos:
             break
         for video in videos:
@@ -216,7 +215,4 @@ def delete_videos_bulk(repo: VideoRepository = Depends(_get_video_repo)) -> None
                     Path(kf.image_path).unlink(missing_ok=True)
             repo.delete_video(video)
         repo.db.commit()
-        if page * 100 >= total:
-            break
-        page += 1
     return None
