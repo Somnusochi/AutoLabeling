@@ -59,6 +59,7 @@ def init_db() -> None:
 
     alembic_cfg = Config(ini_path)
     alembic_cfg.set_main_option("sqlalchemy.url", settings.resolved_database_url)
+    alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "alembic"))
 
     script = ScriptDirectory.from_config(alembic_cfg)
     with engine.connect() as conn:
