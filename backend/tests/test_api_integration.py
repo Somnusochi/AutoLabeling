@@ -256,16 +256,40 @@ class TestTrainingFlow:
         assert resp.status_code == 200
         assert len(resp.json()["data"]) > 0
 
-    @pytest.mark.skip(reason="requires actual training, slow")
     def test_train_and_validate(self):
-        """Full training + validation flow (manual only)."""
-        # Get some detection IDs
-        list_resp = requests.get(f"{BASE}/detections", params={"page": 1, "pageSize": 5})
-        det_ids = [d["id"] for d in list_resp.json()["data"]]
-        if len(det_ids) < 3:
-            pytest.skip("Need at least 3 detections")
+        """Detect 10 images → train YOLO → verify completion and metrics."""
+        if not CAT_DIR or not os.path.isdir(CAT_DIR):
+            pytest.skip("No test images available")
+        images = sorted(
+            [f for f in os.listdir(CAT_DIR) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+        )[:10]
+        if len(images) < 5:
+            pytest.skip(f"Need at least 5 images, found {len(images)}")
 
-        # Start training
+        # Step 1: Detect 10 images
+        det_ids: list[str] = []
+        for img_name in images:
+            img_path = os.path.join(CAT_DIR, img_name)
+            with open(img_path, "rb") as f:
+                resp = requests.post(
+                    f"{BASE}/detect",
+                    files={"file": (img_name, f, "image/jpeg")},
+                    data={"categories": '["cat"]'},
+                    timeout=120,
+                )
+            assert resp.status_code == 201, f"Detect failed for {img_name}: {resp.text}"
+            det_id = resp.json()["data"]["id"]
+            # Wait briefly to ensure detection is fully processed
+            for _ in range(30):
+                detail = requests.get(f"{BASE}/detections/{det_id}").json()
+                if detail.get("data", {}).get("status") == "completed":
+                    break
+                time.sleep(1)
+            det_ids.append(det_id)
+
+        assert len(det_ids) >= 5, f"Only detected {len(det_ids)} images"
+
+        # Step 2: Start training
         train_resp = requests.post(
             f"{BASE}/train/jobs",
             json={
@@ -280,17 +304,26 @@ class TestTrainingFlow:
             },
             timeout=30,
         )
-        assert train_resp.status_code == 201
+        assert train_resp.status_code == 201, f"Train create failed: {train_resp.text}"
         job_id = train_resp.json()["data"]["id"]
 
-        # Wait for training to complete
-        for _ in range(60):
+        # Step 3: Poll until training completes
+        job = None
+        for _ in range(120):  # up to 10 minutes
             job = requests.get(f"{BASE}/train/jobs/{job_id}").json()["data"]
-            if job["status"] in ("completed", "failed"):
+            status = job["status"]
+            if status in ("completed", "failed", "cancelled"):
                 break
             time.sleep(5)
-        assert job["status"] == "completed"
-        assert job.get("metrics", {}).get("mAP50", 0) >= 0
+        assert job is not None
+        assert job["status"] == "completed", f"Training failed: {job.get('errorMessage', 'unknown')}"
+        assert job.get("metrics") is not None, "No metrics returned"
+        assert job["metrics"]["num_samples"] >= 1, f"Expected at least 1 sample, got {job['metrics'].get('num_samples')}"
+
+        # Step 4: Download model
+        dl_resp = requests.get(f"{BASE}/train/jobs/{job_id}/download", timeout=30)
+        assert dl_resp.status_code == 200
+        assert len(dl_resp.content) > 1000, "Model file too small"
 
         # Validate with trained model
         val_url = f"{BASE}/train/jobs/{job_id}/predict"
