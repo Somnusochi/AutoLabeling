@@ -206,6 +206,50 @@ class TestTrainingFlow:
         resp = requests.get(f"{BASE}/train/jobs", timeout=5)
         assert resp.status_code == 200
 
+    def test_rename_job(self):
+        """Rename training job — success, 404, empty → null."""
+        # Get an existing job to rename
+        resp = requests.get(f"{BASE}/train/jobs", timeout=5)
+        assert resp.status_code == 200
+        jobs = resp.json().get("data", [])
+        if not jobs:
+            pytest.skip("No training jobs to rename")
+        job_id = jobs[0]["id"]
+
+        # Successful rename
+        resp = requests.post(
+            f"{BASE}/train/jobs/{job_id}/rename",
+            json={"name": "test-rename"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["name"] == "test-rename"
+
+        # Empty string → null
+        resp = requests.post(
+            f"{BASE}/train/jobs/{job_id}/rename",
+            json={"name": ""},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["name"] is None
+
+        # Restore to original (no name)
+        requests.post(
+            f"{BASE}/train/jobs/{job_id}/rename",
+            json={"name": ""},
+            timeout=5,
+        )
+
+    def test_rename_job_404(self):
+        """Rename non-existent job returns 404."""
+        resp = requests.post(
+            f"{BASE}/train/jobs/00000000-0000-0000-0000-000000000000/rename",
+            json={"name": "test"},
+            timeout=5,
+        )
+        assert resp.status_code == 404
+
     def test_list_variants(self):
         """YOLO variants endpoint works."""
         resp = requests.get(f"{BASE}/train/variants", timeout=5)
