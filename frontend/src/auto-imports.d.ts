@@ -24,9 +24,11 @@ declare global {
   const DETECT_TIMEOUT: typeof import('./services/request').DETECT_TIMEOUT
   const DatasetImportModal: typeof import('./components/DatasetImportModal/index').DatasetImportModal
   const DetectionCanvas: typeof import('./components/DetectionCanvas/index').DetectionCanvas
+  const DetectionControls: typeof import('./components/Sidebar/DetectionControls').DetectionControls
   const DetectionResult: typeof import('./components/DetectionResult/index').DetectionResult
   const DetectionSkeleton: typeof import('./components/LoadingSkeleton/index').DetectionSkeleton
   const ErrorBoundary: typeof import('./components/ErrorBoundary/index').ErrorBoundary
+  const ExtractionPanel: typeof import('./components/VideoPanel/ExtractionPanel').ExtractionPanel
   const FilterPanel: typeof import('./components/FilterPanel/index').FilterPanel
   const Fragment: typeof import('react').Fragment
   const HistoryList: typeof import('./components/HistoryList/index').HistoryList
@@ -46,6 +48,7 @@ declare global {
   const ResultTable: typeof import('./components/ResultTable/index').ResultTable
   const Sam3Status: typeof import('./components/Sam3Status/index').Sam3Status
   const Sidebar: typeof import('./components/Sidebar/index').Sidebar
+  const SidebarHeader: typeof import('./components/Sidebar/Header').SidebarHeader
   const StatusBadge: typeof import('./components/Training/StatusBadge/index').StatusBadge
   const Suspense: typeof import('react').Suspense
   const ThemeContext: typeof import('./hooks/useTheme').ThemeContext
@@ -57,6 +60,7 @@ declare global {
   const UPLOAD_TIMEOUT: typeof import('./services/request').UPLOAD_TIMEOUT
   const ValidationSettings: typeof import('./components/ValidationSettings/index').ValidationSettings
   const VideoDetail: typeof import('./components/VideoDetail/index').VideoDetail
+  const VideoList: typeof import('./components/VideoPanel/VideoList').VideoList
   const VideoPanel: typeof import('./components/VideoPanel/index').VideoPanel
   const VideoValidator: typeof import('./components/VideoValidator/index').VideoValidator
   const addBox: typeof import('./services/api').addBox
@@ -253,6 +257,6 @@ declare global {
   export type { YoloSeries, ImportResult, ImportProgress, ChunkInitResult } from './services/api'
   import('./services/api')
   // @ts-ignore
-  export type { BBox, Detection, DetectResponse, TrainingJob, KeyFrame, VideoInfo, VideoList, ListResponse } from './types/index'
+  export type { BBox, Detection, DetectResponse, TrainingJob, KeyFrame, VideoInfo, ListResponse } from './types/index'
   import('./types/index')
 }

@@ -32,7 +32,6 @@ export function Home() {
     result,
     setResult,
     batchResults,
-    setBatchResults,
   } = useAppStore();
 
   const {
@@ -81,7 +80,6 @@ export function Home() {
     loading,
     batchProgress,
     batchResults,
-    setBatchResults,
     cancel,
     historyQuery: {
       hasNextPage: historyQuery.hasNextPage ?? false,
