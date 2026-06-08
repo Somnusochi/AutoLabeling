@@ -2,7 +2,7 @@ import axios from "axios";
 
 export const request = axios.create({
   baseURL: API_BASE,
-  timeout: 300_000,
+  timeout: DEFAULT_TIMEOUT,
 });
 
 // Axios response interceptor to extract error details uniformly
@@ -18,3 +18,7 @@ request.interceptors.response.use(
     return Promise.reject(new Error(message));
   },
 );
+
+export const DETECT_TIMEOUT = 600_000;       // 10 min — ML inference can be slow
+export const UPLOAD_TIMEOUT = 300_000;       // 5 min — chunked uploads
+export const DEFAULT_TIMEOUT = 60_000;        // 1 min — list/rename/cancel etc.
