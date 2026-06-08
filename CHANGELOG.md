@@ -56,6 +56,9 @@
 - Refactor: rename `useInfiniteScroll` → `useScrollLoad` (avoid ahooks name conflict)
 - Perf: increase virtual list `overscan` 10→20 to reduce scroll white flash
 
+### Fixes
+- Fix: multiprocessing start method `spawn` for CUDA compatibility in YOLO training
+
 ## v1.5.8 (2026-06-08)
 
 ### Docker & CI
