@@ -25,7 +25,10 @@ export async function detectImage(
     form.append("use_sam2", "true");
     if (sam2ScoreThreshold != null) form.append("sam2_score_threshold", String(sam2ScoreThreshold));
   }
-  const { data } = await request.post<{ data: DetectResponse }>("/detect", form, { signal });
+  const { data } = await request.post<{ data: DetectResponse }>("/detect", form, {
+    signal,
+    timeout: DETECT_TIMEOUT,
+  });
   return data.data;
 }
 
@@ -34,7 +37,7 @@ export async function listDetections(
   pageSize = 10000,
 ): Promise<{ items: Detection[]; total: number }> {
   const { data } = await request.get<ListResponse<Detection>>("/detections", {
-    params: { page, pageSize },
+    params: { page, pageSize: 100000 },
   });
   return { items: data.data, total: data.total };
 }
@@ -143,7 +146,9 @@ export function downloadBlob(blob: Blob, filename: string): void {
 export async function uploadVideo(file: File): Promise<VideoInfo> {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await request.post<{ data: VideoInfo }>("/videos/upload", form);
+  const { data } = await request.post<{ data: VideoInfo }>("/videos/upload", form, {
+    timeout: UPLOAD_TIMEOUT,
+  });
   return data.data;
 }
 
@@ -152,7 +157,7 @@ export async function listVideos(
   pageSize = 20,
 ): Promise<{ items: VideoInfo[]; total: number }> {
   const { data } = await request.get<ListResponse<VideoInfo>>("/videos", {
-    params: { page, pageSize },
+    params: { page, pageSize: 100 },
   });
   return { items: data.data, total: data.total };
 }
@@ -306,7 +311,9 @@ export async function importDataset(
   const form = new FormData();
   form.append("file", file);
   form.append("format", format);
-  const { data } = await request.post<{ data: ImportResult }>("/datasets/import", form);
+  const { data } = await request.post<{ data: ImportResult }>("/datasets/import", form, {
+    timeout: UPLOAD_TIMEOUT,
+  });
   return data.data;
 }
 

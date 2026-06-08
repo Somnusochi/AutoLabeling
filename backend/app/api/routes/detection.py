@@ -93,7 +93,7 @@ async def create_detection(
 @router.get("/detections")
 def list_detections(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=10000, validation_alias="pageSize"),
+    page_size: int = Query(20, ge=1, le=100000, validation_alias="pageSize"),
     repo: DetectionRepository = Depends(get_repo),
 ) -> APIResponse:
     items, total = repo.list(page=page, page_size=page_size)
