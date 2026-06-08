@@ -316,9 +316,12 @@ class TestTrainingFlow:
                 break
             time.sleep(5)
         assert job is not None
-        assert job["status"] == "completed", f"Training failed: {job.get('errorMessage', 'unknown')}"
+        assert job["status"] == "completed", (
+            f"Training failed: {job.get('errorMessage', 'unknown')}"
+        )
         assert job.get("metrics") is not None, "No metrics returned"
-        assert job["metrics"]["num_samples"] >= 1, f"Expected at least 1 sample, got {job['metrics'].get('num_samples')}"
+        ns = job["metrics"]["num_samples"]
+        assert ns >= 1, f"Expected at least 1 sample, got {ns}"
 
         # Step 4: Download model
         dl_resp = requests.get(f"{BASE}/train/jobs/{job_id}/download", timeout=30)
