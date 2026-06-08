@@ -66,6 +66,23 @@
 
 ## 快速开始
 
+### CLI（推荐 macOS / Linux）
+
+```bash
+git clone https://github.com/Somnusochi/VLM-AutoYOLO.git
+cd VLM-AutoYOLO
+python3 cli.py all
+```
+
+CLI 自动处理所有环境准备：依赖检查、Python venv、pip install、pnpm install、数据库迁移，然后启动前后端。浏览器打开 http://localhost:5173。
+
+**命令：**
+```bash
+python3 cli.py setup   # 安装依赖 + 初始化数据库
+python3 cli.py start   # 启动服务
+python3 cli.py all     # setup + start
+```
+
 ### Docker 部署
 
 > **环境要求：** Linux 或 Windows (WSL2) + NVIDIA GPU + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)。

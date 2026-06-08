@@ -66,6 +66,23 @@ Comprehensive guides: quick start, annotation best practices, training parameter
 
 ## Quick Start
 
+### CLI (Recommended for macOS / Linux)
+
+```bash
+git clone https://github.com/Somnusochi/VLM-AutoYOLO.git
+cd VLM-AutoYOLO
+python3 cli.py all
+```
+
+The CLI handles everything: dependency checks, Python venv, pip install, pnpm install, database migrations, and launches both services. Open http://localhost:5173.
+
+**Commands:**
+```bash
+python3 cli.py setup   # Install deps + init database
+python3 cli.py start   # Launch services (auto-detects setup)
+python3 cli.py all     # Setup + start
+```
+
 ### Docker Deployment
 
 > **Requirements:** Linux or Windows (WSL2) with NVIDIA GPU + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
