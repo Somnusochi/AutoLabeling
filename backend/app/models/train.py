@@ -17,6 +17,7 @@ class TrainingJob(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
+    name: Mapped[str | None] = mapped_column(String(128), nullable=True, default=None)
     model_variant: Mapped[str] = mapped_column(String(32), default="yolo11n")
     epochs: Mapped[int] = mapped_column(Integer, default=100)
     imgsz: Mapped[int] = mapped_column(Integer, default=640)
