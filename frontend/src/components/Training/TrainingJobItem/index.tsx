@@ -173,7 +173,7 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
                         trigger="hover"
                         placement="top"
                       >
-                        <span className="cursor-pointer border-b border-dashed border-gray-300">
+                        <span className="cursor-pointer border-b border-dashed border-gray-300 text-primary-600">
                           {String(job.metrics?.num_classes ?? "-")}
                         </span>
                       </Popover>
