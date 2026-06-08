@@ -59,6 +59,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL 2>/dev/null || true
+          docker system prune -af --volumes 2>/dev/null || true
+          df -h /
+
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
