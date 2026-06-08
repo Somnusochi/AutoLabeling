@@ -7,6 +7,9 @@ export const TrainingCandidateList = memo(
     setHoveredRect,
     enterTimerRef,
     leaveTimerRef,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
   }: {
     filteredDetections: Detection[];
     selected: Set<string>;
@@ -15,8 +18,13 @@ export const TrainingCandidateList = memo(
     setHoveredRect: (rect: { right: number; top: number } | null) => void;
     enterTimerRef: { current: number | null };
     leaveTimerRef: { current: number | null };
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+    fetchNextPage: () => void;
   }) => {
     const candParentRef = useRef<HTMLDivElement>(null);
+
+    useInfiniteScroll(candParentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
 
     const candVirtualizer = useVirtualizer({
       count: filteredDetections.length,

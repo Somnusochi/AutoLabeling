@@ -1,5 +1,6 @@
 import { Select, InputNumber, Dropdown } from "antd";
 import { useAppStore } from "@/store/useAppStore";
+import { JobHistoryList } from "@/components/Training/JobHistoryList";
 
 // ── Component ───────────────────────────────────────
 
@@ -7,7 +8,15 @@ interface Props {
   detections: Detection[];
 }
 
-export function TrainingPanel({ detections }: Props) {
+interface Props {
+  detections: Detection[];
+  total: number;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
+}
+
+export function TrainingPanel({ detections, total, hasNextPage, isFetchingNextPage, fetchNextPage }: Props) {
   const { t } = useTranslation();
   const isTraining = useAppStore((s) => s.isTraining);
   const setIsTraining = useAppStore((s) => s.setIsTraining);
@@ -40,24 +49,31 @@ export function TrainingPanel({ detections }: Props) {
   const variantKeys = Object.keys(variantOptions);
   const currentVariant = variant in variantOptions ? variant : (variantKeys[0] ?? variant);
 
-  const jobsQuery = useQuery({
+  const jobsQuery = useInfiniteQuery({
     queryKey: ["training-jobs"],
-    queryFn: fetchTrainingJobs,
+    queryFn: ({ pageParam }) => fetchTrainingJobs(pageParam, 30),
+    getNextPageParam: (lastPage, allPages) => {
+      const totalFetched = allPages.reduce((sum, p) => sum + p.items.length, 0);
+      return totalFetched < lastPage.total ? allPages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
     refetchInterval: (query) => {
-      const jobs = query.state.data;
-      if (!jobs || jobs.length === 0) return false;
-      // Only poll if any job is in a transient state
-      const hasActiveJobs = jobs.some((j) => j.status === "running" || j.status === "pending");
+      const allItems = query.state.data?.pages.flatMap((p) => p.items) ?? [];
+      if (allItems.length === 0) return false;
+      const hasActiveJobs = allItems.some((j) => j.status === "running" || j.status === "pending");
       return hasActiveJobs ? 10_000 : false;
     },
     staleTime: 5_000,
   });
 
+  const allJobs = useMemo(
+    () => jobsQuery.data?.pages.flatMap((p) => p.items) ?? [],
+    [jobsQuery.data],
+  );
+
   useEffect(() => {
-    const jobs = jobsQuery.data;
-    if (!jobs) return;
-    setIsTraining(jobs.some((j) => j.status === "running" || j.status === "pending"));
-  }, [jobsQuery.data, setIsTraining]);
+    setIsTraining(allJobs.some((j) => j.status === "running" || j.status === "pending"));
+  }, [allJobs, setIsTraining]);
 
   const trainMut = useMutation({
     mutationFn: startTraining,
@@ -138,6 +154,8 @@ export function TrainingPanel({ detections }: Props) {
 
   const selectedCount = selected.size;
 
+  const [loadingAll, handleLoadAll] = useLoadAll(fetchNextPage);
+
   const [hoveredDetId, setHoveredDetId] = useState<string | null>(null);
   const [hoveredRect, setHoveredRect] = useState<{ right: number; top: number } | null>(null);
   const leaveTimerRef = useRef<number | null>(null);
@@ -183,6 +201,18 @@ export function TrainingPanel({ detections }: Props) {
             filtered: trainFilter.size > 0 ? ` / ${filteredDetections.length}` : "",
             total: detections.length,
           })}
+          {hasNextPage && (
+            <button
+              type="button"
+              disabled={loadingAll || isFetchingNextPage}
+              onClick={handleLoadAll}
+              className="ml-2 text-primary-600 hover:text-primary-700 disabled:opacity-50"
+            >
+              {loadingAll
+                ? t("common.loading")
+                : t("trainingPanel.loadAll", { remaining: total - detections.length })}
+            </button>
+          )}
         </span>
         <div className="flex items-center gap-2">
           {selectedCount > 0 && (
@@ -244,6 +274,9 @@ export function TrainingPanel({ detections }: Props) {
         setHoveredRect={setHoveredRect}
         enterTimerRef={enterTimerRef}
         leaveTimerRef={leaveTimerRef}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        fetchNextPage={fetchNextPage}
       />
 
       {/* Global single-instance hover preview popup */}
@@ -366,15 +399,13 @@ export function TrainingPanel({ detections }: Props) {
       </button>
 
       {/* Job history */}
-      {jobsQuery.data && jobsQuery.data.length > 0 && (
-        <div>
-          <p className="text-xs font-medium text-gray-500 mb-1">{t("trainingPanel.trainJobs")}</p>
-          <div className="space-y-1">
-            {jobsQuery.data.map((job) => (
-              <TrainingJobItem key={job.id} job={job} />
-            ))}
-          </div>
-        </div>
+      {allJobs.length > 0 && (
+        <JobHistoryList
+          jobs={allJobs}
+          hasNextPage={jobsQuery.hasNextPage ?? false}
+          isFetchingNextPage={jobsQuery.isFetchingNextPage}
+          fetchNextPage={() => jobsQuery.fetchNextPage()}
+        />
       )}
       <DatasetImportModal
         open={importModalOpen}
