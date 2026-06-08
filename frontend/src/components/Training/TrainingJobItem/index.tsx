@@ -1,4 +1,4 @@
-import { Modal, Popconfirm } from "antd";
+import { Modal, Popconfirm, Popover } from "antd";
 import { StatusBadge } from "../StatusBadge";
 
 export function TrainingJobItem({ job }: { job: TrainingJob }) {
@@ -151,7 +151,37 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
                 {(job.metrics.recall as number)?.toFixed(3) ?? "-"}
               </span>
               <span className="font-medium">{String(job.metrics.num_samples ?? "-")}</span>
-              <span className="font-medium">{String(job.metrics.num_classes ?? "-")}</span>
+              <span className="font-medium">
+                {(() => {
+                  const cMap = (job.metrics?.class_map as Record<string, string>) || job.classMap;
+                  if (cMap && Object.values(cMap).length > 0) {
+                    return (
+                      <Popover
+                        content={
+                          <div className="max-w-[200px] flex flex-wrap gap-1">
+                            {Object.values(cMap).map((cat) => (
+                              <span
+                                key={cat}
+                                className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]"
+                              >
+                                {cat}
+                              </span>
+                            ))}
+                          </div>
+                        }
+                        title={null}
+                        trigger="hover"
+                        placement="top"
+                      >
+                        <span className="cursor-pointer border-b border-dashed border-gray-300">
+                          {String(job.metrics?.num_classes ?? "-")}
+                        </span>
+                      </Popover>
+                    );
+                  }
+                  return String(job.metrics?.num_classes ?? "-");
+                })()}
+              </span>
             </div>
           )}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
