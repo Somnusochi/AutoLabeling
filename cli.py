@@ -132,6 +132,28 @@ def run_migrations():
     else:
         ok("up to date")
 
+def download_models():
+    step("Checking VLM model (LocateAnything-3B, ~6GB)...")
+    model_dir = BACKEND / "model"
+    if model_dir.exists() and any(model_dir.iterdir()):
+        ok("already cached")
+        return
+    print(f"  Model not found. Downloading to {model_dir}...")
+    print("  This may take 10-30 minutes depending on your network.")
+    try:
+        run(
+            [
+                str(PYTHON), "-c",
+                "from huggingface_hub import snapshot_download; "
+                "snapshot_download('nvidia/LocateAnything-3B', local_dir='model')",
+            ],
+            cwd=BACKEND,
+        )
+        ok("downloaded")
+    except Exception as e:
+        print(f"  {red('✗')} Download failed: {e}")
+        print("  The model will be downloaded on first detection instead.")
+
 
 # ── Start ──────────────────────────────────────────────
 
@@ -187,7 +209,7 @@ def start_frontend(port=5173, backend_port=8000):
 
 # ── Main ────────────────────────────────────────────────
 
-def cmd_setup():
+def cmd_setup(skip_models=False):
     print(green("VLM-AutoYOLO Setup\n"))
     check_python()
     check_node()
@@ -198,6 +220,8 @@ def cmd_setup():
     install_node_deps()
     check_db_config()
     run_migrations()
+    if not skip_models:
+        download_models()
     print(f"\n{green('Setup complete!')} Run: {cyan('python cli.py start')}")
 
 def cmd_start():
@@ -222,21 +246,31 @@ def cmd_start():
         print(f"\n{green('已关闭')}")
 
 def main():
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "start"
+    args = sys.argv[1:]
+    skip_models = "--no-models" in args
+    cmds = [a for a in args if not a.startswith("--")]
+    cmd = cmds[0] if cmds else "start"
 
     if cmd == "setup":
-        cmd_setup()
+        cmd_setup(skip_models=skip_models)
     elif cmd == "start":
         cmd_start()
     elif cmd == "all":
-        cmd_setup()
+        cmd_setup(skip_models=skip_models)
         print()
         cmd_start()
+    elif cmd == "download":
+        check_python()
+        setup_venv()
+        install_python_deps()
+        download_models()
     else:
-        print("Usage: python cli.py [setup|start|all]")
-        print("  setup  — install dependencies and init database")
-        print("  start  — launch backend + frontend (auto-setup if needed)")
-        print("  all    — setup + start")
+        print("Usage: python cli.py [setup|start|all|download] [--no-models]")
+        print("  setup       — install deps, init DB, download models")
+        print("  start       — launch backend + frontend")
+        print("  all         — setup + start")
+        print("  download    — download/re-download models only")
+        print("  --no-models — skip model download (for offline/slow networks)")
         sys.exit(1)
 
 if __name__ == "__main__":
