@@ -52,12 +52,16 @@ export function TrainingPreview({ detection }: { detection: Detection }) {
           ctx.strokeStyle = color;
           ctx.lineWidth = 1.5;
           ctx.strokeRect(x, y, w, h);
+          // Label positioning — same logic as DetectionCanvas drawRect
           ctx.font = "10px system-ui";
-          const tw = ctx.measureText(box.className).width + 4;
+          const tw = ctx.measureText(box.className).width + 6;
+          const labelX = Math.max(0, Math.min(x, canvas.width - tw));
+          const labelY = y < 16 ? y + 2 : y - 16;
+          const textY = y < 16 ? y + 13 : y - 5;
           ctx.fillStyle = color;
-          ctx.fillRect(x, y - 14, tw, 14);
+          ctx.fillRect(labelX, labelY, tw, 15);
           ctx.fillStyle = "#fff";
-          ctx.fillText(box.className, x + 2, y - 4);
+          ctx.fillText(box.className, labelX + 3, textY);
         }
       });
     };
