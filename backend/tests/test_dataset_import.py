@@ -10,17 +10,12 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from app.services.dataset_import import (
-    _parse_coco_zip,
-    _parse_createml_zip,
-    _parse_voc_zip,
-    _parse_yolo_line,
-    _parse_yolo_seg_line,
-    _parse_yolo_zip,
-    _read_image_size,
-    _read_yolo_names,
-    _save_image,
-)
+from app.services.dataset_import.coco import parse_coco_zip
+from app.services.dataset_import.createml import parse_createml_zip
+from app.services.dataset_import.helpers import read_image_size, save_image
+from app.services.dataset_import.voc import parse_voc_zip
+from app.services.dataset_import.yolo import _parse_yolo_line, _read_yolo_names, parse_yolo_zip
+from app.services.dataset_import.yolo_seg import _parse_yolo_seg_line
 
 
 def _make_zip(spec: dict) -> str:
@@ -80,7 +75,7 @@ class TestYoloZip:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
-                items = _parse_yolo_zip(d)
+                items = parse_yolo_zip(d)
                 assert len(items) == 1
                 assert items[0]["image_name"] == "img1.jpg"
                 assert len(items[0]["boxes"]) == 1
@@ -100,7 +95,7 @@ class TestYoloZip:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
                 with pytest.raises(ValueError, match="labels.*images"):
-                    _parse_yolo_zip(d)
+                    parse_yolo_zip(d)
         finally:
             os.unlink(zip_path)
 
@@ -180,7 +175,7 @@ class TestCocoZip:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
-                items = _parse_coco_zip(d)
+                items = parse_coco_zip(d)
                 assert len(items) == 1
                 assert items[0]["image_name"] == "img1.jpg"
                 assert len(items[0]["boxes"]) == 1
@@ -204,7 +199,7 @@ class TestCocoZip:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
-                items = _parse_coco_zip(d)
+                items = parse_coco_zip(d)
                 assert items[0]["boxes"] == []
         finally:
             os.unlink(zip_path)
@@ -216,7 +211,7 @@ class TestCocoZip:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
                 with pytest.raises(ValueError, match="COCO"):
-                    _parse_coco_zip(d)
+                    parse_coco_zip(d)
         finally:
             os.unlink(zip_path)
 
@@ -239,7 +234,7 @@ class TestVocZip:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
-                items = _parse_voc_zip(d)
+                items = parse_voc_zip(d)
                 assert len(items) == 1
                 assert items[0]["image_name"] == "img1.jpg"
                 assert len(items[0]["boxes"]) == 1
@@ -256,7 +251,7 @@ class TestVocZip:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
                 with pytest.raises(ValueError, match="VOC"):
-                    _parse_voc_zip(d)
+                    parse_voc_zip(d)
         finally:
             os.unlink(zip_path)
 
@@ -280,7 +275,7 @@ class TestCreateMLZip:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
-                items = _parse_createml_zip(d)
+                items = parse_createml_zip(d)
                 assert len(items) == 1
                 assert items[0]["image_name"] == "img1.jpg"
                 assert len(items[0]["boxes"]) == 1
@@ -296,7 +291,7 @@ class TestCreateMLZip:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
                 with pytest.raises(ValueError):
-                    _parse_createml_zip(d)
+                    parse_createml_zip(d)
         finally:
             os.unlink(zip_path)
 
@@ -309,7 +304,7 @@ class TestCreateMLZip:
             with tempfile.TemporaryDirectory() as d:
                 with zipfile.ZipFile(zip_path, "r") as zf:
                     zf.extractall(d)
-                items = _parse_createml_zip(d)
+                items = parse_createml_zip(d)
                 assert items[0]["boxes"] == []
         finally:
             os.unlink(zip_path)
@@ -318,27 +313,27 @@ class TestCreateMLZip:
 # ── Helpers ─────────────────────────────────────────
 
 
-def test_read_image_size():
+def testread_image_size():
     img = _make_image()
-    w, h = _read_image_size(None)
+    w, h = read_image_size(None)
     assert w == 0
     assert h == 0
 
     with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
         f.write(img)
         f.flush()
-        w, h = _read_image_size(f.name)
+        w, h = read_image_size(f.name)
         os.unlink(f.name)
     assert w == 10
     assert h == 10
 
 
-def test_save_image():
+def testsave_image():
     img = _make_image()
     with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as src:
         src.write(img)
         src.flush()
-        dst = _save_image(src.name, "test.jpg")
+        dst = save_image(src.name, "test.jpg")
         try:
             assert os.path.exists(dst)
             assert dst.endswith("_test.jpg")
