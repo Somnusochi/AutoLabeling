@@ -232,13 +232,17 @@ def chunk_cancel(upload_id: str) -> APIResponse:
 # ── Direct upload (small files) ─────────────────────
 
 
-@router.post("/datasets/import", status_code=201)
+@router.post("/datasets/import", status_code=201, deprecated=True)
 def import_dataset(
     file: UploadFile = File(...),
     fmt: str = Form("yolo", alias="format"),
     repo: DetectionRepository = Depends(get_repo),
 ) -> APIResponse:
-    """Upload a ZIP dataset and import annotations (direct, for smaller files)."""
+    """[DEPRECATED] Use chunked upload instead.
+
+    Upload a ZIP dataset and import annotations (direct, for smaller files).
+    This endpoint is deprecated and will be removed in a future version.
+    """
     from ...services.dataset_import import import_dataset as do_import
 
     if not file.filename or not file.filename.endswith(".zip"):

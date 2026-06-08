@@ -88,7 +88,7 @@ Base URL: `http://localhost:8000/api/v1`
 
 | 方法 | 路径 | 说明 |
 |--------|------|-------------|
-| POST | `/datasets/import` | 直接上传（≤200MB ZIP），后台启动导入 |
+| POST | `/datasets/import` | ⚠️ 已废弃 — 直接上传（≤200MB ZIP）。请使用分片上传 |
 | POST | `/datasets/import/chunk/init` | 创建/续传分片上传会话，最大 10GB |
 | POST | `/datasets/import/chunk/{id}/{n}` | 上传分片 `n`（二进制 body） |
 | GET | `/datasets/import/chunk/{id}` | 查看上传状态（已上传分片列表） |
