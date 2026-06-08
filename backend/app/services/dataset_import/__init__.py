@@ -51,7 +51,7 @@ def import_dataset(
         with zipfile.ZipFile(zip_path, "r") as zf:
             for member in zf.infolist():
                 member_path = (extract_path / member.filename).resolve()
-                if not str(member_path).startswith(str(extract_path) + "/"):
+                if not member_path.is_relative_to(extract_path):
                     logger.warning("Skipping suspicious path in ZIP: %s", member.filename)
                     continue
                 zf.extract(member, extract_path)
