@@ -74,7 +74,7 @@ export function HistoryList({
     overscan: 20,
   });
 
-  useInfiniteScroll(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
+  useScrollLoad(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
 
   if (list.length === 0) {
     return (

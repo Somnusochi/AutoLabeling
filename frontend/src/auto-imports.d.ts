@@ -174,7 +174,7 @@ declare global {
   const useImperativeHandle: typeof import('react').useImperativeHandle
   const useInViewport: typeof import('ahooks').useInViewport
   const useInfiniteQuery: typeof import('@tanstack/react-query').useInfiniteQuery
-  const useInfiniteScroll: typeof import('./hooks/useInfiniteScroll').useInfiniteScroll
+  const useInfiniteScroll: typeof import('ahooks').useInfiniteScroll
   const useInsertionEffect: typeof import('react').useInsertionEffect
   const useInterval: typeof import('ahooks').useInterval
   const useIsomorphicLayoutEffect: typeof import('ahooks').useIsomorphicLayoutEffect
@@ -210,6 +210,7 @@ declare global {
   const useResponsive: typeof import('ahooks').useResponsive
   const useSafeState: typeof import('ahooks').useSafeState
   const useScroll: typeof import('ahooks').useScroll
+  const useScrollLoad: typeof import('./hooks/useScrollLoad').useScrollLoad
   const useSelections: typeof import('ahooks').useSelections
   const useSessionStorageState: typeof import('ahooks').useSessionStorageState
   const useSet: typeof import('ahooks').useSet

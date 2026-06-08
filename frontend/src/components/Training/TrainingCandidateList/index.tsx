@@ -25,7 +25,7 @@ export const TrainingCandidateList = memo(
     const { t } = useTranslation();
     const candParentRef = useRef<HTMLDivElement>(null);
 
-    useInfiniteScroll(candParentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
+    useScrollLoad(candParentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
 
     const candVirtualizer = useVirtualizer({
       count: filteredDetections.length,

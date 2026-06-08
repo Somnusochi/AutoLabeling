@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@/utils/test-utils";
 import { useRef } from "react";
-import { useInfiniteScroll } from "./useInfiniteScroll";
+import { useScrollLoad } from "./useScrollLoad";
 
-describe("useInfiniteScroll", () => {
+describe("useScrollLoad", () => {
   it("does not fire when not scrolled near bottom", () => {
     const fetchNextPage = vi.fn();
     const { result: refResult } = renderHook(() => useRef<HTMLDivElement>(null));
 
     renderHook(() =>
-      useInfiniteScroll(refResult.current, true, false, fetchNextPage, 100),
+      useScrollLoad(refResult.current, true, false, fetchNextPage, 100),
     );
 
     expect(fetchNextPage).not.toHaveBeenCalled();
@@ -26,7 +26,7 @@ describe("useInfiniteScroll", () => {
     const ref = { current: el };
 
     renderHook(() =>
-      useInfiniteScroll(ref, true, false, fetchNextPage, 100),
+      useScrollLoad(ref, true, false, fetchNextPage, 100),
     );
 
     el.dispatchEvent(new Event("scroll"));
@@ -44,7 +44,7 @@ describe("useInfiniteScroll", () => {
     const ref = { current: el };
 
     renderHook(() =>
-      useInfiniteScroll(ref, false, false, fetchNextPage, 100),
+      useScrollLoad(ref, false, false, fetchNextPage, 100),
     );
 
     el.dispatchEvent(new Event("scroll"));
@@ -62,7 +62,7 @@ describe("useInfiniteScroll", () => {
     const ref = { current: el };
 
     renderHook(() =>
-      useInfiniteScroll(ref, true, true, fetchNextPage, 100),
+      useScrollLoad(ref, true, true, fetchNextPage, 100),
     );
 
     el.dispatchEvent(new Event("scroll"));

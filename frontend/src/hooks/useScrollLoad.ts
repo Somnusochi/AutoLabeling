@@ -4,7 +4,7 @@ import type { RefObject } from "react";
  * Triggers fetchNextPage when scrollbar nears bottom of a container.
  * Use across all virtual lists to avoid duplicating scroll logic.
  */
-export function useInfiniteScroll(
+export function useScrollLoad(
   containerRef: RefObject<HTMLElement | null>,
   hasNextPage: boolean,
   isFetchingNextPage: boolean,

@@ -31,7 +31,7 @@ export function VideoList({
     overscan: 20,
   });
 
-  useInfiniteScroll(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
+  useScrollLoad(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
 
   return (
     <>
