@@ -198,6 +198,15 @@ export function HistoryList({
               );
             })}
           </div>
+          {isFetchingNextPage ? (
+            <p className="text-xs text-center text-gray-400 py-1">{t("common.loading")}</p>
+          ) : hasNextPage ? (
+            <p className="text-xs text-center text-gray-400 py-1">
+              {t("historyList.loadedCount", { loaded: list.length, total: total })}
+            </p>
+          ) : list.length > 0 ? (
+            <p className="text-xs text-center text-gray-300 py-1">{t("historyList.allLoaded")}</p>
+          ) : null}
         </div>
       )}
 

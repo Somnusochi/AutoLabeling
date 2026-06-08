@@ -130,7 +130,8 @@
     "expandAll": "Expand all {{count}} frames",
     "selectMethodToExtract": "Select extraction method and click \"Extract Keyframes\"",
     "extractSuccessSSIM": "Extracted {{count}} keyframes (SSIM deduplicated)",
-    "clearAllVideos": "Clear All Videos"
+    "clearAllVideos": "Clear All Videos",
+    "allVideosLoaded": "All videos loaded"
   },
   "keyframeGrid": {
     "frameNum": "Frame",
@@ -159,7 +160,9 @@
     "clearFilter": "Clear Filter",
     "matchCount": "Filtered {{current}} / {{total}} records",
     "noMatchRecords": "No matching records",
-    "loadAll": "Load All ({{remaining}} remaining)"
+    "loadAll": "Load All ({{remaining}} remaining)",
+    "allLoaded": "All records loaded",
+    "loadedCount": "Loaded {{loaded}} / {{total}}"
   },
   "detectionResult": {
     "drawCategoryPlaceholder": "Annotate category...",
@@ -205,6 +208,8 @@
     "chartTitle": "Training Curves & Metrics",
     "trainStarted": "Training job started",
     "loadAll": "Load All ({{remaining}} remaining)",
+    "allItemsLoaded": "All items loaded",
+    "allJobsLoaded": "All jobs loaded",
     "addToQueue": "Add to training queue ({{count}})",
     "trainingInProgress": "Training in progress, detection is unavailable",
     "selectRecordRequired": "Please select at least one detection record",

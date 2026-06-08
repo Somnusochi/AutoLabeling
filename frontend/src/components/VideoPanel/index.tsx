@@ -95,6 +95,11 @@ function VideoList({
             );
           })}
         </div>
+        {isFetchingNextPage ? (
+          <p className="text-xs text-center text-gray-400 py-1">{t("common.loading")}</p>
+        ) : hasNextPage ? null : items.length > 0 ? (
+          <p className="text-xs text-center text-gray-300 py-1">{t("videoPanel.allVideosLoaded")}</p>
+        ) : null}
       </div>
       <Popconfirm
         title={t("videoPanel.deleteAllConfirm", { count: items.length })}

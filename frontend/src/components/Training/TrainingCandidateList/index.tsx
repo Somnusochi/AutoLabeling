@@ -22,6 +22,7 @@ export const TrainingCandidateList = memo(
     isFetchingNextPage: boolean;
     fetchNextPage: () => void;
   }) => {
+    const { t } = useTranslation();
     const candParentRef = useRef<HTMLDivElement>(null);
 
     useInfiniteScroll(candParentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
@@ -62,6 +63,11 @@ export const TrainingCandidateList = memo(
             );
           })}
         </div>
+        {isFetchingNextPage ? (
+          <p className="text-xs text-center text-gray-400 py-1">{t("common.loading")}</p>
+        ) : hasNextPage ? null : filteredDetections.length > 0 ? (
+          <p className="text-xs text-center text-gray-300 py-1">{t("trainingPanel.allItemsLoaded")}</p>
+        ) : null}
       </div>
     );
   },

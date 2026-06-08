@@ -130,7 +130,8 @@
     "expandAll": "全 {{count}} 枚代表帧展開",
     "selectMethodToExtract": "抽出方式選択 →「代表帧抽出」",
     "extractSuccessSSIM": "{{count}} 枚代表帧抽出 (SSIM 重複除去済)",
-    "clearAllVideos": "全動画消去"
+    "clearAllVideos": "全動画消去",
+    "allVideosLoaded": "全動画読込済"
   },
   "keyframeGrid": {
     "frameNum": "帧番号",
@@ -159,7 +160,9 @@
     "clearFilter": "絞込解除",
     "matchCount": "{{current}} / {{total}} 件 (絞込済)",
     "noMatchRecords": "一致記録無",
-    "loadAll": "全読込（残 {{remaining}} 件）"
+    "loadAll": "全読込（残 {{remaining}} 件）",
+    "allLoaded": "全記録読込済",
+    "loadedCount": "{{loaded}} / {{total}} 読込済"
   },
   "detectionResult": {
     "drawCategoryPlaceholder": "标注分類…",
@@ -245,6 +248,8 @@
     "datasetDownloaded": "資料集合取得完了",
     "datasetDownloadFailed": "資料集合取得失敗",
     "loadAll": "全読込（残 {{remaining}} 件）",
+    "allItemsLoaded": "全項目読込済",
+    "allJobsLoaded": "全任務読込済",
     "addToQueue": "学習隊列追加 ({{count}} 件)",
     "cancelJobConfirm": "学習任務取消確認",
     "cancelFailed": "取消失敗",
