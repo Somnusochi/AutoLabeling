@@ -165,27 +165,62 @@ def run_migrations():
     else:
         ok("up to date")
 
+def check_sam3_token():
+    """Guide SAM3 setup — needs HF_TOKEN for the gated facebook/sam3 model."""
+    step("Checking SAM3 model access...")
+
+    # Check if HF_TOKEN is already set
+    env_file = BACKEND / ".env"
+    if env_file.exists():
+        content = env_file.read_text()
+        if "HF_TOKEN" in content and "HF_TOKEN=" in content:
+            val = content.split("HF_TOKEN=")[-1].split("\n")[0].strip()
+            if val and val != "${HF_TOKEN:-}":
+                ok("HF_TOKEN configured")
+                return True
+
+    print(f"\n  {yellow('SAM3 requires a HuggingFace access token.')}")
+    print("  To use SAM3 text-driven detection + segmentation:")
+    print()
+    print(f"  1. Visit {cyan('https://huggingface.co/facebook/sam3')}")
+    print("     Click \"Agree and access repository\"")
+    print(f"  2. Create a Read token at {cyan('https://huggingface.co/settings/tokens')}")
+    print(f"  3. Set it in {cyan('backend/.env')}:")
+    print("       HF_TOKEN=hf_your_token_here")
+    print()
+    print(f"  {yellow('Skip this step if you only use VLM+SAM2 mode.')}")
+    return False
+
 def download_models():
+    # VLM model
     step("Checking VLM model (LocateAnything-3B, ~6GB)...")
     model_dir = BACKEND / "model"
     if model_dir.exists() and any(model_dir.iterdir()):
         ok("already cached")
-        return
-    print(f"  Model not found. Downloading to {model_dir}...")
-    print("  This may take 10-30 minutes depending on your network.")
-    try:
-        run(
-            [
-                str(PYTHON), "-c",
-                "from huggingface_hub import snapshot_download; "
-                "snapshot_download('nvidia/LocateAnything-3B', local_dir='model')",
-            ],
-            cwd=BACKEND,
-        )
-        ok("downloaded")
-    except Exception as e:
-        warn(f"Download failed: {e}")
-        print("  The model will be downloaded on first detection instead.")
+    else:
+        print(f"  Downloading to {model_dir}... (~10-30 min)")
+        try:
+            run(
+                [
+                    str(PYTHON), "-c",
+                    "from huggingface_hub import snapshot_download; "
+                    "snapshot_download('nvidia/LocateAnything-3B', local_dir='model')",
+                ],
+                cwd=BACKEND,
+            )
+            ok("downloaded")
+        except Exception as e:
+            warn(f"Download failed: {e}")
+            print("  Will download on first detection instead.")
+
+    # SAM2 model
+    step("Checking SAM2 model (~2.4GB)...")
+    sam2_cache = Path.home() / ".cache" / "huggingface" / "hub"
+    if sam2_cache.exists() and any((sam2_cache / "models--facebook--sam2.1-hiera-base-plus").iterdir() if (sam2_cache / "models--facebook--sam2.1-hiera-base-plus").exists() else False):
+        ok("already cached")
+    else:
+        print("  SAM2 downloads on first use with 'Enable SAM2 Segmentation' checked.")
+        print(f"  To pre-download: run the app, enable SAM2, and detect once.\n")
 
 
 # ── Start / Stop ───────────────────────────────────────
@@ -370,6 +405,7 @@ def cmd_setup(skip_models=False):
     run_migrations()
     if not skip_models:
         download_models()
+    check_sam3_token()
     print(f"\n{green('Setup complete!')} Run: {cyan('python cli.py start')}")
 
 def print_help():
