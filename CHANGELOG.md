@@ -27,10 +27,30 @@
 - Fix: training preview canvas label position clamped at image edges (matching DetectionCanvas logic)
 - Fix: video list item overlap — add `measureElement` for dynamic row heights
 
+### CLI
+- Feat: `python3 cli.py all` — one-command setup, model download, and launch
+- Feat: `--models=vlm|sam2|all` select which models to pre-download
+- Feat: `stop` / `status` commands, `--help`, `--no-models`
+- Feat: automatic SAM3 HF_TOKEN check with step-by-step setup guide
+- Feat: Windows path support, pnpm auto-install, port conflict detection
+
+### Security
+- Fix: ZIP path traversal — validate each member against extract_dir with `Path.is_relative_to`
+- Fix: chunk upload — random UUID uploadId, chunkSize validation, Content-Length guard, assembly size verify
+- Fix: database migration fail-fast for PostgreSQL (create_all only for dev/SQLite)
+- Fix: SSE reconnect timer leak on component unmount
+- Fix: "Clear All Videos" now uses `POST /videos/delete-bulk` (server-side full delete)
+
+### Refactoring
+- Refactor: split `dataset_import.py` (629 lines) into package (`yolo`, `coco`, `voc`, `createml` + helpers)
+- Refactor: extract `VideoList` + `ExtractionPanel` from `VideoPanel` (591→224 lines)
+- Refactor: extract `Header` + `DetectionControls` from `Sidebar` (496→233 lines)
+- Refactor: rename `useInfiniteScroll` → `useScrollLoad` (avoid ahooks name conflict)
+
 ### Testing
 - Test: 10-image detect→train→validate→download end-to-end integration test
 - Test: `test_rename_job` + `test_rename_job_404` integration tests
-- Test: 4 `useLoadAll` + 4 `useInfiniteScroll` hook unit tests
+- Test: 4 `useLoadAll` + 4 `useScrollLoad` hook unit tests
 - Total: 81 backend + 42 frontend tests passing
 
 ## v1.5.8 (2026-06-08)

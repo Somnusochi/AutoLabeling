@@ -78,9 +78,15 @@ CLI 自动处理所有环境准备：依赖检查、Python venv、pip install、
 
 **命令：**
 ```bash
-python3 cli.py setup   # 安装依赖 + 初始化数据库
-python3 cli.py start   # 启动服务
-python3 cli.py all     # setup + start
+python3 cli.py all                       # 安装依赖 + 下载模型 + 启动
+python3 cli.py all --no-models           # 跳过模型下载
+python3 cli.py all --models=vlm          # 只下载 VLM 模型
+python3 cli.py all --models=vlm,sam2     # 下载 VLM + SAM2
+python3 cli.py setup                     # 安装依赖 + 初始化数据库
+python3 cli.py start                     # 启动服务
+python3 cli.py stop                      # 停止服务
+python3 cli.py status                    # 查看运行状态
+python3 cli.py download --models=vlm     # 重新下载指定模型
 ```
 
 ### Docker 部署

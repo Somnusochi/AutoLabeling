@@ -78,9 +78,15 @@ The CLI handles everything: dependency checks, Python venv, pip install, pnpm in
 
 **Commands:**
 ```bash
-python3 cli.py setup   # Install deps + init database
-python3 cli.py start   # Launch services (auto-detects setup)
-python3 cli.py all     # Setup + start
+python3 cli.py all                       # Setup + download models + start
+python3 cli.py all --no-models           # Skip model download
+python3 cli.py all --models=vlm          # Only download VLM model
+python3 cli.py all --models=vlm,sam2     # Download VLM + SAM2
+python3 cli.py setup                     # Install deps + init DB
+python3 cli.py start                     # Launch services
+python3 cli.py stop                      # Stop services
+python3 cli.py status                    # Check if running
+python3 cli.py download --models=vlm     # Re-download specific model
 ```
 
 ### Docker Deployment
