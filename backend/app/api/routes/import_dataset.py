@@ -31,11 +31,12 @@ MAX_CHUNK_SIZE = 50 * 1024 * 1024  # 50MB per chunk
 
 @router.post("/datasets/import/chunk/init")
 async def chunk_init(request: Request) -> APIResponse:
-    """Create or resume a chunked upload session.
+    """Create a new chunked upload session.
 
     The client sends JSON: {fileName, totalSize, chunkSize, format}.
-    We derive an uploadId from fileName+totalSize so re-uploads
-    of the same file resume automatically.
+    Upload ID is server-generated (random UUID) — previous sessions
+    are not resumed. To resume after a page refresh, the client must
+    persist the uploadId and use /chunk/{id} status endpoint.
     """
     body: dict = {}
     with suppress(json.JSONDecodeError):
@@ -43,7 +44,6 @@ async def chunk_init(request: Request) -> APIResponse:
 
     file_name = body.get("fileName", "dataset.zip")
     total_size = body.get("totalSize", 0)
-    chunk_size = body.get("chunkSize", 20 * 1024 * 1024)
     fmt = body.get("format", "yolo")
 
     if not total_size or not file_name:
@@ -53,11 +53,18 @@ async def chunk_init(request: Request) -> APIResponse:
     if total_size > max_bytes:
         raise HTTPException(400, f"File exceeds {settings.max_import_size_mb // 1024}GB limit")
 
-    # Cap chunk size to prevent memory pressure
-    chunk_size = min(chunk_size, MAX_CHUNK_SIZE)
-    total_chunks = max(1, (total_size + chunk_size - 1) // chunk_size)
+    # Validate chunk size: must be int, between 1MB and MAX_CHUNK_SIZE
+    try:
+        chunk_size = int(body.get("chunkSize", 20 * 1024 * 1024))
+    except (TypeError, ValueError):
+        raise HTTPException(400, "chunkSize must be an integer") from None
+    if not (1024 * 1024 <= chunk_size <= MAX_CHUNK_SIZE):
+        raise HTTPException(
+            400,
+            f"chunkSize must be between 1MB and {MAX_CHUNK_SIZE // (1024 * 1024)}MB",
+        )
 
-    # Server-generated random uploadId — prevents session collision and guessing
+    total_chunks = max(1, (total_size + chunk_size - 1) // chunk_size)
     upload_id = uuid.uuid4().hex
 
     chunk_dir = CHUNK_DIR / upload_id
@@ -106,8 +113,20 @@ async def chunk_upload(
     if chunk_index < 0 or chunk_index >= meta["totalChunks"]:
         raise HTTPException(400, f"Invalid chunk index: {chunk_index}")
 
+    # Reject oversize before reading body (Content-Length header)
+    max_expected = meta["chunkSize"]
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            if int(content_length) > max_expected:
+                raise HTTPException(
+                    400,
+                    f"Chunk too large: {content_length} bytes (max {max_expected})",
+                )
+        except ValueError:
+            raise HTTPException(400, "Invalid Content-Length header") from None
+
     chunk_data = await request.body()
-    max_expected = meta["chunkSize"] * 2  # allow some overhead for last chunk
     if len(chunk_data) > max_expected:
         raise HTTPException(400, f"Chunk too large: {len(chunk_data)} bytes (max {max_expected})")
 
