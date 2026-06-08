@@ -1,5 +1,6 @@
 # Python
 .venv/
+.venv-sam3/
 sam3-venv/
 __pycache__/
 *.pyc
@@ -32,4 +33,13 @@ Thumbs.db
 # Data
 uploads/
 training_runs/
+trained_models/
 model/
+pretrained/
+external_models/
+import_chunks/
+import_progress/
+*.db
+*.sqlite
+*.sqlite3
+*.log
