@@ -34,3 +34,4 @@ backend/data.db
 docs/src/
 .playwright-mcp/
 test-results/
+.cli_pids.json
