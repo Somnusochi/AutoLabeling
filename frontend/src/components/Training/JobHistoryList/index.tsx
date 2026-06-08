@@ -45,7 +45,7 @@ export function JobHistoryList({
     count: jobs.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 120,
-    overscan: 5,
+    overscan: 20,
   });
 
   useInfiniteScroll(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);

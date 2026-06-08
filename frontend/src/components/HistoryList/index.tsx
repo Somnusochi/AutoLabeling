@@ -71,7 +71,7 @@ export function HistoryList({
     count: filtered.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 120,
-    overscan: 10,
+    overscan: 20,
   });
 
   useInfiniteScroll(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);

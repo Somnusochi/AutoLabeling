@@ -31,7 +31,7 @@ export const TrainingCandidateList = memo(
       count: filteredDetections.length,
       getScrollElement: () => candParentRef.current,
       estimateSize: () => 40,
-      overscan: 10,
+      overscan: 20,
     });
 
     return (

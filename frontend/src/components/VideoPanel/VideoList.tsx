@@ -28,7 +28,7 @@ export function VideoList({
     count: items.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 42,
-    overscan: 10,
+    overscan: 20,
   });
 
   useInfiniteScroll(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
