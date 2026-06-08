@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import multiprocessing
 import threading
@@ -10,6 +11,18 @@ from ..core.database import SessionLocal
 from ..models.train import TrainingJob
 
 logger = logging.getLogger(__name__)
+
+# CUDA cannot be re-initialized after fork(). Use 'spawn' to start a fresh
+# process that imports CUDA from scratch. Must be set before any Process() call.
+_multiprocessing_initialized = False
+
+
+def _ensure_spawn_method():
+    global _multiprocessing_initialized
+    if not _multiprocessing_initialized:
+        with contextlib.suppress(RuntimeError):
+            multiprocessing.set_start_method("spawn", force=True)
+        _multiprocessing_initialized = True
 
 _queue_lock = threading.Lock()
 _worker_thread: threading.Thread | None = None
@@ -83,6 +96,7 @@ def _worker_loop() -> None:
 
         logger.info("Starting training job %s (%s, %d epochs)", job_id, model_variant, epochs)
 
+        _ensure_spawn_method()
         proc = multiprocessing.Process(
             target=_run_training_in_subprocess,
             args=(
