@@ -122,7 +122,7 @@ async def stream_progress(job_id: str):
 def list_jobs(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100000, validation_alias="pageSize"),
+    page_size: int = Query(20, ge=1, le=1000, validation_alias="pageSize"),
 ) -> APIResponse:
     q = db.query(TrainingJob)
     total = q.count()
@@ -152,7 +152,7 @@ def get_job(
 
 
 @router.post("/jobs/{job_id}/rename")
-def rename_job(
+async def rename_job(
     job_id: UUID,
     request: Request,
     db: Session = Depends(get_db),
