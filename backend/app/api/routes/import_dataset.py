@@ -43,11 +43,15 @@ async def chunk_init(request: Request) -> APIResponse:
 
     file_name = body.get("fileName", "dataset.zip")
     total_size = body.get("totalSize", 0)
-    chunk_size = body.get("chunkSize", 5 * 1024 * 1024)
+    chunk_size = body.get("chunkSize", 20 * 1024 * 1024)
     fmt = body.get("format", "yolo")
 
     if not total_size or not file_name:
         raise HTTPException(400, "fileName and totalSize are required")
+
+    max_bytes = settings.max_import_size_mb * 1024 * 1024
+    if total_size > max_bytes:
+        raise HTTPException(400, f"File exceeds {settings.max_import_size_mb // 1024}GB limit")
 
     total_chunks = max(1, (total_size + chunk_size - 1) // chunk_size)
 
@@ -245,7 +249,11 @@ def import_dataset(
     size = file.file.tell()
     file.file.seek(0)
     if size > max_size:
-        raise HTTPException(400, "File exceeds 200MB limit. Use chunked upload for larger files.")
+        raise HTTPException(
+            400,
+            f"File exceeds 200MB limit. "
+            f"Use chunked upload for files up to {settings.max_import_size_mb // 1024}GB.",
+        )
 
     import_id = uuid.uuid4().hex
     progress_dir = Path(settings.project_root) / "import_progress"
