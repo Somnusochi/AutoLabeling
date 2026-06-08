@@ -53,8 +53,8 @@ async def upload_video(
     file.file.seek(0, 2)
     size_mb = file.file.tell() / (1024 * 1024)
     file.file.seek(0)
-    if size_mb > settings.max_upload_size_mb * 5:  # videos can be larger
-        raise HTTPException(400, detail=f"File exceeds {settings.max_upload_size_mb * 5}MB limit")
+    if size_mb > settings.max_video_upload_size_mb:
+        raise HTTPException(400, detail=f"File exceeds {settings.max_video_upload_size_mb}MB limit")
 
     filepath, safe_name, _ = _save_video_file(file)
 

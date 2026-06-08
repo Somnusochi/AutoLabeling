@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     # Upload
     max_upload_size_mb: int = 20
     max_import_size_mb: int = 10240  # 10 GB
+    max_video_upload_size_mb: int = 500
 
     @property
     def project_root(self) -> Path:

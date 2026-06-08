@@ -76,7 +76,7 @@
     "uploadVideo": "Upload Video",
     "clickToUploadVideo": "Click or drag video file here to upload",
     "dropVideoHere": "Drop video file here",
-    "videoLimit": "Supports MP4/AVI/MKV etc., max 100MB",
+    "videoLimit": "Supports MP4/AVI/MKV etc., max 500MB",
     "keyframeExtract": "Keyframe Extraction",
     "extractMode": "Extraction Mode",
     "modeScene": "Scene Cut",

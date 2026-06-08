@@ -76,7 +76,7 @@
     "uploadVideo": "動画登録",
     "clickToUploadVideo": "選択又 描画領域投入",
     "dropVideoHere": "動画投入",
-    "videoLimit": "MP4/AVI/MKV 等対応 最大 100MB",
+    "videoLimit": "MP4/AVI/MKV 等対応 最大 500MB",
     "keyframeExtract": "代表帧抽出",
     "extractMode": "抽出方式",
     "modeScene": "場面切替",

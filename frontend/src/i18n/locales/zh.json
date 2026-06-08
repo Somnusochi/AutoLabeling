@@ -76,7 +76,7 @@
     "uploadVideo": "上传视频",
     "clickToUploadVideo": "点击或拖拽视频文件到此处上传",
     "dropVideoHere": "释放视频文件",
-    "videoLimit": "支持 MP4/AVI/MKV 等，最大 100MB",
+    "videoLimit": "支持 MP4/AVI/MKV 等，最大 500MB",
     "keyframeExtract": "关键帧提取",
     "extractMode": "提取模式",
     "modeScene": "场景切换",
