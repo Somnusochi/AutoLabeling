@@ -23,7 +23,7 @@ export interface SidebarProps {
   batchResults: Detection[];
   setBatchResults: React.Dispatch<React.SetStateAction<Detection[]>>;
   cancel: () => void;
-  historyQuery: { hasNextPage: boolean; isFetchingNextPage: boolean; fetchNextPage: () => void };
+  historyQuery: { hasNextPage: boolean; isFetchingNextPage: boolean; fetchNextPage: () => unknown };
   allItems: Detection[];
   total: number;
   result: Detection | null;

@@ -2,13 +2,13 @@
  * Repeatedly calls fetchNextPage until all pages are loaded.
  * Returns [loadingAll, handleLoadAll] for button state and onClick.
  */
-export function useLoadAll(fetchNextPage: () => Promise<unknown>) {
+export function useLoadAll(fetchNextPage: () => unknown) {
   const [loadingAll, setLoadingAll] = useState(false);
 
   const handleLoadAll = useCallback(() => {
     setLoadingAll(true);
     const loadNext = () => {
-      fetchNextPage().then((result: unknown) => {
+      Promise.resolve(fetchNextPage()).then((result: unknown) => {
         const pages = (result as { data?: { pages?: { items: unknown[]; total: number }[] } })?.data
           ?.pages;
         if (!pages) {

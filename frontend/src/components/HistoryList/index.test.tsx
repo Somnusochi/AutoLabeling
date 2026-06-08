@@ -1,13 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render } from "@/utils/test-utils";
 import {describe, it, expect} from "vitest";
 import { HistoryList } from "./index";
 
 describe("HistoryList", () => {
   it("renders without crashing", () => {
-    // Note: Provide basic props if needed, or mock stores/hooks
-    // This is a basic boilerplate test
-    const { container } = render(<HistoryList {...({} as any)} onSelect={() => {}} />);
+    const { container } = render(
+      <HistoryList
+        allItems={[]}
+        total={0}
+        hasNextPage={false}
+        isFetchingNextPage={false}
+        fetchNextPage={() => {}}
+        onSelect={() => {}}
+      />,
+    );
     expect(container).toBeTruthy();
   });
 });

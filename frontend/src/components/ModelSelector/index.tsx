@@ -20,10 +20,10 @@ export function ModelSelector({
   const { t, i18n } = useTranslation();
   const { data: jobs } = useQuery({
     queryKey: ["training-jobs"],
-    queryFn: fetchTrainingJobs,
+    queryFn: () => fetchTrainingJobs(),
   });
 
-  const completedJobs = (jobs ?? []).filter((j) => j.status === "completed");
+  const completedJobs = (jobs?.items ?? []).filter((j: TrainingJob) => j.status === "completed");
 
   return (
     <div className="space-y-2">
