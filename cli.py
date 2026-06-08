@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """VLM-AutoYOLO CLI — one command to setup and launch."""
 
+import json
 import os
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import time
@@ -13,36 +16,43 @@ ROOT = Path(__file__).resolve().parent
 BACKEND = ROOT / "backend"
 FRONTEND = ROOT / "frontend"
 VENV = BACKEND / ".venv"
-PYTHON = VENV / "bin" / "python"
-UVICORN = VENV / "bin" / "uvicorn"
-ALEMBIC = VENV / "bin" / "alembic"
+IS_WIN = sys.platform == "win32"
+BIN = "Scripts" if IS_WIN else "bin"
+PYTHON_EXE = "python.exe" if IS_WIN else "python"
+PYTHON = VENV / BIN / PYTHON_EXE
+UVICORN = VENV / BIN / ("uvicorn.exe" if IS_WIN else "uvicorn")
+ALEMBIC = VENV / BIN / ("alembic.exe" if IS_WIN else "alembic")
+PIP = VENV / BIN / ("pip.exe" if IS_WIN else "pip")
+PIDFILE = ROOT / ".cli_pids.json"
+
+BACKEND_PORT = int(os.environ.get("BACKEND_PORT", 8000))
+FRONTEND_PORT = int(os.environ.get("FRONTEND_PORT", 5173))
 
 # ── Utilities ──────────────────────────────────────────
 
-def green(s):
-    return f"\033[92m{s}\033[0m"
+def green(s):   return f"\033[92m{s}\033[0m"
+def red(s):     return f"\033[91m{s}\033[0m"
+def cyan(s):    return f"\033[96m{s}\033[0m"
+def yellow(s):  return f"\033[93m{s}\033[0m"
 
-def red(s):
-    return f"\033[91m{s}\033[0m"
-
-def cyan(s):
-    return f"\033[96m{s}\033[0m"
-
-def step(msg):
-    print(f"  {cyan(msg)}")
-
-def ok(msg):
-    print(f"  {green('✓')} {msg}")
-
-def fail(msg):
-    print(f"  {red('✗')} {msg}")
-    sys.exit(1)
+def step(msg):   print(f"  {cyan(msg)}")
+def ok(msg):     print(f"  {green('✓')} {msg}")
+def warn(msg):   print(f"  {yellow('!')} {msg}")
+def fail(msg):   print(f"  {red('✗')} {msg}"); sys.exit(1)
 
 def run(cmd, **kwargs):
-    return subprocess.run(cmd, check=True, **kwargs)
+    kwargs.setdefault("check", True)
+    return subprocess.run(cmd, **kwargs)
 
 def run_output(cmd, **kwargs):
     return subprocess.run(cmd, capture_output=True, text=True, **kwargs).stdout.strip()
+
+def is_port_open(port):
+    try:
+        with socket.create_connection(("localhost", port), timeout=0.5):
+            return True
+    except Exception:
+        return False
 
 
 # ── Prereq checks ──────────────────────────────────────
@@ -65,14 +75,27 @@ def check_node():
             return
         fail(f"Node.js 22+ required, found {out}")
     except Exception:
-        fail("Node.js not found. Install: brew install node / https://nodejs.org")
+        fail("Node.js not found. Install: https://nodejs.org")
+
+def check_pnpm():
+    step("Checking pnpm...")
+    if shutil.which("pnpm"):
+        ok(shutil.which("pnpm"))
+        return
+    warn("pnpm not found. Install: npm install -g pnpm   or   brew install pnpm")
+    print("  Attempting: npm install -g pnpm...")
+    try:
+        run(["npm", "install", "-g", "pnpm"])
+        ok("pnpm installed")
+    except Exception:
+        fail("Failed to install pnpm. Install manually: npm install -g pnpm")
 
 def check_ffmpeg():
     step("Checking ffmpeg...")
     if shutil.which("ffmpeg"):
         ok("found")
         return
-    print("  ⚠ ffmpeg not found — video features will not work")
+    warn("ffmpeg not found — video features will not work")
     print("    Install: brew install ffmpeg / apt install ffmpeg")
 
 def check_postgres():
@@ -87,6 +110,16 @@ def check_postgres():
     return False
 
 
+# ── Quick pre-flight for start ─────────────────────────
+
+def ensure_setup_done():
+    """Lightweight check — warn if deps look missing, but don't fail."""
+    if not VENV.exists():
+        fail("Virtual env not found. Run: python cli.py setup")
+    if not (FRONTEND / "node_modules").exists():
+        fail("node_modules not found. Run: python cli.py setup")
+
+
 # ── Setup ──────────────────────────────────────────────
 
 def setup_venv():
@@ -95,21 +128,21 @@ def setup_venv():
         ok("already exists")
         return
     run([sys.executable, "-m", "venv", str(VENV)])
-    run([str(VENV / "bin" / "pip"), "install", "--upgrade", "pip"], capture_output=True)
+    run([str(PIP), "install", "--upgrade", "pip"])
     ok("created")
 
 def install_python_deps():
-    step("Installing Python dependencies...")
+    step("Installing Python dependencies (may take a few minutes)...")
     req = BACKEND / "requirements.txt"
-    run([str(VENV / "bin" / "pip"), "install", "-r", str(req)], capture_output=True)
+    run([str(PIP), "install", "-r", str(req)])
     ok("done")
 
 def install_node_deps():
-    step("Installing Node.js dependencies...")
+    step("Installing Node.js dependencies (may take a few minutes)...")
     if (FRONTEND / "node_modules").exists():
         ok("already exists")
         return
-    run(["pnpm", "install"], cwd=FRONTEND, capture_output=True)
+    run(["pnpm", "install"], cwd=FRONTEND)
     ok("done")
 
 def check_db_config():
@@ -151,60 +184,174 @@ def download_models():
         )
         ok("downloaded")
     except Exception as e:
-        print(f"  {red('✗')} Download failed: {e}")
+        warn(f"Download failed: {e}")
         print("  The model will be downloaded on first detection instead.")
 
 
-# ── Start ──────────────────────────────────────────────
+# ── Start / Stop ───────────────────────────────────────
 
-def start_backend(port=8000):
-    step(f"Starting backend on port {port}...")
+def _save_pids(backend_pid, frontend_pid):
+    PIDFILE.write_text(json.dumps({
+        "backend": backend_pid,
+        "frontend": frontend_pid,
+        "backend_port": BACKEND_PORT,
+        "frontend_port": FRONTEND_PORT,
+    }))
+
+def _load_pids():
+    if not PIDFILE.exists():
+        return None
+    try:
+        return json.loads(PIDFILE.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+def start_backend():
+    step(f"Starting backend on port {BACKEND_PORT}...")
+    if is_port_open(BACKEND_PORT):
+        warn(f"Port {BACKEND_PORT} already in use. Try: BACKEND_PORT={BACKEND_PORT + 1} python3 cli.py start")
+        return None
     proc = subprocess.Popen(
-        [str(UVICORN), "app.main:app", "--host", "0.0.0.0", "--port", str(port)],
+        [str(UVICORN), "app.main:app", "--host", "0.0.0.0", "--port", str(BACKEND_PORT)],
         cwd=BACKEND,
         env={**os.environ, "PYTHONPATH": str(BACKEND)},
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    # Wait for backend to be ready
     import urllib.request
-    import urllib.error
     for _ in range(30):
         time.sleep(0.5)
+        if proc.poll() is not None:
+            fail(f"Backend process exited with code {proc.returncode}. Check logs.")
         try:
-            urllib.request.urlopen(f"http://localhost:{port}/api/health", timeout=1)
+            urllib.request.urlopen(f"http://localhost:{BACKEND_PORT}/api/health", timeout=1)
             ok("backend ready")
             return proc
         except Exception:
             continue
-    fail("backend failed to start")
-    return proc
+    proc.kill()
+    fail("Backend failed to start — check backend logs for errors.")
 
-def start_frontend(port=5173, backend_port=8000):
-    step(f"Starting frontend on port {port}...")
+def start_frontend():
+    step(f"Starting frontend on port {FRONTEND_PORT}...")
+    if is_port_open(FRONTEND_PORT):
+        warn(f"Port {FRONTEND_PORT} already in use. Try: FRONTEND_PORT={FRONTEND_PORT + 1} python3 cli.py start")
+        return None
     proc = subprocess.Popen(
-        ["pnpm", "dev", "--port", str(port)],
+        ["pnpm", "dev", "--port", str(FRONTEND_PORT)],
         cwd=FRONTEND,
-        env={
-            **os.environ,
-            "VITE_BACKEND_PORT": str(backend_port),
-        },
+        env={**os.environ, "VITE_BACKEND_PORT": str(BACKEND_PORT)},
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    # Wait for frontend to be ready
     import urllib.request
-    import urllib.error
     for _ in range(30):
         time.sleep(0.5)
+        if proc.poll() is not None:
+            fail(f"Frontend process exited with code {proc.returncode}. Check logs.")
         try:
-            urllib.request.urlopen(f"http://localhost:{port}", timeout=1)
+            urllib.request.urlopen(f"http://localhost:{FRONTEND_PORT}", timeout=1)
             ok("frontend ready")
             return proc
         except Exception:
             continue
-    fail("frontend failed to start")
-    return proc
+    proc.kill()
+    fail("Frontend failed to start — check frontend logs for errors.")
+
+
+def cmd_start():
+    print(green("VLM-AutoYOLO\n"))
+    ensure_setup_done()
+
+    backend = start_backend()
+    frontend = start_frontend()
+    if backend and frontend:
+        _save_pids(backend.pid, frontend.pid)
+    elif backend:
+        backend.kill()  # rollback
+    elif frontend:
+        frontend.kill()
+
+    if not backend or not frontend:
+        sys.exit(1)
+
+    print(f"\n{'━' * 46}")
+    print(f"  {green('VLM-AutoYOLO')}")
+    print(f"  前端:   {cyan(f'http://localhost:{FRONTEND_PORT}')}")
+    print(f"  后端:   {cyan(f'http://localhost:{BACKEND_PORT}')}")
+    print(f"  API:    {cyan(f'http://localhost:{BACKEND_PORT}/docs')}")
+    print(f"  {red('Ctrl+C')} 停止")
+    print(f"{'━' * 46}\n")
+
+    webbrowser.open(f"http://localhost:{FRONTEND_PORT}")
+
+    try:
+        backend.wait()
+        frontend.wait()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        cmd_stop()
+
+
+def _kill_port(port):
+    """Kill process listening on a port (fallback when no PID file)."""
+    try:
+        if IS_WIN:
+            run_output(f'netstat -ano | findstr :{port}', shell=True)
+        else:
+            out = run_output(["lsof", "-ti", f":{port}"])
+            for pid_str in out.split("\n"):
+                try:
+                    os.kill(int(pid_str), signal.SIGTERM)
+                except OSError:
+                    pass
+    except Exception:
+        pass
+
+def cmd_stop():
+    pids = _load_pids()
+    killed = False
+    if pids:
+        for name in ("backend", "frontend"):
+            pid = pids.get(name)
+            if pid:
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                    killed = True
+                except OSError:
+                    pass
+        PIDFILE.unlink(missing_ok=True)
+
+    # Fallback: kill by port if PID file missing or stale
+    if is_port_open(BACKEND_PORT):
+        _kill_port(BACKEND_PORT)
+        killed = True
+    if is_port_open(FRONTEND_PORT):
+        _kill_port(FRONTEND_PORT)
+        killed = True
+
+    if killed:
+        time.sleep(0.5)
+        print(green("Services stopped."))
+    else:
+        print("No running services found.")
+
+
+def cmd_status():
+    backend_up = is_port_open(BACKEND_PORT)
+    frontend_up = is_port_open(FRONTEND_PORT)
+
+    print(f"  Backend  ({BACKEND_PORT}): {green('running') if backend_up else red('stopped')}")
+    print(f"  Frontend ({FRONTEND_PORT}): {green('running') if frontend_up else red('stopped')}")
+
+    if backend_up and frontend_up:
+        print(f"\n  {cyan(f'http://localhost:{FRONTEND_PORT}')}")
+        print(f"  {cyan(f'http://localhost:{BACKEND_PORT}/docs')}")
+
+    pids = _load_pids()
+    if pids:
+        print(f"\n  PIDs: backend={pids.get('backend')}, frontend={pids.get('frontend')}")
 
 
 # ── Main ────────────────────────────────────────────────
@@ -213,6 +360,7 @@ def cmd_setup(skip_models=False):
     print(green("VLM-AutoYOLO Setup\n"))
     check_python()
     check_node()
+    check_pnpm()
     check_ffmpeg()
     check_postgres()
     setup_venv()
@@ -224,29 +372,35 @@ def cmd_setup(skip_models=False):
         download_models()
     print(f"\n{green('Setup complete!')} Run: {cyan('python cli.py start')}")
 
-def cmd_start():
-    print(green("VLM-AutoYOLO\n"))
-    backend = start_backend()
-    frontend = start_frontend()
+def print_help():
+    print("""VLM-AutoYOLO CLI
 
-    print(f"\n{'━' * 46}")
-    print(f"  {green('VLM-AutoYOLO 已启动')}")
-    print(f"  前端:   {cyan('http://localhost:5173')}")
-    print(f"  后端:   {cyan('http://localhost:8000')}")
-    print(f"  API 文档: {cyan('http://localhost:8000/docs')}")
-    print(f"  {red('Ctrl+C')} 停止")
-    print(f"{'━' * 46}\n")
+Usage: python3 cli.py <command> [options]
 
-    webbrowser.open("http://localhost:5173")
+Commands:
+  setup         Install dependencies, init database, download models
+  start          Launch backend + frontend (requires setup first)
+  stop           Stop running services
+  status         Show whether services are running
+  all            Setup + start (one command)
+  download       Download/re-download models only
 
-    try:
-        backend.wait()
-        frontend.wait()
-    except KeyboardInterrupt:
-        print(f"\n{green('已关闭')}")
+Options:
+  --no-models    Skip model download during setup (for offline/slow networks)
+  --help, -h     Show this help
+
+Environment:
+  BACKEND_PORT   Backend port (default 8000)
+  FRONTEND_PORT  Frontend port (default 5173)
+""")
 
 def main():
     args = sys.argv[1:]
+
+    if "-h" in args or "--help" in args:
+        print_help()
+        return
+
     skip_models = "--no-models" in args
     cmds = [a for a in args if not a.startswith("--")]
     cmd = cmds[0] if cmds else "start"
@@ -255,6 +409,10 @@ def main():
         cmd_setup(skip_models=skip_models)
     elif cmd == "start":
         cmd_start()
+    elif cmd == "stop":
+        cmd_stop()
+    elif cmd == "status":
+        cmd_status()
     elif cmd == "all":
         cmd_setup(skip_models=skip_models)
         print()
@@ -265,12 +423,8 @@ def main():
         install_python_deps()
         download_models()
     else:
-        print("Usage: python cli.py [setup|start|all|download] [--no-models]")
-        print("  setup       — install deps, init DB, download models")
-        print("  start       — launch backend + frontend")
-        print("  all         — setup + start")
-        print("  download    — download/re-download models only")
-        print("  --no-models — skip model download (for offline/slow networks)")
+        print(f"Unknown command: {cmd}")
+        print_help()
         sys.exit(1)
 
 if __name__ == "__main__":
