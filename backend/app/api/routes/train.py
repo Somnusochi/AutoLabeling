@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import shutil
@@ -10,7 +11,7 @@ import tempfile
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from starlette.responses import StreamingResponse
@@ -147,6 +148,24 @@ def get_job(
     job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
     if not job:
         raise HTTPException(404, f"Training job {job_id} not found")
+    return APIResponse(data=TrainingJobOut.model_validate(job).model_dump(by_alias=True))
+
+
+@router.post("/jobs/{job_id}/rename")
+def rename_job(
+    job_id: UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> APIResponse:
+    job = db.query(TrainingJob).filter(TrainingJob.id == job_id).first()
+    if not job:
+        raise HTTPException(404, f"Training job {job_id} not found")
+    body = {}
+    with contextlib.suppress(json.JSONDecodeError):
+        body = json.loads((await request.body() or b"{}").decode())
+    job.name = body.get("name", "").strip()[:128] or None
+    db.commit()
+    db.refresh(job)
     return APIResponse(data=TrainingJobOut.model_validate(job).model_dump(by_alias=True))
 
 

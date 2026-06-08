@@ -23,6 +23,7 @@ class TrainRequest(BaseSchema):
 
 class TrainingJobOut(BaseSchema):
     id: str
+    name: str | None = None
     model_variant: str
     epochs: int
     imgsz: int
