@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - '**'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -80,6 +80,13 @@ jobs:
         run: |
           cd frontend
           pnpm exec tsc -b --noEmit
+
+      - name: Test
+        run: |
+          cd frontend
+          pnpm run test
+        env:
+          CI: true
 
       - name: Build
         run: |
