@@ -191,36 +191,63 @@ def check_sam3_token():
     print(f"  {yellow('Skip this step if you only use VLM+SAM2 mode.')}")
     return False
 
-def download_models():
-    # VLM model
-    step("Checking VLM model (LocateAnything-3B, ~6GB)...")
+SAM2_MODEL_ID = "facebook/sam2.1-hiera-base-plus"
+
+def download_vlm():
+    step("VLM model (LocateAnything-3B, ~6GB)...")
     model_dir = BACKEND / "model"
     if model_dir.exists() and any(model_dir.iterdir()):
         ok("already cached")
-    else:
-        print(f"  Downloading to {model_dir}... (~10-30 min)")
-        try:
-            run(
-                [
-                    str(PYTHON), "-c",
-                    "from huggingface_hub import snapshot_download; "
-                    "snapshot_download('nvidia/LocateAnything-3B', local_dir='model')",
-                ],
-                cwd=BACKEND,
-            )
-            ok("downloaded")
-        except Exception as e:
-            warn(f"Download failed: {e}")
-            print("  Will download on first detection instead.")
+        return
+    print(f"  Downloading to {model_dir}... (~10-30 min)")
+    try:
+        run(
+            [str(PYTHON), "-c",
+             "from huggingface_hub import snapshot_download; "
+             "snapshot_download('nvidia/LocateAnything-3B', local_dir='model')"],
+            cwd=BACKEND,
+        )
+        ok("downloaded")
+    except Exception as e:
+        warn(f"Download failed: {e}")
+        print("  Will download on first detection instead.")
 
-    # SAM2 model
-    step("Checking SAM2 model (~2.4GB)...")
-    sam2_cache = Path.home() / ".cache" / "huggingface" / "hub"
-    if sam2_cache.exists() and any((sam2_cache / "models--facebook--sam2.1-hiera-base-plus").iterdir() if (sam2_cache / "models--facebook--sam2.1-hiera-base-plus").exists() else False):
+def download_sam2():
+    step("SAM2 model (facebook/sam2.1-hiera-base-plus, ~2.4GB)...")
+    cache_dir = Path.home() / ".cache" / "huggingface" / "hub" / "models--facebook--sam2.1-hiera-base-plus"
+    if cache_dir.exists() and any(cache_dir.rglob("*.safetensors")):
         ok("already cached")
-    else:
-        print("  SAM2 downloads on first use with 'Enable SAM2 Segmentation' checked.")
-        print(f"  To pre-download: run the app, enable SAM2, and detect once.\n")
+        return
+    print("  Downloading SAM2... (~5-15 min)")
+    try:
+        run(
+            [str(PYTHON), "-c",
+             "from transformers import AutoModelForMaskGeneration; "
+             f"AutoModelForMaskGeneration.from_pretrained('{SAM2_MODEL_ID}', trust_remote_code=True)"],
+            cwd=BACKEND,
+        )
+        ok("downloaded")
+    except Exception as e:
+        warn(f"Download failed: {e}")
+        print("  SAM2 will download on first use.")
+
+def download_models(selection="all"):
+    """Download selected models. selection: 'all' | 'vlm' | 'sam2' | 'vlm,sam2'"""
+    selected = set(selection.replace(" ", "").split(","))
+
+    if "all" in selected:
+        selected = {"vlm", "sam2"}
+
+    for m in sorted(selected):
+        if m == "vlm":
+            download_vlm()
+        elif m == "sam2":
+            download_sam2()
+        else:
+            warn(f"Unknown model: {m} (valid: vlm, sam2)")
+
+    if not selected:
+        print("  No models selected. Use --models vlm|sam2|all")
 
 
 # ── Start / Stop ───────────────────────────────────────
@@ -391,7 +418,7 @@ def cmd_status():
 
 # ── Main ────────────────────────────────────────────────
 
-def cmd_setup(skip_models=False):
+def cmd_setup(skip_models=False, model_selection="all"):
     print(green("VLM-AutoYOLO Setup\n"))
     check_python()
     check_node()
@@ -404,7 +431,7 @@ def cmd_setup(skip_models=False):
     check_db_config()
     run_migrations()
     if not skip_models:
-        download_models()
+        download_models(model_selection)
     check_sam3_token()
     print(f"\n{green('Setup complete!')} Run: {cyan('python cli.py start')}")
 
@@ -422,8 +449,13 @@ Commands:
   download       Download/re-download models only
 
 Options:
-  --no-models    Skip model download during setup (for offline/slow networks)
-  --help, -h     Show this help
+  --models=vlm|sam2|all   Select which models to download (default: all)
+                          vlm  = LocateAnything-3B (~6GB, required)
+                          sam2 = SAM2.1 segmentation (~2.4GB, optional)
+                          all  = both
+                          Use comma for multiple: --models=vlm,sam2
+  --no-models              Skip model download entirely
+  --help, -h               Show this help
 
 Environment:
   BACKEND_PORT   Backend port (default 8000)
@@ -438,11 +470,15 @@ def main():
         return
 
     skip_models = "--no-models" in args
+    model_selection = "all"
+    for a in args:
+        if a.startswith("--models="):
+            model_selection = a.split("=", 1)[1]
     cmds = [a for a in args if not a.startswith("--")]
     cmd = cmds[0] if cmds else "start"
 
     if cmd == "setup":
-        cmd_setup(skip_models=skip_models)
+        cmd_setup(skip_models=skip_models, model_selection=model_selection)
     elif cmd == "start":
         cmd_start()
     elif cmd == "stop":
@@ -450,14 +486,14 @@ def main():
     elif cmd == "status":
         cmd_status()
     elif cmd == "all":
-        cmd_setup(skip_models=skip_models)
+        cmd_setup(skip_models=skip_models, model_selection=model_selection)
         print()
         cmd_start()
     elif cmd == "download":
         check_python()
         setup_venv()
         install_python_deps()
-        download_models()
+        download_models(model_selection)
     else:
         print(f"Unknown command: {cmd}")
         print_help()
