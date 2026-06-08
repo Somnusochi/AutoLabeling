@@ -6,9 +6,9 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
   const qc = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState(job.name || "");
-  const nameInputRef = useRef<HTMLInputElement>(null);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renaming, setRenaming] = useState(false);
   const [progress, setProgress] = useState<{
     epoch: number;
     totalEpochs: number;
@@ -42,46 +42,43 @@ export function TrainingJobItem({ job }: { job: TrainingJob }) {
     <div className="rounded border border-gray-100 p-2 text-xs">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 min-w-0">
-          {editingName ? (
-            <input
-              ref={nameInputRef}
-              value={nameValue}
-              onChange={(e) => setNameValue(e.target.value)}
-              onBlur={async () => {
-                setEditingName(false);
-                const trimmed = nameValue.trim();
-                if (trimmed !== (job.name || "")) {
-                  try {
-                    await renameTrainingJob(job.id, trimmed);
-                    qc.invalidateQueries({ queryKey: ["training-jobs"] });
-                  } catch { /* ignore */ }
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                if (e.key === "Escape") {
-                  setNameValue(job.name || "");
-                  setEditingName(false);
-                }
-              }}
-              className="text-xs font-medium border border-primary-300 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-primary-400 max-w-[160px]"
-              maxLength={128}
-              autoFocus
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span
-              className="font-medium cursor-pointer hover:text-primary-600 truncate max-w-[200px]"
-              onClick={() => {
-                setNameValue(job.name || "");
-                setEditingName(true);
-                setTimeout(() => nameInputRef.current?.select(), 0);
-              }}
-              title={t("trainingPanel.clickToRename")}
-            >
+          <Popconfirm
+            open={renameOpen}
+            onOpenChange={(open) => {
+              if (open) setRenameValue(job.name || "");
+              setRenameOpen(open);
+            }}
+            title={t("trainingPanel.renameJob")}
+            description={
+              <input
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.stopPropagation();
+                }}
+                placeholder={job.modelVariant}
+                className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-xs outline-none focus:border-primary-400"
+                maxLength={128}
+              />
+            }
+            okText={t("common.save")}
+            cancelText={t("common.cancel")}
+            okButtonProps={{ loading: renaming }}
+            onConfirm={async () => {
+              setRenaming(true);
+              try {
+                await renameTrainingJob(job.id, renameValue.trim());
+                qc.invalidateQueries({ queryKey: ["training-jobs"] });
+                setRenameOpen(false);
+              } catch { /* ignore */ }
+              finally { setRenaming(false); }
+            }}
+            placement="bottomLeft"
+          >
+            <span className="font-medium text-primary-600 cursor-pointer hover:text-primary-700 truncate max-w-[200px]">
               {job.name || job.modelVariant}
             </span>
-          )}
+          </Popconfirm>
           {job.completedAt && (
             <span className="text-gray-400 ml-2">
               {new Date(job.completedAt).toLocaleString(

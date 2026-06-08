@@ -158,7 +158,8 @@
     "noMatch": "无匹配",
     "clearFilter": "清除筛选",
     "matchCount": "已过滤 {{current}} / {{total}} 条",
-    "noMatchRecords": "无匹配记录"
+    "noMatchRecords": "无匹配记录",
+    "loadAll": "加载全部（剩余 {{remaining}} 条）"
   },
   "detectionResult": {
     "drawCategoryPlaceholder": "标注类别...",
@@ -203,6 +204,7 @@
     "currentMetrics": "当前指标",
     "chartTitle": "训练曲线与指标",
     "trainStarted": "训练任务已启动",
+    "loadAll": "加载全部（剩余 {{remaining}} 条）",
     "addToQueue": "加入训练队列 ({{count}} 条)",
     "trainingInProgress": "训练进行中，检测功能暂不可用",
     "selectRecordRequired": "请至少选择一条检测记录",
@@ -231,6 +233,7 @@
     "dataset": "数据集",
     "retrain": "重训",
     "details": "详情",
+    "renameJob": "重命名任务",
     "clickToRename": "点击重命名",
     "retrainCreated": "重训任务已创建",
     "retrainFailed": "重训失败",

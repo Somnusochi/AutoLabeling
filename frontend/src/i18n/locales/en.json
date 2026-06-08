@@ -158,7 +158,8 @@
     "noMatch": "No match",
     "clearFilter": "Clear Filter",
     "matchCount": "Filtered {{current}} / {{total}} records",
-    "noMatchRecords": "No matching records"
+    "noMatchRecords": "No matching records",
+    "loadAll": "Load All ({{remaining}} remaining)"
   },
   "detectionResult": {
     "drawCategoryPlaceholder": "Annotate category...",
@@ -203,6 +204,7 @@
     "currentMetrics": "Current Metrics",
     "chartTitle": "Training Curves & Metrics",
     "trainStarted": "Training job started",
+    "loadAll": "Load All ({{remaining}} remaining)",
     "addToQueue": "Add to training queue ({{count}})",
     "trainingInProgress": "Training in progress, detection is unavailable",
     "selectRecordRequired": "Please select at least one detection record",
@@ -231,6 +233,7 @@
     "dataset": "Dataset",
     "retrain": "Retrain",
     "details": "Details",
+    "renameJob": "Rename Job",
     "clickToRename": "Click to rename",
     "retrainCreated": "Retrain job created successfully",
     "retrainFailed": "Failed to retrain",

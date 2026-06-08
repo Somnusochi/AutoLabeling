@@ -158,7 +158,8 @@
     "noMatch": "一致無",
     "clearFilter": "絞込解除",
     "matchCount": "{{current}} / {{total}} 件 (絞込済)",
-    "noMatchRecords": "一致記録無"
+    "noMatchRecords": "一致記録無",
+    "loadAll": "全読込（残 {{remaining}} 件）"
   },
   "detectionResult": {
     "drawCategoryPlaceholder": "标注分類…",
@@ -227,6 +228,7 @@
     "dataset": "資料集合",
     "retrain": "再学習",
     "details": "詳細",
+    "renameJob": "任務名称変更",
     "clickToRename": "選択名称変更",
     "retrainCreated": "再学習任務作成",
     "retrainFailed": "再学習失敗",
@@ -242,6 +244,7 @@
     "downloadDataset": "資料集合取得",
     "datasetDownloaded": "資料集合取得完了",
     "datasetDownloadFailed": "資料集合取得失敗",
+    "loadAll": "全読込（残 {{remaining}} 件）",
     "addToQueue": "学習隊列追加 ({{count}} 件)",
     "cancelJobConfirm": "学習任務取消確認",
     "cancelFailed": "取消失敗",
