@@ -42,6 +42,7 @@ USER appuser
 COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser sam3_server.py .
 COPY --chown=appuser:appuser alembic.ini .
+COPY --chown=appuser:appuser alembic ./alembic
 
 # Set environment variables
 ENV PYTHONPATH=/app \

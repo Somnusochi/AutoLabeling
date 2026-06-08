@@ -49,8 +49,15 @@ def import_dataset(
     }[fmt]
 
     with tempfile.TemporaryDirectory() as extract_dir:
+        extract_path = Path(extract_dir).resolve()
         with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(extract_dir)
+            for member in zf.infolist():
+                # Prevent path traversal attacks (e.g. ../../etc/passwd)
+                member_path = (extract_path / member.filename).resolve()
+                if not str(member_path).startswith(str(extract_path) + "/"):
+                    logger.warning("Skipping suspicious path in ZIP: %s", member.filename)
+                    continue
+                zf.extract(member, extract_path)
 
         parsed = parser(extract_dir)
 
