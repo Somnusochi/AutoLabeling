@@ -48,7 +48,7 @@ export function Home() {
     isRedetecting,
   } = useDetectionProcess();
 
-  const { historyData, recentCategories, handleSelectHistory } = useDetectionHistory();
+  const { historyQuery, allItems, total, recentCategories, handleSelectHistory } = useDetectionHistory();
 
   const {
     handleDrawBox,
@@ -83,7 +83,13 @@ export function Home() {
     batchResults,
     setBatchResults,
     cancel,
-    historyData,
+    historyQuery: {
+      hasNextPage: historyQuery.hasNextPage ?? false,
+      isFetchingNextPage: historyQuery.isFetchingNextPage,
+      fetchNextPage: () => historyQuery.fetchNextPage(),
+    } as const,
+    allItems,
+    total,
     result,
     setResult,
     handleSelectKeyframe,

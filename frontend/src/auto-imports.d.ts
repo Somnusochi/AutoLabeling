@@ -20,6 +20,8 @@ declare global {
   const DEFAULT_EPOCHS: typeof import('./lib/constants').DEFAULT_EPOCHS
   const DEFAULT_IMGSZ: typeof import('./lib/constants').DEFAULT_IMGSZ
   const DEFAULT_IOU: typeof import('./lib/constants').DEFAULT_IOU
+  const DEFAULT_TIMEOUT: typeof import('./services/request').DEFAULT_TIMEOUT
+  const DETECT_TIMEOUT: typeof import('./services/request').DETECT_TIMEOUT
   const DatasetImportModal: typeof import('./components/DatasetImportModal/index').DatasetImportModal
   const DetectionCanvas: typeof import('./components/DetectionCanvas/index').DetectionCanvas
   const DetectionResult: typeof import('./components/DetectionResult/index').DetectionResult
@@ -33,6 +35,7 @@ declare global {
   const Home: typeof import('./pages/Home').Home
   const HoverPreview: typeof import('./components/Training/HoverPreview/index').HoverPreview
   const ImageUploader: typeof import('./components/ImageUploader/index').ImageUploader
+  const JobHistoryList: typeof import('./components/Training/JobHistoryList/index').JobHistoryList
   const KeyframeGrid: typeof import('./components/KeyframeGrid/index').KeyframeGrid
   const Layout: typeof import('./components/Layout/index').Layout
   const MAX_UPLOAD_SIZE_MB: typeof import('./lib/constants').MAX_UPLOAD_SIZE_MB
@@ -51,6 +54,7 @@ declare global {
   const TrainingJobItem: typeof import('./components/Training/TrainingJobItem/index').TrainingJobItem
   const TrainingPanel: typeof import('./components/TrainingPanel/index').TrainingPanel
   const TrainingPreview: typeof import('./components/Training/TrainingPreview/index').TrainingPreview
+  const UPLOAD_TIMEOUT: typeof import('./services/request').UPLOAD_TIMEOUT
   const ValidationSettings: typeof import('./components/ValidationSettings/index').ValidationSettings
   const VideoDetail: typeof import('./components/VideoDetail/index').VideoDetail
   const VideoPanel: typeof import('./components/VideoPanel/index').VideoPanel
@@ -140,6 +144,7 @@ declare global {
   const useDetectMutation: typeof import('./hooks/useDetection').useDetectMutation
   const useDetectionAnnotation: typeof import('./hooks/useDetectionAnnotation').useDetectionAnnotation
   const useDetectionHistory: typeof import('./hooks/useDetectionHistory').useDetectionHistory
+  const useDetectionListInfiniteQuery: typeof import('./hooks/useDetection').useDetectionListInfiniteQuery
   const useDetectionListQuery: typeof import('./hooks/useDetection').useDetectionListQuery
   const useDetectionProcess: typeof import('./hooks/useDetectionProcess').useDetectionProcess
   const useDetectionTimer: typeof import('./hooks/useDetectionTimer').useDetectionTimer
@@ -165,13 +170,14 @@ declare global {
   const useImperativeHandle: typeof import('react').useImperativeHandle
   const useInViewport: typeof import('ahooks').useInViewport
   const useInfiniteQuery: typeof import('@tanstack/react-query').useInfiniteQuery
-  const useInfiniteScroll: typeof import('ahooks').useInfiniteScroll
+  const useInfiniteScroll: typeof import('./hooks/useInfiniteScroll').useInfiniteScroll
   const useInsertionEffect: typeof import('react').useInsertionEffect
   const useInterval: typeof import('ahooks').useInterval
   const useIsomorphicLayoutEffect: typeof import('ahooks').useIsomorphicLayoutEffect
   const useKeyPress: typeof import('ahooks').useKeyPress
   const useLatest: typeof import('ahooks').useLatest
   const useLayoutEffect: typeof import('react').useLayoutEffect
+  const useLoadAll: typeof import('./hooks/useLoadAll').useLoadAll
   const useLocalStorageState: typeof import('ahooks').useLocalStorageState
   const useLockFn: typeof import('ahooks').useLockFn
   const useLongPress: typeof import('ahooks').useLongPress

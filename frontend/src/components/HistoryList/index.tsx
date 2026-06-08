@@ -1,12 +1,24 @@
 interface Props {
-  data: { total: number; items: Detection[] } | undefined;
+  allItems: Detection[];
+  total: number;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
   onSelect: (det: Detection) => void;
 }
 
-export function HistoryList({ data, onSelect }: Props) {
+export function HistoryList({
+  allItems,
+  total,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  onSelect,
+}: Props) {
   const { t } = useTranslation();
   const deleteMut = useDeleteDetectionMutation();
-  const list = useMemo(() => data?.items ?? [], [data?.items]);
+  const list = useMemo(() => allItems, [allItems]);
+  const [loadingAll, handleLoadAll] = useLoadAll(fetchNextPage);
 
   const allCategories = useMemo(() => {
     const count = new Map<string, number>();
@@ -61,6 +73,8 @@ export function HistoryList({ data, onSelect }: Props) {
     estimateSize: () => 120,
     overscan: 10,
   });
+
+  useInfiniteScroll(parentRef, hasNextPage, isFetchingNextPage, fetchNextPage);
 
   if (list.length === 0) {
     return (
@@ -140,9 +154,21 @@ export function HistoryList({ data, onSelect }: Props) {
         {selected.size > 0
           ? t("historyList.matchCount", {
               current: filtered.length,
-              total: data?.total ?? 0,
+              total: total ?? 0,
             })
-          : t("historyList.totalCount", { count: data?.total ?? 0 })}
+          : t("historyList.totalCount", { count: total ?? 0 })}
+        {hasNextPage && (
+          <button
+            type="button"
+            disabled={loadingAll || isFetchingNextPage}
+            onClick={handleLoadAll}
+            className="ml-2 text-primary-600 hover:text-primary-700 disabled:opacity-50"
+          >
+            {loadingAll
+              ? t("common.loading")
+              : t("historyList.loadAll", { remaining: total - list.length })}
+          </button>
+        )}
       </p>
 
       {filtered.length === 0 ? (
@@ -174,6 +200,7 @@ export function HistoryList({ data, onSelect }: Props) {
           </div>
         </div>
       )}
+
     </div>
   );
 }

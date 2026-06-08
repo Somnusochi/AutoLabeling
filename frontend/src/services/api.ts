@@ -34,10 +34,10 @@ export async function detectImage(
 
 export async function listDetections(
   page = 1,
-  pageSize = 10000,
+  pageSize = 50,
 ): Promise<{ items: Detection[]; total: number }> {
   const { data } = await request.get<ListResponse<Detection>>("/detections", {
-    params: { page, pageSize: 100000 },
+    params: { page, pageSize },
   });
   return { items: data.data, total: data.total };
 }
@@ -98,11 +98,14 @@ export async function startTraining(params: {
   return data.data;
 }
 
-export async function fetchTrainingJobs(): Promise<TrainingJob[]> {
+export async function fetchTrainingJobs(
+  page = 1,
+  pageSize = 30,
+): Promise<{ items: TrainingJob[]; total: number }> {
   const { data } = await request.get<ListResponse<TrainingJob>>("/train/jobs", {
-    params: { pageSize: 10000 },
+    params: { page, pageSize },
   });
-  return data.data ?? [];
+  return { items: data.data ?? [], total: data.total };
 }
 
 export async function cancelTrainingJob(id: string): Promise<TrainingJob> {
@@ -154,10 +157,10 @@ export async function uploadVideo(file: File): Promise<VideoInfo> {
 
 export async function listVideos(
   page = 1,
-  pageSize = 20,
+  pageSize = 30,
 ): Promise<{ items: VideoInfo[]; total: number }> {
   const { data } = await request.get<ListResponse<VideoInfo>>("/videos", {
-    params: { page, pageSize: 100 },
+    params: { page, pageSize },
   });
   return { items: data.data, total: data.total };
 }

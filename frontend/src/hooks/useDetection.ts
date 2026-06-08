@@ -1,10 +1,17 @@
-export function useDetectionListQuery(page = 1) {
-  return useQuery({
-    queryKey: ["detections", page],
-    queryFn: () => listDetections(page),
+export function useDetectionListInfiniteQuery() {
+  return useInfiniteQuery({
+    queryKey: ["detections"],
+    queryFn: ({ pageParam }) => listDetections(pageParam, PAGE_SIZE_DETECTIONS),
+    getNextPageParam: (lastPage, allPages) => {
+      const totalFetched = allPages.reduce((sum, p) => sum + p.items.length, 0);
+      return totalFetched < lastPage.total ? allPages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
     staleTime: 30_000,
   });
 }
+
+const PAGE_SIZE_DETECTIONS = 10000;
 
 export function useDetectMutation() {
   const { t } = useTranslation();

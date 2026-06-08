@@ -23,7 +23,9 @@ export interface SidebarProps {
   batchResults: Detection[];
   setBatchResults: React.Dispatch<React.SetStateAction<Detection[]>>;
   cancel: () => void;
-  historyData?: { items: Detection[]; total: number };
+  historyQuery: { hasNextPage: boolean; isFetchingNextPage: boolean; fetchNextPage: () => void };
+  allItems: Detection[];
+  total: number;
   result: Detection | null;
   setResult: (result: Detection | null) => void;
   handleSelectKeyframe: (files: File[]) => void;
@@ -43,7 +45,9 @@ export function Sidebar({
   batchResults,
   setBatchResults,
   cancel,
-  historyData,
+  historyQuery,
+  allItems,
+  total,
   result,
   setResult,
   handleSelectKeyframe,
@@ -463,7 +467,14 @@ export function Sidebar({
         <p className="text-sm font-medium text-gray-600 mb-2">{t("common.history")}</p>
         <Suspense fallback={<HistorySkeleton />}>
           <ErrorBoundary>
-            <HistoryList data={historyData} onSelect={handleSelectHistory} />
+            <HistoryList
+              allItems={allItems}
+              total={total}
+              hasNextPage={historyQuery.hasNextPage}
+              isFetchingNextPage={historyQuery.isFetchingNextPage}
+              fetchNextPage={historyQuery.fetchNextPage}
+              onSelect={handleSelectHistory}
+            />
           </ErrorBoundary>
         </Suspense>
       </div>
@@ -472,7 +483,13 @@ export function Sidebar({
 
       <div>
         <p className="text-sm font-medium text-gray-600 mb-2">{t("common.yoloTrain")}</p>
-        <TrainingPanel detections={historyData?.items ?? []} />
+        <TrainingPanel
+          detections={allItems}
+          total={total}
+          hasNextPage={historyQuery.hasNextPage}
+          isFetchingNextPage={historyQuery.isFetchingNextPage}
+          fetchNextPage={historyQuery.fetchNextPage}
+        />
       </div>
     </aside>
   );

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useAppStore } from "@/store/useAppStore";
-import { useDetectionListQuery } from "./useDetection";
+import { useDetectionListInfiniteQuery } from "./useDetection";
 import { getDetection } from "@/services/api";
 import { API_BASE } from "@/lib/constants";
 import type { Detection } from "@/types";
@@ -12,9 +12,11 @@ export function useDetectionHistory() {
   const { setPreviewUrl, setCategories, setFilterMode, setNmsIou, setHiddenIndices, setResult, setFiles, setBatchResults } =
     useAppStore();
 
-  const { data: historyData } = useDetectionListQuery();
+  const historyQuery = useDetectionListInfiniteQuery();
+  const allItems = historyQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const total = historyQuery.data?.pages[0]?.total ?? 0;
   const recentCategories = Array.from<string>(
-    new Set((historyData?.items ?? []).flatMap((d: Detection) => parseCategories(d.categories))),
+    new Set(allItems.flatMap((d: Detection) => parseCategories(d.categories))),
   ).sort();
 
   const handleSelectHistory = useCallback(
@@ -47,7 +49,9 @@ export function useDetectionHistory() {
   );
 
   return {
-    historyData,
+    historyQuery,
+    allItems,
+    total,
     recentCategories,
     handleSelectHistory,
   };
