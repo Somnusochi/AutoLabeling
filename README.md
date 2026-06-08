@@ -27,7 +27,7 @@
 - 🎯 **SAM2 / SAM3 segmentation**: Bbox → pixel-precise mask with SAM 2.1 or SAM3 text-driven detection+segmentation in one pass, BBox/Mask toggle on canvas
 - 🎥 **Video annotation**: Intelligent keyframe extraction (scene / motion / interval), SSIM dedup
 - ✏️ **Manual refinement**: Canvas draw mode, NMS filtering, hide/show individual boxes
-- 📦 **Multi-format export/import**: YOLO, YOLO-Seg, COCO JSON, Pascal VOC XML, CreateML JSON — import existing datasets via ZIP
+- 📦 **Multi-format export/import**: YOLO, YOLO-Seg, COCO JSON, Pascal VOC XML, CreateML JSON — import datasets via chunked ZIP upload (max 10GB, resume support)
 - 🚀 **Training queue**: Sequential job processing with cancel support, one-click training (YOLOv8 / v11 / v26) with real-time SSE progress
 - ✅ **Model validation**: Batch image / video testing, MJPEG live stream, SSE video inference
 - 💾 **Smart model management**: Lazy loading, idle auto-unload, MPS/CUDA strategy pattern cleanup
@@ -237,7 +237,7 @@ Canvas-based annotation with View / Draw modes.
 ### History Management
 
 - Thumbnail + category tag previews, tag-based multi-select filtering
-- Click to view details, re-detect with updated labels, frontend pagination
+- Click to view details, re-detect with updated labels, virtual scroll with infinite loading
 - Single / batch export in **5 formats**: YOLO, YOLO-Seg, COCO JSON, Pascal VOC XML, CreateML JSON
 - Format selection via dropdown menu, one-click zip download
 
@@ -247,8 +247,10 @@ Canvas-based annotation with View / Draw modes.
 - **Task types**: Object Detection (Detect), Instance Segmentation (Segment)
 - Segmentation training auto-uses SAM2 polygon labels; falls back to bbox when unavailable
 - Tag filter + thumbnail preview for precise data selection
+- Virtual scroll with "Load All" button for large datasets
 - Dataset split presets (70/20/10, 80/20, 90/10, 60/20/20)
 - Real-time SSE progress: Epoch / Loss / mAP50
+- Rename training jobs for easier identification
 - Auto ONNX export; download PT / ONNX / dataset zip
 
 ### Model Validation

@@ -1,11 +1,8 @@
 # Changelog
 
-## v1.5.8 (2026-06-08)
+## v1.5.9 (2026-06-08)
 
 ### Performance & Infrastructure
-- Feat: embed GPU passthrough in `docker-compose.yml` — no manual yaml editing required
-- Feat: add `.dockerignore` for backend and frontend — excludes ~2.8GB venv/node_modules from build context
-- Fix: add Free disk space step before Docker build in CI to prevent disk-full crashes
 - Perf: increase chunk upload size 5MB → 20MB for 4× faster dataset imports
 - Feat: `max_import_size_mb` config (default 10GB) with validation in chunk_init and frontend file picker
 - Depr: mark `POST /datasets/import` direct upload endpoint as deprecated in favor of chunked upload
@@ -15,12 +12,10 @@
 ### Training Job Management
 - Feat: rename training jobs via Popconfirm with inline text input (`POST /train/jobs/{id}/rename`)
 - Feat: `name` column added to `TrainingJob` model (nullable String(128))
-- Feat: class map Popover on hover for `num_classes` in training job metrics
 - Style: num_classes count shown in `text-primary-600`
 
 ### Virtual Lists & Infinite Scroll
-- Feat: virtualize training job list (`JobHistoryList`) with `@tanstack/react-virtual`
-- Feat: virtualize video list (`VideoList`) with dynamic height measurement
+- Feat: virtualize training job list (`JobHistoryList`) and video list (`VideoList`) with `@tanstack/react-virtual`
 - Feat: infinite scroll pagination for detection history, training jobs, and videos
 - Feat: `useInfiniteScroll` hook — unified scroll-to-bottom trigger for all virtual lists
 - Feat: `useLoadAll` hook — "Load All" button that fetches remaining pages in bulk
@@ -35,9 +30,18 @@
 ### Testing
 - Test: 10-image detect→train→validate→download end-to-end integration test
 - Test: `test_rename_job` + `test_rename_job_404` integration tests
-- Test: 4 `useLoadAll` hook unit tests (init, batch fetch, loading state, empty pages)
-- Test: 4 `useInfiniteScroll` hook unit tests (edge detection, scroll trigger, guard conditions)
+- Test: 4 `useLoadAll` + 4 `useInfiniteScroll` hook unit tests
 - Total: 81 backend + 42 frontend tests passing
+
+## v1.5.8 (2026-06-08)
+
+### Docker & CI
+- Feat: embed GPU passthrough in `docker-compose.yml` — no manual yaml editing required
+- Feat: add `.dockerignore` for backend and frontend — excludes ~2.8GB venv/node_modules from build context
+- Fix: add Free disk space step before Docker build in CI to prevent disk-full crashes
+
+### UI
+- Feat: class map Popover on hover for `num_classes` in training job metrics
 
 ## v1.5.7 (2026-06-08)
 

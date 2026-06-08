@@ -27,7 +27,7 @@
 - 🎯 **SAM2 / SAM3 分割**：SAM2 精修 VLM 检测框；SAM3 文本驱动的端到端检测+分割，BBox/Mask 画布独立开关
 - 🎥 **视频标注**：智能关键帧提取（场景/运动/间隔），SSIM 去重
 - ✏️ **人工修正**：Canvas 画框模式，NMS 过滤，单框隐藏
-- 📦 **多格式导入/导出**：YOLO、YOLO-Seg、COCO JSON、Pascal VOC XML、CreateML JSON — 支持已有数据集 ZIP 导入
+- 📦 **多格式导入/导出**：YOLO、YOLO-Seg、COCO JSON、Pascal VOC XML、CreateML JSON — 分片上传支持最大 10GB，断点续传
 - 🚀 **训练队列**：任务排队串行执行，支持取消，一键 YOLO 训练（v8 / v11 / v26）SSE 实时进度
 - ✅ **模型验证**：批量图片/视频测试，MJPEG 实时流，SSE 视频推理
 - 💾 **智能模型管理**：VLM/SAM2/SAM3 惰性加载，闲置自动卸载，统一 SSE 状态推送，MPS/CUDA 策略模式内存回收
@@ -236,7 +236,7 @@ Canvas 画框模式，查看/标注双模式切换。
 ### 历史管理
 
 - 缩略图 + 类别标签，按标签多选筛选
-- 点击查看详情，支持重新检测，前端分页
+- 点击查看详情，支持重新检测，虚拟滚动 + 无限加载
 - 单张/批量导出 **5 种格式**：YOLO、YOLO-Seg、COCO JSON、Pascal VOC XML、CreateML JSON
 - 下拉菜单选格式，一键下载 zip
 
@@ -246,6 +246,8 @@ Canvas 画框模式，查看/标注双模式切换。
 - **任务类型**：目标检测（Detect）、实例分割（Segment）
 - 分割训练自动使用 SAM2 polygon 标签，无 polygon 时 fallback 到 bbox
 - 标签筛选 + 缩略图预览精确选择训练数据
+- 虚拟滚动 + 「加载全部」按钮，大数据集无卡顿
+- 训练任务支持重命名，便于辨识
 - 数据集拆分预设（70/20/10、80/20、90/10、60/20/20）
 - SSE 实时推送：Epoch / Loss / mAP50
 - 自动 ONNX 导出，可下载 PT / ONNX / 数据集 zip
