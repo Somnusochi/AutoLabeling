@@ -1,6 +1,6 @@
 /** Web Worker: chunked file upload with resume support. */
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_RETRIES = 3;
 const API_BASE = "/api/v1";
 
