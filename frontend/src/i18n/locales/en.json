@@ -257,7 +257,7 @@
     "importSuccess": "Successfully imported {{count}} images",
     "importFailed": "Import failed",
     "invalidZip": "Only .zip files are supported",
-    "fileTooLarge": "File exceeds size limit"
+    "fileTooLarge": "File exceeds 10GB limit. Please split into smaller datasets."
   },
   "videoValidator": {
     "playerCompleted": "Playback completed. Click to replay",

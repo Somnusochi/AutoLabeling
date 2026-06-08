@@ -89,7 +89,7 @@ Base URL: `http://localhost:8000/api/v1`
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/datasets/import` | Direct upload (≤200MB ZIP), starts import in background |
-| POST | `/datasets/import/chunk/init` | Create/resume chunked upload session (JSON: `{fileName, totalSize, chunkSize, format}`) |
+| POST | `/datasets/import/chunk/init` | Create/resume chunked upload session (JSON: `{fileName, totalSize, chunkSize, format}`). Max 10GB |
 | POST | `/datasets/import/chunk/{id}/{n}` | Upload chunk `n` (binary body) |
 | GET | `/datasets/import/chunk/{id}` | Check upload status (uploaded chunks list) |
 | POST | `/datasets/import/chunk/{id}/complete` | Assemble chunks → start import |

@@ -15,6 +15,8 @@ interface Props {
   onClose: () => void;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
+
 export function DatasetImportModal({ open, onClose }: Props) {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -53,6 +55,10 @@ export function DatasetImportModal({ open, onClose }: Props) {
     setError(null);
     if (f && !f.name.endsWith(".zip")) {
       setError(t("datasetImport.invalidZip"));
+      return;
+    }
+    if (f && f.size > MAX_FILE_SIZE) {
+      setError(t("datasetImport.fileTooLarge"));
       return;
     }
     setFile(f);

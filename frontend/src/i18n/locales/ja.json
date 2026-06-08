@@ -257,7 +257,7 @@
     "importSuccess": "{{count}} 枚画像導入完了",
     "importFailed": "導入失敗",
     "invalidZip": ".zip 文件専用",
-    "fileTooLarge": "文件寸法上限超過"
+    "fileTooLarge": "文件寸法 10GB 上限超過。小分要。"
   },
   "videoValidator": {
     "playerCompleted": "再生完了。選択再播放",

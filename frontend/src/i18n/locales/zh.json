@@ -257,7 +257,7 @@
     "importSuccess": "成功导入 {{count}} 张图片",
     "importFailed": "导入失败",
     "invalidZip": "仅支持 .zip 文件",
-    "fileTooLarge": "文件大小超过上限"
+    "fileTooLarge": "文件大小超过 10GB 上限，请拆分为较小的数据集"
   },
   "videoValidator": {
     "playerCompleted": "播放完成，点击重播",
