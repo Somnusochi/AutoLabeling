@@ -343,6 +343,9 @@ def cmd_start():
     print(f"  后端:   {cyan(f'http://localhost:{BACKEND_PORT}')}")
     print(f"  API:    {cyan(f'http://localhost:{BACKEND_PORT}/docs')}")
     print(f"  {red('Ctrl+C')} 停止")
+    print(f"{'━' * 46}")
+    print(f"  💡 {yellow('提示: VLM 和 SAM 模型采用【惰性加载】策略。')}")
+    print(f"     {yellow('在网页端首次执行检测前，它们会显示为“未加载”状态。')}")
     print(f"{'━' * 46}\n")
 
     webbrowser.open(f"http://localhost:{FRONTEND_PORT}")

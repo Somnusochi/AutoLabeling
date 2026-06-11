@@ -53,6 +53,9 @@ echo "  后端: http://localhost:$BACKEND_PORT"
 echo "  API文档: http://localhost:$BACKEND_PORT/docs"
 echo "  Ctrl+C 停止"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  💡 提示: VLM 和 SAM 模型采用【惰性加载】策略。"
+echo "     在网页端首次执行检测前，它们会显示为“未加载”状态。"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 wait
